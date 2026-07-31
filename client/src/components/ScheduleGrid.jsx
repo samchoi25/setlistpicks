@@ -3,13 +3,14 @@ import { SCHEDULE, DAYS } from '../../../shared/schedule.js';
 import { ShowBlock, TOTAL_SLOTS, STAGE_COL, minToSlot, GRID_START_MIN } from './ShowBlock.jsx';
 
 const STAGE_HEADERS = {
-  prudential: 'Prudential Stage',
-  tmobile:    'T-Mobile Stage',
-  hellofresh: 'HelloFresh Stage',
-  northbay:   'NorthBay Health Stage',
+  landsend:  'Lands End',
+  twinpeaks: 'Twin Peaks',
+  sutro:     'Sutro',
+  panhandle: 'Panhandle',
+  soma:      'SOMA',
 };
 
-const STAGES_ORDER = ['prudential', 'tmobile', 'hellofresh', 'northbay'];
+const STAGES_ORDER = ['landsend', 'twinpeaks', 'sutro', 'panhandle', 'soma'];
 
 function timeAxisLabel(slotIndex) {
   const totalMin = GRID_START_MIN + slotIndex * 15;
@@ -28,14 +29,15 @@ function ordinalSuffix(n) {
 
 function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, groupId, onVoteChange, onLongPress, onNotMember }) {
   const daySets = SCHEDULE.filter((s) => s.dayId === day.id);
-  const dayNum = parseInt(day.date.split(' ')[1], 10);
+  const [dayMonth, dayNumStr] = day.date.split(' ');
+  const dayNum = parseInt(dayNumStr, 10);
   const dayDate = `${dayNum}${ordinalSuffix(dayNum)}`;
 
   return (
     <div data-day={day.id}>
       <div className="day-heading">
         <span className="day-name">{day.name}</span>
-        <span className="day-date">May {dayDate}</span>
+        <span className="day-date">{dayMonth} {dayDate}</span>
       </div>
       <div className="schedule-wrap">
         <div className="schedule-grid">

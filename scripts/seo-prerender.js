@@ -18,7 +18,7 @@ function fmtTime(hhmm) {
 
 // 'HH:MM' + date string → ISO 8601 datetime with PT offset
 function toIso(hhmm, dateStr) {
-  // dateStr is like 'May 22'
+  // dateStr is like 'Aug 7'
   const monthMap = { Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12 };
   const [mon, day] = dateStr.split(' ');
   const month = String(monthMap[mon]).padStart(2, '0');
@@ -45,10 +45,13 @@ export function renderLineupHtml() {
 
   const artistCount = SCHEDULE.length;
 
+  const stageList = STAGES.map((s) => s.name);
+  const stageSentence = `${stageList.slice(0, -1).join(', ')}, and ${stageList[stageList.length - 1]}`;
+
   return `<div id="seo-prerender" aria-hidden="true" style="display:none">
-<h1>BottleRock 2026 Lineup &amp; Schedule</h1>
-<p>BottleRock Napa Valley 2026 runs May 22&ndash;24 at the Napa Valley Expo. ${artistCount} sets across 4 stages &mdash; Prudential, T-Mobile, HelloFresh, and NorthBay Health. Headliners include Foo Fighters, Lorde, Backstreet Boys, and Lil Wayne. Use this tool to pick your must-see shows and plan with your crew.</p>
-<p><a href="https://www.bottlerocknapavalley.com/schedule/" rel="noopener noreferrer">Official BottleRock schedule &rarr;</a></p>
+<h1>Outside Lands 2026 Lineup &amp; Set Times</h1>
+<p>Outside Lands 2026 runs August 7&ndash;9 in Golden Gate Park, San Francisco. ${artistCount} sets across ${STAGES.length} stages &mdash; ${escHtml(stageSentence)}. Headliners include Charli xcx, The Strokes, RÜFÜS DU SOL, and Baby Keem, plus Turnstile, The xx, PinkPantheress, Death Cab for Cutie, Ethel Cain, and Lucy Dacus. Use this tool to pick your must-see shows and plan with your crew.</p>
+<p><a href="https://sfoutsidelands.com/lineup/" rel="noopener noreferrer">Official Outside Lands lineup &rarr;</a></p>
 ${dayGroups}
 </div>`;
 }
@@ -63,13 +66,13 @@ export function renderJsonLd() {
       endDate: toIso(s.end, day.date),
       location: {
         '@type': 'Place',
-        name: `${STAGE_NAMES[s.stageId]} — Napa Valley Expo`,
+        name: `${STAGE_NAMES[s.stageId]} — Golden Gate Park`,
         address: {
           '@type': 'PostalAddress',
-          streetAddress: '575 Third St',
-          addressLocality: 'Napa',
+          streetAddress: '501 Stanyan St',
+          addressLocality: 'San Francisco',
           addressRegion: 'CA',
-          postalCode: '94559',
+          postalCode: '94117',
           addressCountry: 'US',
         },
       },
@@ -80,18 +83,18 @@ export function renderJsonLd() {
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'MusicFestival',
-    name: 'BottleRock Napa Valley 2026',
-    startDate: '2026-05-22T12:00:00-07:00',
-    endDate: '2026-05-24T22:00:00-07:00',
+    name: 'Outside Lands 2026',
+    startDate: '2026-08-07T12:00:00-07:00',
+    endDate: '2026-08-09T22:00:00-07:00',
     location: {
       '@type': 'Place',
-      name: 'Napa Valley Expo',
+      name: 'Golden Gate Park',
       address: {
         '@type': 'PostalAddress',
-        streetAddress: '575 Third St',
-        addressLocality: 'Napa',
+        streetAddress: '501 Stanyan St',
+        addressLocality: 'San Francisco',
         addressRegion: 'CA',
-        postalCode: '94559',
+        postalCode: '94117',
         addressCountry: 'US',
       },
     },

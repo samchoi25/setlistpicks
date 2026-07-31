@@ -1,26 +1,28 @@
-// BottleRock Napa Valley 2026 schedule.
-// Source: https://riffmagazine.com/festivals/bottlerock-napa-2026-stage-times/
-// Cross-checked against https://www.bottlerocknapavalley.com/schedule/
+// Outside Lands 2026 schedule.
+// Source: official interactive lineup data (https://sfoutsidelands.com/lineup/),
+// which is served from the Festuff embed at dsfestlands26.dostff.co.
+// Set times are the OFFICIAL published times, not estimates.
 //
 // Format per set: [stageId, 'HH:MM start', 'HH:MM end', 'Artist']
-// Friday end times are from the official daily-schedule image.
-// Saturday/Sunday end times: next_show_start − 30 min; last shows on each
-// stage get durations that match Friday's pattern (headliners ≈ 90–120 min,
-// secondary closers ≈ 75 min, small-stage closers ≈ 75–90 min).
+// Stage order: Lands End (main) → Twin Peaks → Sutro → Panhandle → SOMA
+//
+// Note: the Duboce Triangle pop-up area is intentionally omitted — its handful of
+// 30-min sets are all by artists who also play one of the five stages above.
 //
 // All times are PT (24h).
 
 export const STAGES = [
-  { id: 'prudential', name: 'Prudential', short: 'PRU' },
-  { id: 'tmobile',    name: 'T-Mobile',   short: 'TMO' },
-  { id: 'hellofresh', name: 'HelloFresh', short: 'HF'  },
-  { id: 'northbay',   name: 'NorthBay Health', short: 'NBH' },
+  { id: 'landsend',  name: 'Lands End',  short: 'LE'  },
+  { id: 'twinpeaks', name: 'Twin Peaks', short: 'TP'  },
+  { id: 'sutro',     name: 'Sutro',      short: 'SUT' },
+  { id: 'panhandle', name: 'Panhandle',  short: 'PAN' },
+  { id: 'soma',      name: 'SOMA',       short: 'SOMA' },
 ];
 
 export const DAYS = [
-  { id: 'fri', name: 'Friday',   date: 'May 22' },
-  { id: 'sat', name: 'Saturday', date: 'May 23' },
-  { id: 'sun', name: 'Sunday',   date: 'May 24' },
+  { id: 'fri', name: 'Friday',   date: 'Aug 7' },
+  { id: 'sat', name: 'Saturday', date: 'Aug 8' },
+  { id: 'sun', name: 'Sunday',   date: 'Aug 9' },
 ];
 
 // Helper: 'HH:MM' → minutes since midnight.
@@ -32,112 +34,136 @@ const t = (s) => {
 // Each set: [stageId, start, end, artist]
 const sets = {
   fri: [
-    // ── Prudential Stage (from official schedule image) ──────────────
-    ['prudential', '12:00', '13:00', 'Indy'],
-    ['prudential', '13:30', '14:30', 'The Beths'],
-    ['prudential', '15:00', '16:00', 'Del Water Gap'],
-    ['prudential', '16:30', '17:30', 'Chaka Khan'],
-    ['prudential', '18:15', '19:30', 'Teddy Swims'],
-    ['prudential', '20:15', '21:45', 'Lorde'],
+    // ── Lands End Stage ─────────────────────────────────────────────────
+    ['landsend', '12:05', '12:50', 'Faouzia'],
+    ['landsend', '13:20', '14:05', 'Grace Ives'],
+    ['landsend', '14:35', '15:25', 'Durand Bernarr'],
+    ['landsend', '15:55', '16:45', 'Wet Leg'],
+    ['landsend', '17:15', '18:15', 'GloRilla'],
+    ['landsend', '18:45', '19:55', 'Labrinth'],
+    ['landsend', '20:40', '21:55', 'Charli xcx'],
 
-    // ── T-Mobile Stage ───────────────────────────────────────────────
-    ['tmobile', '13:00', '13:45', 'Hannah Cohen'],
-    ['tmobile', '14:15', '15:15', 'Natasha Bedingfield'],
-    ['tmobile', '15:45', '16:45', 'Tash Sultana'],
-    ['tmobile', '17:15', '18:15', 'Jon Bellion'],
-    ['tmobile', '18:45', '20:00', 'Papa Roach'],
-    ['tmobile', '20:30', '21:45', 'Lil Wayne'],
+    // ── Twin Peaks Stage ────────────────────────────────────────────────
+    ['twinpeaks', '12:35', '13:20', 'NEZZA'],
+    ['twinpeaks', '14:05', '14:50', 'Kerala Dust'],
+    ['twinpeaks', '15:35', '16:25', 'ALLEYCVT'],
+    ['twinpeaks', '17:10', '18:00', 'Tinashe'],
+    ['twinpeaks', '18:45', '19:35', 'Clipse'],
+    ['twinpeaks', '20:25', '21:50', 'GRIZTRONICS'],
 
-    // ── HelloFresh Stage ─────────────────────────────────────────────
-    ['hellofresh', '12:00', '12:40', 'Malick Koly'],
-    ['hellofresh', '13:15', '14:15', 'Penelope Road'],
-    ['hellofresh', '14:45', '15:45', 'The Paradox'],
-    ['hellofresh', '16:15', '17:15', 'Chevy Metal'],
-    ['hellofresh', '17:45', '18:45', 'Rev Run'],
-    ['hellofresh', '19:15', '20:15', 'Børns'],
-    ['hellofresh', '20:45', '22:00', 'Men At Work'],
+    // ── Sutro Stage ─────────────────────────────────────────────────────
+    ['sutro', '12:25', '13:10', 'Bad Nerves'],
+    ['sutro', '13:40', '14:25', 'Die Spitz'],
+    ['sutro', '14:55', '15:40', 'The Story So Far'],
+    ['sutro', '16:10', '17:10', 'Sierra Ferrell'],
+    ['sutro', '17:50', '18:50', 'Geese'],
+    ['sutro', '19:20', '20:20', 'Turnstile'],
+    ['sutro', '20:50', '21:50', 'Modest Mouse'],
 
-    // ── NorthBay Health Stage ────────────────────────────────────────
-    ['northbay', '12:00', '12:45', 'The Rookies'],
-    ['northbay', '13:15', '14:00', 'Khatumu'],
-    ['northbay', '14:30', '15:30', 'The Chin Chins'],
-    ['northbay', '16:00', '17:00', 'New Constellations'],
-    ['northbay', '17:30', '18:30', 'Melt'],
-    ['northbay', '19:00', '20:00', 'Treach (of Naughty By Nature)'],
-    ['northbay', '20:30', '22:00', 'Meredith Marks (Silent Disco)'],
+    // ── Panhandle Stage ─────────────────────────────────────────────────
+    ['panhandle', '12:00', '12:30', 'Dani Satin and Always Hallways'],
+    ['panhandle', '13:20', '14:00', 'Chezile'],
+    ['panhandle', '14:50', '15:30', 'Sawyer Hill'],
+    ['panhandle', '16:25', '17:05', 'Billie Marten'],
+    ['panhandle', '18:00', '18:40', 'Goldie Boutilier'],
+    ['panhandle', '19:35', '20:20', 'Dylan Brady'],
+
+    // ── SOMA Stage ──────────────────────────────────────────────────────
+    ['soma', '12:00', '12:55', 'Vertigo'],
+    ['soma', '12:55', '14:25', 'Luke Alessi'],
+    ['soma', '14:25', '15:55', 'tobiahs'],
+    ['soma', '15:55', '17:25', 'MPH'],
+    ['soma', '17:25', '18:55', 'KI/KI'],
+    ['soma', '18:55', '20:25', '¥ØU$UK€ ¥UK1MAT$U'],
+    ['soma', '20:25', '21:55', 'ODD MOB & OMNOM present HYPERBEAM'],
   ],
 
   sat: [
-    // ── Prudential Stage ─────────────────────────────────────────────
-    ['prudential', '12:00', '13:00', 'The Alive'],
-    ['prudential', '13:30', '14:15', 'The Return of Jackie & Judy'],
-    ['prudential', '14:45', '15:45', 'Joan Jett & the Blackhearts'],
-    ['prudential', '16:15', '17:15', 'AJR'],
-    ['prudential', '17:45', '19:00', 'LCD Soundsystem'],
-    ['prudential', '19:45', '21:45', 'Foo Fighters'],        // 120 min headliner
+    // ── Lands End Stage ─────────────────────────────────────────────────
+    ['landsend', '12:10', '12:55', 'Bandalos Chinos'],
+    ['landsend', '13:25', '14:10', 'Haute & Freddy'],
+    ['landsend', '14:40', '15:30', 'Audrey Hobert'],
+    ['landsend', '16:00', '16:50', 'Lucy Dacus'],
+    ['landsend', '17:20', '18:20', 'Ethel Cain'],
+    ['landsend', '18:50', '19:50', 'Djo'],
+    ['landsend', '20:35', '21:55', 'The Strokes'],
 
-    // ── T-Mobile Stage ───────────────────────────────────────────────
-    ['tmobile', '13:00', '13:45', 'Paris Jackson'],
-    ['tmobile', '14:15', '15:15', 'Flipturn'],
-    ['tmobile', '15:45', '16:45', 'Bush'],
-    ['tmobile', '17:15', '18:15', 'Busta Rhymes'],
-    ['tmobile', '18:45', '19:45', 'Rilo Kiley'],
-    ['tmobile', '20:30', '22:00', 'Zedd'],                   // 90 min closer
+    // ── Twin Peaks Stage ────────────────────────────────────────────────
+    ['twinpeaks', '12:30', '13:10', 'Red Leather'],
+    ['twinpeaks', '13:55', '14:35', 'After'],
+    ['twinpeaks', '15:10', '16:00', 'Łaszewo'],
+    ['twinpeaks', '16:45', '17:45', 'Malcolm Todd'],
+    ['twinpeaks', '18:30', '19:20', 'Dijon'],
+    ['twinpeaks', '20:10', '21:25', 'The xx'],
 
-    // ── HelloFresh Stage ─────────────────────────────────────────────
-    ['hellofresh', '12:00', '12:45', 'Bettina Maureenji'],
-    ['hellofresh', '13:15', '14:15', 'Moonalice'],
-    ['hellofresh', '14:45', '15:45', 'Saxsquatch'],
-    ['hellofresh', '16:15', '17:15', 'Midnight Generation'],
-    ['hellofresh', '17:45', '18:45', 'The Warning'],
-    ['hellofresh', '19:15', '20:15', 'Arrested Development'],
-    ['hellofresh', '20:45', '22:00', 'Maoli'],               // 75 min closer
+    // ── Sutro Stage ─────────────────────────────────────────────────────
+    ['sutro', '12:35', '13:20', 'RIO KOSTA'],
+    ['sutro', '13:50', '14:35', 'Wunderhorse'],
+    ['sutro', '15:05', '15:50', 'Sienna Spiro'],
+    ['sutro', '16:20', '17:05', 'Yard Act'],
+    ['sutro', '17:35', '18:20', 'Snow Strippers'],
+    ['sutro', '18:50', '20:00', "it's murph"],
+    ['sutro', '20:45', '21:45', 'PinkPantheress'],
 
-    // ── NorthBay Health Stage ────────────────────────────────────────
-    ['northbay', '12:00', '12:30', 'Jake Zimma'],
-    ['northbay', '13:00', '14:00', 'Folk Bitch Trio'],
-    ['northbay', '14:30', '15:15', 'Zinadelphia'],
-    ['northbay', '15:45', '16:45', 'Charlotte Lawrence'],
-    ['northbay', '17:15', '18:15', 'Almost Monday'],
-    ['northbay', '18:45', '19:45', 'Better Than Ezra'],
-    ['northbay', '20:15', '22:00', 'DJ Pauly D (Silent Disco)'], // 105 min
+    // ── Panhandle Stage ─────────────────────────────────────────────────
+    ['panhandle', '12:00', '12:30', 'RYMAN'],
+    ['panhandle', '13:10', '13:50', 'Racing Mount Pleasant'],
+    ['panhandle', '14:35', '15:05', 'Ally Evenson'],
+    ['panhandle', '16:00', '16:40', 'Automatic'],
+    ['panhandle', '17:45', '18:25', 'Silvana Estrada'],
+    ['panhandle', '19:20', '20:05', 'DJ Trixie Mattel'],
+
+    // ── SOMA Stage ──────────────────────────────────────────────────────
+    ['soma', '12:35', '13:55', 'bad juuju'],
+    ['soma', '13:55', '15:25', '1-800 GIRLS'],
+    ['soma', '15:25', '16:55', 'camoufly'],
+    ['soma', '16:55', '18:25', 'Sultan + Shepard'],
+    ['soma', '18:40', '20:10', 'Ben Böhmer'],
+    ['soma', '20:25', '21:55', 'Lane 8'],
   ],
 
   sun: [
-    // ── Prudential Stage ─────────────────────────────────────────────
-    ['prudential', '12:00', '13:00', 'Betty Taylor'],
-    ['prudential', '13:30', '14:30', 'Larkin Poe'],
-    ['prudential', '15:00', '16:00', 'Kool & the Gang'],
-    ['prudential', '16:30', '17:45', 'Mt. Joy'],
-    ['prudential', '18:15', '19:15', 'Sombr'],
-    ['prudential', '20:00', '21:45', 'Backstreet Boys'],     // 105 min headliner
+    // ── Lands End Stage ─────────────────────────────────────────────────
+    ['landsend', '12:00', '12:40', "SF Gay Men's Chorus"],
+    ['landsend', '13:10', '13:55', 'Sports'],
+    ['landsend', '14:25', '15:15', 'Balu Brigada'],
+    ['landsend', '15:45', '16:45', 'JADE'],
+    ['landsend', '17:15', '18:15', 'Disco Lines'],
+    ['landsend', '18:45', '19:45', 'Empire Of The Sun'],
+    ['landsend', '20:25', '21:55', 'RÜFÜS DU SOL'],
 
-    // ── T-Mobile Stage ───────────────────────────────────────────────
-    ['tmobile', '12:00', '12:45', 'Nat Myers'],
-    ['tmobile', '13:15', '14:00', 'Izzy Escobar'],
-    ['tmobile', '14:30', '15:15', 'Absolutely'],
-    ['tmobile', '15:45', '16:45', 'Paulo Londra'],
-    ['tmobile', '17:15', '18:15', 'Bigxthaplug'],
-    ['tmobile', '18:45', '20:00', 'Slightly Stoopid'],
-    ['tmobile', '20:30', '21:45', 'Ludacris'],               // 75 min closer
+    // ── Twin Peaks Stage ────────────────────────────────────────────────
+    ['twinpeaks', '12:45', '13:25', 'Magnus Ferrell'],
+    ['twinpeaks', '14:10', '14:55', 'sosocamo'],
+    ['twinpeaks', '15:40', '16:30', 'DESTIN CONRAD'],
+    ['twinpeaks', '17:15', '18:05', 'kwn'],
+    ['twinpeaks', '18:50', '19:50', 'Mariah the Scientist'],
+    ['twinpeaks', '20:40', '21:55', 'Baby Keem'],
 
-    // ── HelloFresh Stage ─────────────────────────────────────────────
-    ['hellofresh', '12:00', '12:30', 'Napa Valley Youth Symphony'],
-    ['hellofresh', '13:00', '14:00', 'The Silverado Pickups'],
-    ['hellofresh', '14:30', '15:30', 'The Paper Kites'],
-    ['hellofresh', '16:00', '17:00', 'Paco Versailles'],
-    ['hellofresh', '17:30', '18:30', 'Good Neighbours'],
-    ['hellofresh', '19:00', '20:00', 'The California Honeydrops'],
-    ['hellofresh', '20:30', '21:45', 'Cut Copy'],            // 75 min closer
+    // ── Sutro Stage ─────────────────────────────────────────────────────
+    ['sutro', '12:40', '13:30', 'Death Cab for Cutie'],
+    ['sutro', '13:50', '14:30', 'Marlon Funaki'],
+    ['sutro', '15:00', '15:45', 'Momma'],
+    ['sutro', '16:15', '17:05', 'Kingfishr'],
+    ['sutro', '17:35', '18:25', 'The Temper Trap'],
+    ['sutro', '19:05', '19:55', 'Not for Radio'],
+    ['sutro', '20:25', '21:40', 'Death Cab for Cutie'],
 
-    // ── NorthBay Health Stage ────────────────────────────────────────
-    ['northbay', '12:00', '12:45', 'Alec Shaw'],
-    ['northbay', '13:15', '14:00', 'Girl Tones'],
-    ['northbay', '14:30', '15:30', 'Buffalo Traffic Jam'],
-    ['northbay', '16:00', '17:00', 'The Heavy Heavy'],
-    ['northbay', '17:30', '18:30', 'Sons of the East'],
-    ['northbay', '19:00', '20:00', 'Matt Maeson'],
-    ['northbay', '20:30', '22:00', 'Jess King (Silent Disco)'], // 90 min
+    // ── Panhandle Stage ─────────────────────────────────────────────────
+    ['panhandle', '12:00', '12:40', 'Cruz Beckham'],
+    ['panhandle', '13:25', '14:05', 'Day We Ran'],
+    ['panhandle', '14:55', '15:35', 'Amble'],
+    ['panhandle', '16:30', '17:10', 'Night Tapes'],
+    ['panhandle', '18:05', '18:45', 'Infinity Song'],
+    ['panhandle', '19:50', '20:35', 'Frost Children'],
+
+    // ── SOMA Stage ──────────────────────────────────────────────────────
+    ['soma', '12:05', '13:35', 'Etari'],
+    ['soma', '13:35', '15:10', 'X CLUB.'],
+    ['soma', '15:10', '16:45', 'Carlita'],
+    ['soma', '16:45', '18:20', 'Boys Noize'],
+    ['soma', '18:20', '19:55', 'Miss Monique'],
+    ['soma', '19:55', '21:55', 'Boris Brejcha'],
   ],
 };
 

@@ -50,7 +50,7 @@ export default function NamePrompt({ groupId, member, memberDisplayName, groupNa
       onClick={(e) => { if (e.target === e.currentTarget) dismiss(null); }}>
       <div className="name-prompt-card">
         <div style={{ fontWeight: 800, fontSize: '1.3rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Plan BottleRock
+          Plan Outside Lands
         </div>
         <ul style={{ margin: '4px 0 0', paddingLeft: '18px', display: 'grid', gap: '4px', fontSize: '0.88rem', color: 'var(--ink-soft)' }}>
           <li>Save the shows you want to see</li>

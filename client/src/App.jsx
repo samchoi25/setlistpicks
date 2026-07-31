@@ -5,12 +5,12 @@ import { ensureSvgDefs } from './svgDefs.js';
 import GroupView from './views/GroupView.jsx';
 
 const GROUP_NAMES = [
-  'Napa Squad', 'The Rosé Riders', 'Vine & Dine Crew', 'Stage Hoppers',
-  'The Barrel Roll', 'Crush Crew', 'Valley Vibes', 'Festival Fam',
+  'Golden Gate Crew', 'The Fog Chasers', 'Polo Field Posse', 'Stage Hoppers',
+  'Karl the Fog Fan Club', 'Sunset Squad', 'Bay Area Vibes', 'Festival Fam',
   'The Lineup Committee', 'Wristband Warriors',
 ];
-const MEMBER_ADJS = ['Wild', 'Lucky', 'Golden', 'Breezy', 'Mellow', 'Groovy', 'Funky', 'Jazzy', 'Sunny', 'Crispy'];
-const MEMBER_NOUNS = ['Vine', 'Barrel', 'Stage', 'Grape', 'Wave', 'Riff', 'Chord', 'Beat', 'Note', 'Sound'];
+const MEMBER_ADJS = ['Wild', 'Lucky', 'Golden', 'Breezy', 'Mellow', 'Groovy', 'Funky', 'Jazzy', 'Sunny', 'Foggy'];
+const MEMBER_NOUNS = ['Dune', 'Cypress', 'Stage', 'Trail', 'Wave', 'Riff', 'Chord', 'Beat', 'Note', 'Sound'];
 
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function randomMemberName() { return `${pick(MEMBER_ADJS)} ${pick(MEMBER_NOUNS)} ${Math.floor(10 + Math.random() * 90)}`; }
@@ -134,7 +134,7 @@ export default function App() {
   const shell = (children) => (
     <div className="app">
       <div className="brand">
-        <div className="brand-logo">BottleRock</div>
+        <div className="brand-logo">Outside Lands</div>
         <div><div className="brand-title">Setlist Picks</div></div>
       </div>
       {children}

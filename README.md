@@ -1,9 +1,9 @@
-# BottleRock Setlist Picks
+# Outside Lands Setlist Picks
 
 Web app for coordinating which acts a group of friends wants to see at
-**BottleRock Napa Valley 2026** (May 22–24). One invite link per group,
-everyone rates shows Skip / 👍 Want / 🔥 Must See, and group picks update
-live via WebSocket.
+**Outside Lands 2026** (Aug 7–9, Golden Gate Park, San Francisco). One invite
+link per group, everyone rates shows Skip / 👍 Want / 🔥 Must See, and group
+picks update live via WebSocket.
 
 - **Stack**: React 18 + Vite frontend, Express + WebSocket backend, SQLite storage.
 - **No accounts**: identity is just a name, saved in `localStorage` per group.
@@ -12,8 +12,12 @@ live via WebSocket.
 - **Storage**: SQLite via `better-sqlite3` (WAL mode). Groups auto-expire after
   90 days of inactivity. No Redis, no external database.
 - **Schedule**: hardcoded in `shared/schedule.js`, sourced from the
-  [official site](https://www.bottlerocknapavalley.com/schedule/) /
-  [riffmagazine](https://riffmagazine.com/festivals/bottlerock-napa-2026-stage-times/).
+  [official interactive lineup](https://sfoutsidelands.com/lineup/) (served from
+  the Festuff embed at `dsfestlands26.dostff.co`). These are the **official**
+  published set times, not estimates.
+- **Stages**: 5 columns — Lands End, Twin Peaks, Sutro, Panhandle, SOMA. The
+  Duboce Triangle pop-up area is deliberately omitted: its handful of 30-min
+  sets are all by artists who also play one of the five main stages.
 
 ## Local development
 
@@ -27,7 +31,8 @@ That starts:
 - Vite dev server on http://localhost:5173 (proxies `/api/*` and `/ws` to :8080)
 - Express + WebSocket API on http://localhost:8080
 
-The SQLite database is created automatically at `data/bottlerock.db` on first run.
+The SQLite database is created automatically at `data/bottlerock.db` on first run
+(the filename is legacy — see `DB_PATH` in `fly.toml` for production).
 No external services needed.
 
 ## Production build
@@ -55,7 +60,7 @@ server/
   index.js               Express + WebSocket server
   groups.js              Group/member/vote data access
   db.js                  SQLite setup (WAL mode, schema, cleanup)
-shared/schedule.js       Authoritative 2026 schedule (used by client + server)
+shared/schedule.js       Authoritative Outside Lands 2026 schedule (client + server)
 Dockerfile               Two-stage build (Vite + better-sqlite3 native compile)
 fly.toml                 Fly.io app config
 .github/workflows/       GitHub Actions deploy pipeline

@@ -1,13 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
 
-@font-face {
-  font-family: 'Picnic Club';
-  font-style: italic;
-  font-weight: 400;
-  font-display: swap;
-  src: url('https://www.bottlerocknapavalley.com/wp-content/themes/bottlerock/assets/fonts/the-picnic-club/the-picnic-club-italic/webfonts/the-picnic-club-italic.woff2') format('woff2');
-}
-
 :root {
   --bg: rgb(241, 233, 215);
   --paper: #fbf6e9;
@@ -21,9 +13,10 @@
   --pink-carnation: #F38DBB;
   --muted-olive: #95B258;
   --jungle-green: #1A8F65;
+  --dusk-purple: #7A4FA3;
   --marker-yellow: rgba(255, 221, 87, 0.55);
   --marker-pink: rgba(243, 141, 187, 0.55);
-  --font-display: 'Picnic Club', Georgia, serif;
+  --font-display: Georgia, 'Times New Roman', serif;
   --font-body: 'Montserrat', system-ui, sans-serif;
   --slot-h: 13px;
 }
@@ -279,8 +272,8 @@ input[type="text"]::placeholder {
 
 .schedule-grid {
   display: grid;
-  /* col 0: time axis, cols 1-4: stages with 20px gaps between */
-  grid-template-columns: 48px repeat(4, 1fr);
+  /* col 0: time axis, cols 1-5: stages with 20px gaps between */
+  grid-template-columns: 48px repeat(5, 1fr);
   column-gap: 20px;
   /* 40 rows of 15-min slots (12:00→22:00) */
   grid-template-rows: 28px repeat(40, var(--slot-h));
@@ -322,10 +315,11 @@ input[type="text"]::placeholder {
   position: relative;
   z-index: 1;
 }
-.stage-header[data-stage="prudential"] { color: var(--ocean-deep); }
-.stage-header[data-stage="tmobile"]    { color: var(--pink-carnation); }
-.stage-header[data-stage="hellofresh"] { color: var(--muted-olive); }
-.stage-header[data-stage="northbay"]   { color: var(--jungle-green); }
+.stage-header[data-stage="landsend"]  { color: var(--ocean-deep); }
+.stage-header[data-stage="twinpeaks"] { color: var(--pink-carnation); }
+.stage-header[data-stage="sutro"]     { color: var(--muted-olive); }
+.stage-header[data-stage="panhandle"] { color: var(--jungle-green); }
+.stage-header[data-stage="soma"]      { color: var(--dusk-purple); }
 
 /* ─── Time axis labels ───────────────────────────────────────────── */
 .time-label {
@@ -379,10 +373,11 @@ input[type="text"]::placeholder {
   filter: brightness(0.92);
 }
 
-.show-block[data-stage="prudential"] { background: var(--ocean-deep); }
-.show-block[data-stage="tmobile"]    { background: var(--pink-carnation); }
-.show-block[data-stage="hellofresh"] { background: var(--muted-olive); }
-.show-block[data-stage="northbay"]   { background: var(--jungle-green); }
+.show-block[data-stage="landsend"]  { background: var(--ocean-deep); }
+.show-block[data-stage="twinpeaks"] { background: var(--pink-carnation); }
+.show-block[data-stage="sutro"]     { background: var(--muted-olive); }
+.show-block[data-stage="panhandle"] { background: var(--jungle-green); }
+.show-block[data-stage="soma"]      { background: var(--dusk-purple); }
 
 .show-block .artist-name {
   font-weight: 700;
@@ -717,10 +712,11 @@ input[type="text"]::placeholder {
   letter-spacing: 0.04em;
   color: #fff;
 }
-.stage-chip.prudential { background: var(--ocean-deep); }
-.stage-chip.tmobile    { background: var(--pink-carnation); }
-.stage-chip.hellofresh { background: var(--muted-olive); }
-.stage-chip.northbay   { background: var(--jungle-green); }
+.stage-chip.landsend  { background: var(--ocean-deep); }
+.stage-chip.twinpeaks { background: var(--pink-carnation); }
+.stage-chip.sutro     { background: var(--muted-olive); }
+.stage-chip.panhandle { background: var(--jungle-green); }
+.stage-chip.soma      { background: var(--dusk-purple); }
 
 
 /* ─── Profile badge ──────────────────────────────────────────────── */
@@ -802,8 +798,8 @@ input[type="text"]::placeholder {
    * reference — toggled by JS adding .time-active to the grid.
    */
   .schedule-grid {
-    grid-template-columns: 16px repeat(4, minmax(0, 1fr));
-    column-gap: 3px;
+    grid-template-columns: 16px repeat(5, minmax(0, 1fr));
+    column-gap: 2px;
   }
 
   .schedule-grid::after {

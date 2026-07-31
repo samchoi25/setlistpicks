@@ -16,7 +16,7 @@ export default function GroupView({ groupId, member, groupMeta, freshJoin, onLea
   const [myVotes,          setMyVotes]          = useState({});
   const [perArtistRaw,     setPerArtistRaw]     = useState({});
   const [mutedMembers,     setMutedMembers]     = useState(groupMeta?.members || []);
-  const [groupName,        setGroupName]        = useState(groupMeta?.name || 'Napa Squad');
+  const [groupName,        setGroupName]        = useState(groupMeta?.name || 'Golden Gate Crew');
   const [memberDisplayName, setMemberDisplayName] = useState(member.displayName);
   const [activeDay,        setActiveDay]        = useState(DAYS[0].id);
   const [showNamePrompt,   setShowNamePrompt]   = useState(freshJoin);

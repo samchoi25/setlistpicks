@@ -8,7 +8,7 @@ const GRID_START_MIN = 12 * 60;
 const GRID_END_MIN   = 22 * 60;
 const SLOT_MINS      = 15;
 const TOTAL_SLOTS    = (GRID_END_MIN - GRID_START_MIN) / SLOT_MINS;
-const STAGE_COL      = { prudential: 2, tmobile: 3, hellofresh: 4, northbay: 5 };
+const STAGE_COL      = { landsend: 2, twinpeaks: 3, sutro: 4, panhandle: 5, soma: 6 };
 
 function minToSlot(min) { return Math.round((min - GRID_START_MIN) / SLOT_MINS); }
 function fmtTimeShort(hhmm) {
