@@ -2,13 +2,9 @@ import React, { useRef, useCallback, useState } from 'react';
 import { computeWashData } from '../svgDefs.js';
 import { api } from '../api.js';
 import { toast } from '../toast.js';
-import { SCHEDULE } from '../../../shared/schedule.js';
-
-const GRID_START_MIN = 12 * 60;
-const GRID_END_MIN   = 22 * 60;
-const SLOT_MINS      = 15;
-const TOTAL_SLOTS    = (GRID_END_MIN - GRID_START_MIN) / SLOT_MINS;
-const STAGE_COL      = { landsend: 2, twinpeaks: 3, sutro: 4, panhandle: 5, soma: 6 };
+import {
+  SCHEDULE, GRID_START_MIN, GRID_END_MIN, SLOT_MINS, TOTAL_SLOTS,
+} from '../../../shared/schedule.js';
 
 function minToSlot(min) { return Math.round((min - GRID_START_MIN) / SLOT_MINS); }
 function fmtTimeShort(hhmm) {
@@ -65,11 +61,11 @@ function GroupVotesEl({ votes, myVote, memberKey, memberDisplayName }) {
 }
 
 const ShowBlock = React.memo(function ShowBlock({
-  s, myVote, groupVotes, memberKey, memberDisplayName,
+  s, stage, myVote, groupVotes, memberKey, memberDisplayName,
   groupId, onVoteChange, onLongPress, onNotMember,
 }) {
-  const col = STAGE_COL[s.stageId];
-  if (!col) return null;
+  if (!stage) return null;
+  const col = stage.col;
   const startSlot = minToSlot(Math.max(s.startMin, GRID_START_MIN));
   const endSlot   = minToSlot(Math.min(s.endMin, GRID_END_MIN));
   if (startSlot >= TOTAL_SLOTS || endSlot <= 0) return null;
@@ -132,6 +128,13 @@ const ShowBlock = React.memo(function ShowBlock({
       style={{
         gridColumn: String(col),
         gridRow: `${startSlot + 2} / ${endSlot + 2}`,
+        background: `var(${stage.color})`,
+        // Share the column when this set collides with another on the same
+        // stage; laneCount is 1 for the overwhelming majority of sets.
+        ...(s.laneCount > 1 && {
+          width: `calc(100% / ${s.laneCount})`,
+          marginLeft: `calc(100% * ${s.lane} / ${s.laneCount})`,
+        }),
       }}
       onClick={longPressFired.current ? undefined : handleClick}
       onPointerDown={startLongPress}
@@ -155,7 +158,8 @@ const ShowBlock = React.memo(function ShowBlock({
   prev.myVote        === next.myVote &&
   prev.groupVotes    === next.groupVotes &&
   prev.memberDisplayName === next.memberDisplayName &&
-  prev.onNotMember   === next.onNotMember
+  prev.onNotMember   === next.onNotMember &&
+  prev.stage         === next.stage
 ));
 
-export { ShowBlock, TOTAL_SLOTS, STAGE_COL, minToSlot, GRID_START_MIN };
+export { ShowBlock, minToSlot };

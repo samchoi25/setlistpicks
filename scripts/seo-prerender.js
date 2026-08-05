@@ -3,7 +3,7 @@
 // Generates static HTML (lineup) and JSON-LD (MusicFestival schema) from the
 // shared schedule so Googlebot sees real content at `/` without running JS.
 
-import { SCHEDULE, STAGES, DAYS } from '../shared/schedule.js';
+import { SCHEDULE, STAGES, DAYS, stagesForDay } from '../shared/schedule.js';
 
 const STAGE_NAMES = Object.fromEntries(STAGES.map((s) => [s.id, s.name]));
 
@@ -29,8 +29,8 @@ function toIso(hhmm, dateStr) {
 export function renderLineupHtml() {
   const dayGroups = DAYS.map((day) => {
     const sets = SCHEDULE.filter((s) => s.dayId === day.id);
-    // Group by stage, in STAGES order
-    const stageBlocks = STAGES.map((stage) => {
+    // Group by stage, in STAGES order, using each stage's name for this day.
+    const stageBlocks = stagesForDay(day.id).map((stage) => {
       const stageSets = sets
         .filter((s) => s.stageId === stage.id)
         .sort((a, b) => a.startMin - b.startMin);
@@ -38,7 +38,7 @@ export function renderLineupHtml() {
       const items = stageSets
         .map((s) => `<li><time datetime="${toIso(s.start, day.date)}">${fmtTime(s.start)}</time> &ndash; ${escHtml(s.artist)}</li>`)
         .join('');
-      return `<div class="seo-stage"><h3>${escHtml(STAGE_NAMES[stage.id])}</h3><ul>${items}</ul></div>`;
+      return `<div class="seo-stage"><h3>${escHtml(stage.name)}</h3><ul>${items}</ul></div>`;
     }).join('');
     return `<section class="seo-day"><h2>${escHtml(day.name)}, ${escHtml(day.date)}</h2>${stageBlocks}</section>`;
   }).join('');

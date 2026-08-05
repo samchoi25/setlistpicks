@@ -14,6 +14,9 @@
   --muted-olive: #95B258;
   --jungle-green: #1A8F65;
   --dusk-purple: #7A4FA3;
+  --sunset-coral: #D2652F;
+  --brick-clay: #B0453E;
+  --deep-teal: #14788C;
   --marker-yellow: rgba(255, 221, 87, 0.55);
   --marker-pink: rgba(243, 141, 187, 0.55);
   --font-display: Georgia, 'Times New Roman', serif;
@@ -265,18 +268,27 @@ input[type="text"]::placeholder {
 /* ─── Schedule grid ─────────────────────────────────────────────────── */
 .schedule-wrap {
   position: relative;
-  /* overflow-x intentionally not set — html/body overflow-x:hidden prevents
-     horizontal scroll while still allowing the wash SVG to bleed past the
-     right edge of the last column */
+  /* Stage columns hold a readable minimum width, so past roughly six stages
+     the grid outgrows the viewport and scrolls sideways in here rather than
+     squeezing every column into illegibility. html/body keep overflow-x:hidden,
+     so this is the only horizontal scroll on the page.
+     The vertical padding is headroom for the marker wash, which bleeds 5px
+     above and below each block and would otherwise clip against this box. */
+  overflow-x: auto;
+  padding: 6px 10px 6px 0;
+  overscroll-behavior-x: contain;
 }
 
 .schedule-grid {
   display: grid;
-  /* col 0: time axis, cols 1-5: stages with 20px gaps between */
-  grid-template-columns: 48px repeat(5, 1fr);
-  column-gap: 20px;
-  /* 40 rows of 15-min slots (12:00→22:00) */
-  grid-template-rows: 28px repeat(40, var(--slot-h));
+  /* col 1: time axis. One column per stage on the day, from --stage-count. */
+  grid-template-columns: 48px repeat(var(--stage-count, 5), minmax(0, 1fr));
+  /* Gaps count toward the width the columns need, so fold them into the floor
+     that decides when this grid starts scrolling. */
+  min-width: calc(48px + var(--stage-count, 5) * (var(--stage-col-min, 76px) + var(--col-gap, 20px)));
+  column-gap: var(--col-gap, 20px);
+  /* header row + one row per 15-min slot, from --total-slots */
+  grid-template-rows: 28px repeat(var(--total-slots, 40), var(--slot-h));
   position: relative;
 }
 
@@ -315,13 +327,19 @@ input[type="text"]::placeholder {
   position: relative;
   z-index: 1;
 }
-.stage-header[data-stage="landsend"]  { color: var(--ocean-deep); }
-.stage-header[data-stage="twinpeaks"] { color: var(--pink-carnation); }
-.stage-header[data-stage="sutro"]     { color: var(--muted-olive); }
-.stage-header[data-stage="panhandle"] { color: var(--jungle-green); }
-.stage-header[data-stage="soma"]      { color: var(--dusk-purple); }
+/* Header and block colours come from each stage's `color` custom property,
+   applied inline — see STAGES in shared/schedule.js. Adding a stage needs a new
+   variable at the top of this file and nothing else here. */
 
 /* ─── Time axis labels ───────────────────────────────────────────── */
+.time-axis-backdrop {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--bg);
+  pointer-events: none;
+}
+
 .time-label {
   grid-column: 1;
   display: flex;
@@ -333,8 +351,12 @@ input[type="text"]::placeholder {
   letter-spacing: 0.03em;
   color: var(--ink-dim);
   text-transform: uppercase;
-  position: relative;
-  z-index: 1;
+  /* Pinned to the left edge so the hours stay readable while the stage columns
+     scroll sideways underneath. */
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--bg);
   /* nudge text so it sits on the line rather than below it */
   transform: translateY(-0.5em);
 }
@@ -373,11 +395,7 @@ input[type="text"]::placeholder {
   filter: brightness(0.92);
 }
 
-.show-block[data-stage="landsend"]  { background: var(--ocean-deep); }
-.show-block[data-stage="twinpeaks"] { background: var(--pink-carnation); }
-.show-block[data-stage="sutro"]     { background: var(--muted-olive); }
-.show-block[data-stage="panhandle"] { background: var(--jungle-green); }
-.show-block[data-stage="soma"]      { background: var(--dusk-purple); }
+/* background: set inline from the stage's `color` custom property */
 
 .show-block .artist-name {
   font-weight: 700;
@@ -701,22 +719,9 @@ input[type="text"]::placeholder {
   z-index: 1;
 }
 
-/* ─── Legacy styles kept for future group view ───────────────────── */
-/* legacy — group view */
-.stage-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #fff;
-}
-.stage-chip.landsend  { background: var(--ocean-deep); }
-.stage-chip.twinpeaks { background: var(--pink-carnation); }
-.stage-chip.sutro     { background: var(--muted-olive); }
-.stage-chip.panhandle { background: var(--jungle-green); }
-.stage-chip.soma      { background: var(--dusk-purple); }
+/* .stage-chip removed — unused, and it hardcoded the original five stages.
+   Anything needing a stage swatch should read the stage's `color` property
+   from STAGES in shared/schedule.js. */
 
 
 /* ─── Profile badge ──────────────────────────────────────────────── */
@@ -798,7 +803,11 @@ input[type="text"]::placeholder {
    * reference — toggled by JS adding .time-active to the grid.
    */
   .schedule-grid {
-    grid-template-columns: 16px repeat(5, minmax(0, 1fr));
+    grid-template-columns: 16px repeat(var(--stage-count, 5), minmax(0, 1fr));
+    /* Narrower floor than desktop so five stages still fit a phone without
+       scrolling; beyond that the wrap scrolls sideways. */
+    --stage-col-min: 68px;
+    min-width: calc(16px + var(--stage-count, 5) * var(--stage-col-min));
     column-gap: 2px;
   }
 

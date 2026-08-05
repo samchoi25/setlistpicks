@@ -1,23 +1,20 @@
 import React, { useRef, useEffect, useCallback } from 'react';
-import { SCHEDULE, DAYS } from '../../../shared/schedule.js';
-import { ShowBlock, TOTAL_SLOTS, STAGE_COL, minToSlot, GRID_START_MIN } from './ShowBlock.jsx';
-
-const STAGE_HEADERS = {
-  landsend:  'Lands End',
-  twinpeaks: 'Twin Peaks',
-  sutro:     'Sutro',
-  panhandle: 'Panhandle',
-  soma:      'SOMA',
-};
-
-const STAGES_ORDER = ['landsend', 'twinpeaks', 'sutro', 'panhandle', 'soma'];
+import {
+  SCHEDULE, DAYS, stagesForDay,
+  TOTAL_SLOTS, GRID_START_MIN, SLOT_MINS,
+} from '../../../shared/schedule.js';
+import { ShowBlock, minToSlot } from './ShowBlock.jsx';
 
 function timeAxisLabel(slotIndex) {
-  const totalMin = GRID_START_MIN + slotIndex * 15;
+  const totalMin = GRID_START_MIN + slotIndex * SLOT_MINS;
   const hour = Math.floor(totalMin / 60);
   const h12 = hour % 12 === 0 ? 12 : hour % 12;
-  if (slotIndex === 0)           return <>{12}<span className="time-pm"> PM</span></>;
-  if (slotIndex === TOTAL_SLOTS) return <>{10}<span className="time-pm"> PM</span></>;
+  const suffix = hour >= 12 ? ' PM' : ' AM';
+  // Label the two ends with the meridiem for orientation; the rest are bare
+  // hour numbers so the narrow axis stays readable.
+  if (slotIndex === 0 || slotIndex === TOTAL_SLOTS) {
+    return <>{h12}<span className="time-pm">{suffix}</span></>;
+  }
   return String(h12);
 }
 
@@ -29,6 +26,8 @@ function ordinalSuffix(n) {
 
 function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, groupId, onVoteChange, onLongPress, onNotMember }) {
   const daySets = SCHEDULE.filter((s) => s.dayId === day.id);
+  const stages = stagesForDay(day.id);
+  const stageById = Object.fromEntries(stages.map((st) => [st.id, st]));
   const [dayMonth, dayNumStr] = day.date.split(' ');
   const dayNum = parseInt(dayNumStr, 10);
   const dayDate = `${dayNum}${ordinalSuffix(dayNum)}`;
@@ -40,14 +39,29 @@ function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, gro
         <span className="day-date">{dayMonth} {dayDate}</span>
       </div>
       <div className="schedule-wrap">
-        <div className="schedule-grid">
+        {/* --stage-count drives the column template, so the grid widens to
+            whatever this day's stage list holds. */}
+        <div
+          className="schedule-grid"
+          style={{
+            '--stage-count': stages.length,
+            '--total-slots': TOTAL_SLOTS,
+            // Tighten the gutters once the day is crowded, so eight stages
+            // still fit a desktop window instead of forcing a sideways scroll.
+            '--col-gap': stages.length > 6 ? '10px' : '20px',
+          }}
+        >
           {/* Stage headers */}
-          {STAGES_ORDER.map((stageId, i) => (
-            <div key={stageId} className="stage-header" data-stage={stageId}
-              style={{ gridColumn: i + 2, gridRow: 1 }}>
-              {STAGE_HEADERS[stageId]}
+          {stages.map((stage) => (
+            <div key={stage.id} className="stage-header" data-stage={stage.id}
+              style={{ gridColumn: stage.col, gridRow: 1, color: `var(${stage.color})` }}>
+              {stage.name}
             </div>
           ))}
+
+          {/* Opaque strip behind the sticky time axis, so stage columns
+              scrolling past it don't show through the gaps between labels. */}
+          <div className="time-axis-backdrop" style={{ gridColumn: 1, gridRow: `1 / -1` }} />
 
           {/* Time axis labels */}
           {Array.from({ length: TOTAL_SLOTS / 4 + 1 }, (_, i) => i * 4).map((slot) => (
@@ -62,6 +76,7 @@ function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, gro
             <ShowBlock
               key={s.id}
               s={s}
+              stage={stageById[s.stageId]}
               myVote={myVotes[s.id] || 0}
               groupVotes={perArtistRaw[s.id] || []}
               memberKey={memberKey}

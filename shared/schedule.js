@@ -15,13 +15,40 @@
 //
 // All times are PT (24h).
 
+// Adding a stage should mean editing this list and nothing else.
+//
+// `color` names a CSS custom property (defined in styles.css) used for both the
+// column header and its blocks, so no per-stage CSS selectors are needed.
+// `namesByDay` overrides `name` on a given day — the Dolores' stage rebrands
+// itself for each night's takeover.
+//
+// A stage is only rendered on days where it actually has sets, so a one-day
+// pop-up stage just needs entries under that day.
 export const STAGES = [
-  { id: 'landsend',  name: 'Lands End',  short: 'LE'  },
-  { id: 'twinpeaks', name: 'Twin Peaks', short: 'TP'  },
-  { id: 'sutro',     name: 'Sutro',      short: 'SUT' },
-  { id: 'panhandle', name: 'Panhandle',  short: 'PAN' },
-  { id: 'soma',      name: 'SOMA',       short: 'SOMA' },
+  { id: 'landsend',  name: 'Lands End',       short: 'LE',   color: '--ocean-deep' },
+  { id: 'twinpeaks', name: 'Twin Peaks',      short: 'TP',   color: '--pink-carnation' },
+  { id: 'sutro',     name: 'Sutro',           short: 'SUT',  color: '--muted-olive' },
+  { id: 'panhandle', name: 'Panhandle',       short: 'PAN',  color: '--jungle-green' },
+  { id: 'soma',      name: 'SOMA',            short: 'SOMA', color: '--dusk-purple' },
+  {
+    id: 'dolores',
+    name: "Dolores'",
+    short: 'DOL',
+    color: '--sunset-coral',
+    namesByDay: {
+      fri: "Dolores' x Hot Goth GF",
+      sat: "Dolores' x OASIS",
+      sun: "Dolores' x Polyglamorous",
+    },
+  },
+  { id: 'duboce',    name: 'Duboce Triangle', short: 'DUB',  color: '--brick-clay' },
+  { id: 'cocktail',  name: 'Cocktail Magic',  short: 'CKM',  color: '--deep-teal' },
 ];
+
+// Display name for a stage on a given day.
+export function stageName(stage, dayId) {
+  return stage.namesByDay?.[dayId] ?? stage.name;
+}
 
 export const DAYS = [
   { id: 'fri', name: 'Friday',   date: 'Aug 7' },
@@ -80,6 +107,34 @@ const sets = {
     ['soma', '17:25', '18:55', 'KI/KI'],
     ['soma', '18:55', '20:25', '¥ØU$UK€ ¥UK1MAT$U'],
     ['soma', '20:25', '21:55', 'ODD MOB & OMNOM present HYPERBEAM'],
+
+    // ── Dolores' x Hot Goth GF ──────────────────────────────────────────
+    ['dolores', '12:30', '13:15', 'DJ Erinyes'],
+    ['dolores', '13:15', '14:00', 'DJ Dolomedes'],
+    ['dolores', '14:00', '14:30', 'Pink Stiletto'],
+    ['dolores', '14:30', '15:20', 'DJ Starr Noir'],
+    ['dolores', '15:20', '15:50', 'Hot Goth Freak Show'],
+    ['dolores', '15:50', '16:35', 'Soltera'],
+    ['dolores', '16:35', '17:20', 'DJ Hopeless & Hot Goth Pole Show'],
+    ['dolores', '17:20', '18:05', 'Ms. Boan'],
+    ['dolores', '18:05', '18:35', 'Hot Goth Freak Show'],
+    ['dolores', '18:45', '19:30', 'Light Asylum'],
+    ['dolores', '19:30', '20:30', 'Romy (DJ Set)'],
+
+    // ── Duboce Triangle ─────────────────────────────────────────────────
+    ['duboce', '14:05', '14:35', 'NEZZA'],
+    ['duboce', '15:25', '15:55', 'Chezile'],
+    ['duboce', '16:45', '17:15', 'Luke Alessi'],
+    ['duboce', '18:15', '18:45', 'ALLEYCVT'],
+    ['duboce', '19:55', '20:40', 'tobiahs'],
+
+    // ── Cocktail Magic ──────────────────────────────────────────────────
+    ['cocktail', '12:30', '13:15', 'BINGO LOCO'],
+    ['cocktail', '13:40', '14:25', 'BINGO LOCO'],
+    ['cocktail', '14:50', '15:35', 'BINGO LOCO'],
+    ['cocktail', '16:05', '16:50', 'Open Mic hosted by Rainbow Girls'],
+    ['cocktail', '17:05', '18:05', 'Bootie Mashup: Diva Pop w/ DJ Tyme'],
+    ['cocktail', '18:20', '19:20', 'The Emo Night Tour'],
   ],
 
   sat: [
@@ -124,6 +179,34 @@ const sets = {
     ['soma', '16:55', '18:25', 'Sultan + Shepard'],
     ['soma', '18:40', '20:10', 'Ben Böhmer'],
     ['soma', '20:25', '21:55', 'Lane 8'],
+
+    // ── Dolores' x OASIS ────────────────────────────────────────────────
+    // Note: the two 16:45 sets genuinely overlap on the official schedule —
+    // the same DJ billed under both the PRINCESS and OASIS banners. The grid
+    // splits a stage column into lanes when sets collide, so both show.
+    ['dolores', '12:30', '13:30', "OUT TONIGHT: A Musical Singalong feat. D'Arcy Drollinger"],
+    ['dolores', '13:30', '14:15', 'OASIS DJ Set: Beverly Chills'],
+    ['dolores', '14:15', '15:15', 'REPARATIONS w/ DJ Newoncé'],
+    ['dolores', '15:15', '16:45', 'REPARATIONS w/ Nicki Jizz feat. Kori King'],
+    ['dolores', '16:45', '17:45', 'PRINCESS DJ Set: DJ Ion The Prize'],
+    ['dolores', '16:45', '17:45', 'OASIS DJ Set: DJ Ion The Prize'],
+    ['dolores', '17:45', '19:15', 'PRINCESS w/ Tito Soto feat. Lydia B Kollins'],
+
+    // ── Duboce Triangle ─────────────────────────────────────────────────
+    ['duboce', '12:15', '13:45', 'Surprise Guest'],
+    ['duboce', '14:10', '14:40', 'Bandalos Chinos'],
+    ['duboce', '15:30', '16:00', 'Racing Mount Pleasant'],
+    ['duboce', '16:50', '17:20', 'RIO KOSTA (DJ Set)'],
+    ['duboce', '18:20', '18:50', 'Łaszewo'],
+    ['duboce', '19:50', '20:35', 'bad juuju'],
+
+    // ── Cocktail Magic ──────────────────────────────────────────────────
+    ['cocktail', '12:30', '13:15', 'BINGO LOCO'],
+    ['cocktail', '13:40', '14:25', 'BINGO LOCO'],
+    ['cocktail', '14:50', '15:35', 'BINGO LOCO'],
+    ['cocktail', '16:05', '16:50', 'Open Mic hosted by Rainbow Girls'],
+    ['cocktail', '17:05', '18:05', 'Bootie Mashup: Hip Hop Fuego w/ DJ Airsun'],
+    ['cocktail', '18:20', '19:20', 'Electric Feels'],
   ],
 
   sun: [
@@ -168,8 +251,64 @@ const sets = {
     ['soma', '16:45', '18:20', 'Boys Noize'],
     ['soma', '18:20', '19:55', 'Miss Monique'],
     ['soma', '19:55', '21:55', 'Boris Brejcha'],
+
+    // ── Dolores' x Polyglamorous ────────────────────────────────────────
+    ['dolores', '12:45', '14:25', 'Charles Hawthorne'],
+    ['dolores', '14:25', '15:45', "Mark O'Brien"],
+    ['dolores', '15:45', '16:05', 'Grace Towers & Friends'],
+    ['dolores', '16:05', '17:05', 'Stanley Frank Sensation'],
+    ['dolores', '17:05', '18:05', 'BEYA'],
+    ['dolores', '18:05', '18:25', 'Grace Towers & Friends'],
+    ['dolores', '18:25', '19:25', 'Elaine & Robin'],
+    ['dolores', '19:25', '20:25', 'DJ Minx'],
+
+    // ── Duboce Triangle ─────────────────────────────────────────────────
+    ['duboce', '14:05', '14:35', 'Britton'],
+    ['duboce', '15:25', '15:55', 'Day We Ran'],
+    ['duboce', '16:45', '17:30', 'Frost Children (DJ Set)'],
+    ['duboce', '18:15', '18:45', 'Marlon Funaki'],
+    ['duboce', '19:45', '20:45', 'Surprise Guest'],
+
+    // ── Cocktail Magic ──────────────────────────────────────────────────
+    ['cocktail', '12:30', '13:15', 'BINGO LOCO'],
+    ['cocktail', '13:40', '14:25', 'BINGO LOCO'],
+    ['cocktail', '14:50', '15:35', 'BINGO LOCO'],
+    ['cocktail', '16:05', '16:50', 'Open Mic hosted by Rainbow Girls'],
+    ['cocktail', '17:15', '17:45', 'Aidan Corcoran'],
+    ['cocktail', '18:00', '19:00', 'Help Me Lose My Mind: UK Garage & House w/ MPHD'],
   ],
 };
+
+// Most stages run strictly back-to-back, but a stage can double-book (the
+// Saturday Dolores' 16:45 slot). Assign each set a `lane` so colliding sets sit
+// side by side inside the stage column instead of stacking on top of each
+// other, and a `laneCount` — the width to divide by, computed per run of
+// overlapping sets so an isolated collision doesn't narrow the whole day.
+function assignLanes(list) {
+  const laneFreeAt = [];
+  for (const s of list) {
+    let lane = laneFreeAt.findIndex((end) => end <= s.startMin);
+    if (lane === -1) lane = laneFreeAt.length;
+    laneFreeAt[lane] = s.endMin;
+    s.lane = lane;
+  }
+
+  // Walk the sets in start order, grouping any that transitively overlap.
+  let cluster = [];
+  let clusterEnd = -Infinity;
+  const closeCluster = () => {
+    const laneCount = Math.max(...cluster.map((s) => s.lane)) + 1;
+    for (const s of cluster) s.laneCount = laneCount;
+    cluster = [];
+    clusterEnd = -Infinity;
+  };
+  for (const s of list) {
+    if (cluster.length && s.startMin >= clusterEnd) closeCluster();
+    cluster.push(s);
+    clusterEnd = Math.max(clusterEnd, s.endMin);
+  }
+  if (cluster.length) closeCluster();
+}
 
 function buildSchedule() {
   const all = [];
@@ -177,14 +316,20 @@ function buildSchedule() {
     const byStage = {};
     for (const stage of STAGES) byStage[stage.id] = [];
     for (const [stageId, start, end, artist] of sets[day.id]) {
+      if (!byStage[stageId]) throw new Error(`Unknown stage '${stageId}' on ${day.id}`);
       byStage[stageId].push({ stageId, start, end, artist });
     }
     for (const stage of STAGES) {
       const list = byStage[stage.id].sort((a, b) => t(a.start) - t(b.start));
+      for (const cur of list) {
+        cur.startMin = t(cur.start);
+        cur.endMin   = t(cur.end);
+      }
+      assignLanes(list);
       for (let i = 0; i < list.length; i++) {
         const cur = list[i];
-        const startMin = t(cur.start);
-        const endMin   = t(cur.end);
+        // Index is per stage, so adding a stage never renumbers another's
+        // ids — existing votes stay attached to the right set.
         const id = `${day.id}-${stage.id}-${i}`;
         all.push({
           id,
@@ -192,9 +337,11 @@ function buildSchedule() {
           stageId: stage.id,
           artist: cur.artist,
           start: cur.start,
-          startMin,
-          endMin,
+          startMin: cur.startMin,
+          endMin: cur.endMin,
           end: cur.end,
+          lane: cur.lane,
+          laneCount: cur.laneCount,
         });
       }
     }
@@ -205,6 +352,33 @@ function buildSchedule() {
 export const SCHEDULE = buildSchedule();
 
 export const SCHEDULE_BY_ID = Object.fromEntries(SCHEDULE.map((s) => [s.id, s]));
+
+// Stages that actually have sets on a given day, in canonical STAGES order,
+// each carrying the grid column it occupies (column 1 is the time axis).
+// Built once per day and cached, so React can compare stage objects by identity.
+const STAGES_BY_DAY = Object.fromEntries(
+  DAYS.map((day) => {
+    const active = new Set(
+      SCHEDULE.filter((s) => s.dayId === day.id).map((s) => s.stageId),
+    );
+    const list = STAGES
+      .filter((stage) => active.has(stage.id))
+      .map((stage, i) => ({ ...stage, name: stageName(stage, day.id), col: i + 2 }));
+    return [day.id, list];
+  }),
+);
+
+export function stagesForDay(dayId) {
+  return STAGES_BY_DAY[dayId] ?? [];
+}
+
+// Grid bounds come from the data, rounded out to the hour, so a late-running
+// stage extends the grid instead of being clipped.
+const ALL_MINS = SCHEDULE.flatMap((s) => [s.startMin, s.endMin]);
+export const SLOT_MINS     = 15;
+export const GRID_START_MIN = Math.floor(Math.min(...ALL_MINS) / 60) * 60;
+export const GRID_END_MIN   = Math.ceil(Math.max(...ALL_MINS) / 60) * 60;
+export const TOTAL_SLOTS    = (GRID_END_MIN - GRID_START_MIN) / SLOT_MINS;
 
 // Format 'HH:MM' (24h) into 'H:MMa/p' friendly form.
 export function fmtTime(hhmm) {
