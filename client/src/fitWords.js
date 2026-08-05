@@ -21,30 +21,50 @@ const MIN_SCALE = 0.62;
 const SAFETY = 0.99;
 
 export function fitWords(root = document) {
-  const words = root.querySelectorAll('.artist-name .word');
+  const words = [...root.querySelectorAll('.artist-name .word')];
   if (!words.length) return;
 
-  // Reset first, so a re-run after a resize measures against the base size
-  // rather than compounding a previous shrink.
-  for (const w of words) w.style.fontSize = '';
+  /*
+   * Measure the word's own natural width against the width of the name box
+   * around it, rather than comparing the word's scrollWidth to its
+   * clientWidth. Those words sit inside a `display: -webkit-box` (which
+   * -webkit-line-clamp requires), and a percentage max-width on a child of a
+   * legacy -webkit-box is not reliably honoured — WebKit may leave the word
+   * unclamped, in which case scrollWidth equals clientWidth and an overflow
+   * looks like a fit. Measuring the element itself avoids depending on that.
+   *
+   * Batched as write → read → write so the whole grid costs a fixed number of
+   * layout flushes instead of one per word.
+   */
 
-  // Read pass: nothing is written here, so this is a single layout flush.
-  const work = [];
+  // Reset previous sizing (so a re-run measures the base size rather than
+  // compounding a shrink) and lift the cap so the natural width is visible.
   for (const w of words) {
-    const avail = w.clientWidth;
-    const needed = w.scrollWidth;
-    if (needed > avail + 0.5 && avail > 0) {
-      const scale = (avail / needed) * SAFETY;
-      // Below the floor, leave it alone and let CSS ellipsize at full size.
-      if (scale >= MIN_SCALE) {
-        work.push({ el: w, scale, basePx: parseFloat(getComputedStyle(w).fontSize) });
-      }
-    }
+    w.style.fontSize = '';
+    w.style.maxWidth = 'none';
   }
 
-  // Write pass.
-  for (const { el, scale, basePx } of work) {
-    el.style.fontSize = `${(basePx * scale).toFixed(2)}px`;
+  const measured = words.map((w) => ({
+    el: w,
+    natural: w.getBoundingClientRect().width,
+    avail: w.parentElement.clientWidth,
+    basePx: parseFloat(getComputedStyle(w).fontSize),
+  }));
+
+  for (const { el, natural, avail, basePx } of measured) {
+    el.style.maxWidth = '';
+    if (!(avail > 0) || natural <= avail + 0.5) continue;
+
+    const scale = (avail / natural) * SAFETY;
+    if (scale >= MIN_SCALE) {
+      el.style.fontSize = `${(basePx * scale).toFixed(2)}px`;
+    } else {
+      // Too long to shrink legibly, so it ellipsizes instead. Pin an explicit
+      // pixel max-width: unlike the stylesheet's percentage, a length clamps
+      // in every engine, so the ellipsis is guaranteed rather than the word
+      // spilling out of its column.
+      el.style.maxWidth = `${Math.floor(avail)}px`;
+    }
   }
 }
 
