@@ -1,6 +1,6 @@
 # Deploying to Fly.io
 
-The app is live at **https://setlistpicks.com** (also https://bottlerock-picks.fly.dev).
+The app is live at **https://setlistpicks.com** (also https://outsidelands-picks.fly.dev).
 Every push to `main` deploys automatically via GitHub Actions.
 
 ## First-time setup (for a new fork/clone)
@@ -18,7 +18,7 @@ fly auth login
 fly launch --no-deploy --org <your-org>
 ```
 
-Accept the existing `fly.toml`. The app name (`bottlerock-picks`) and org (`bottlerock`)
+Accept the existing `fly.toml`. The app name (`outsidelands-picks`) and org (`bottlerock`)
 are already set — update `fly.toml` if you're deploying to a different account.
 
 ### 3. Create the persistent volume
@@ -26,12 +26,12 @@ are already set — update `fly.toml` if you're deploying to a different account
 SQLite lives on a Fly volume that survives deploys and machine restarts. Create it once:
 
 ```bash
-fly volumes create bottlerock_data --size 1 --region sjc --yes
+fly volumes create outsidelands_data --size 1 --region sjc --yes
 ```
 
 - `--size 1` = 1 GB (each group is < 10 KB; this handles tens of thousands of groups)
 - `--region sjc` = San Jose; match your `primary_region` in `fly.toml`
-- The volume name **must** match `source = "bottlerock_data"` in `fly.toml`
+- The volume name **must** match `source = "outsidelands_data"` in `fly.toml`
 
 > ⚠️ A Fly volume is pinned to one machine in one region. This app runs a
 > **single instance** (`min_machines_running = 0`). For multi-region HA,
@@ -40,7 +40,7 @@ fly volumes create bottlerock_data --size 1 --region sjc --yes
 ### 4. Add the GitHub Actions deploy secret
 
 ```bash
-fly tokens create deploy --app bottlerock-picks -x 999999h
+fly tokens create deploy --app outsidelands-picks -x 999999h
 ```
 
 Copy the token, then in GitHub → repo → **Settings → Secrets and variables →
@@ -55,20 +55,26 @@ Every push to `main` now triggers `.github/workflows/deploy.yml`.
 ### 5. Custom domain (optional)
 
 ```bash
-fly certs add yourdomain.com --app bottlerock-picks
-fly certs add www.yourdomain.com --app bottlerock-picks
+fly certs add yourdomain.com --app outsidelands-picks
+fly certs add www.yourdomain.com --app outsidelands-picks
 ```
 
-Add DNS records in your registrar (gray cloud / DNS-only if using Cloudflare):
+Add DNS records in your registrar (gray cloud / DNS-only if using Cloudflare).
+Get the app's actual IPs — **they differ per app**, so don't copy them from an
+older deployment:
+
+```bash
+fly ips list --app outsidelands-picks
+```
 
 | Type | Name | Value |
 |---|---|---|
-| `A` | `@` | `66.241.125.84` |
-| `AAAA` | `@` | `2a09:8280:1::114:1aa1:0` |
-| `A` | `www` | `66.241.125.84` |
-| `AAAA` | `www` | `2a09:8280:1::114:1aa1:0` |
+| `A` | `@` | the `v4` address from `fly ips list` |
+| `AAAA` | `@` | the `v6` address from `fly ips list` |
+| `A` | `www` | same `v4` address |
+| `AAAA` | `www` | same `v6` address |
 
-Check validation progress: `fly certs check yourdomain.com --app bottlerock-picks`
+Check validation progress: `fly certs check yourdomain.com --app outsidelands-picks`
 
 ---
 
@@ -84,7 +90,7 @@ fly deploy
 
 ```bash
 fly releases list
-fly deploy --image registry.fly.io/bottlerock-picks:<version>
+fly deploy --image registry.fly.io/outsidelands-picks:<version>
 ```
 
 ## Backups
@@ -93,14 +99,12 @@ Fly automatically takes **daily snapshots** of all volumes and retains them for 
 A GitHub Actions cron (`.github/workflows/snapshot.yml`) additionally creates **hourly snapshots**
 using `fly volumes snapshots create`.
 
-### One-time setup for hourly snapshots
+### Setup for hourly snapshots
 
-1. Get the volume ID:
-   ```bash
-   fly volumes list --app bottlerock-picks
-   ```
-2. In GitHub → repo → **Settings → Variables → Actions**, add:
-   - `FLY_VOLUME_ID` = `vol_xxxxxxxx` (the ID from step 1)
+No setup needed. The workflow looks the volume ID up at runtime via
+`flyctl volumes list`, so it keeps working after the volume is recreated
+(for example when restoring from a snapshot). It only needs the
+`FLY_API_TOKEN` secret, which the deploy workflow already requires.
 
 The `FLY_API_TOKEN` secret is already present from the deploy workflow. Once the variable is set,
 the hourly snapshot workflow runs automatically.
@@ -109,13 +113,13 @@ the hourly snapshot workflow runs automatically.
 
 ```bash
 # List available snapshots (daily + hourly)
-fly volumes snapshots list <volume-id> --app bottlerock-picks
+fly volumes snapshots list <volume-id> --app outsidelands-picks
 
 # Create a new volume restored from a specific snapshot
-fly volumes create bottlerock_data_restored \
-  --snapshot-id <snap_id> --size 1 --region sjc --app bottlerock-picks
+fly volumes create outsidelands_data_restored \
+  --snapshot-id <snap_id> --size 1 --region sjc --app outsidelands-picks
 
-# Swap it in: edit fly.toml → change source to 'bottlerock_data_restored', then deploy
+# Swap it in: edit fly.toml → change source to 'outsidelands_data_restored', then deploy
 fly deploy
 ```
 
@@ -124,10 +128,10 @@ fly deploy
 ## Monitoring
 
 ```bash
-fly logs --app bottlerock-picks        # live log tail
-fly status --app bottlerock-picks      # machine + volume health
-fly ssh console --app bottlerock-picks # shell into running machine
-sqlite3 /data/bottlerock.db ".tables"  # inspect DB (inside console)
+fly logs --app outsidelands-picks        # live log tail
+fly status --app outsidelands-picks      # machine + volume health
+fly ssh console --app outsidelands-picks # shell into running machine
+sqlite3 /data/outsidelands.db ".tables"  # inspect DB (inside console)
 ```
 
 ## Environment variables
@@ -138,7 +142,7 @@ Configured in `fly.toml`. Override secrets with `fly secrets set KEY=value`.
 |---|---|---|
 | `PORT` | `8080` | HTTP + WebSocket listen port |
 | `NODE_ENV` | `production` | Disables Vite dev mode |
-| `DB_PATH` | `/data/bottlerock.db` | SQLite file on the persistent volume |
+| `DB_PATH` | `/data/outsidelands.db` | SQLite file on the persistent volume |
 
 ## Architecture
 
@@ -162,7 +166,7 @@ git push → GitHub Actions → flyctl deploy --remote-only
                          Fly machine (256 MB shared CPU, sjc)
                          ├─ Express HTTP + WebSocket server (:8080)
                          ├─ better-sqlite3 (WAL mode, in-process)
-                         └─ /data/bottlerock.db  ←── persistent volume
+                         └─ /data/outsidelands.db  ←── persistent volume
 ```
 
 ## Scaling notes
