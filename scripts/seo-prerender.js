@@ -76,7 +76,8 @@ export function renderJsonLd() {
           addressCountry: 'US',
         },
       },
-      performer: { '@type': 'MusicGroup', name: s.artist },
+      // Co-billed slots carry one performer entry per act.
+      performer: s.artists.map((name) => ({ '@type': 'MusicGroup', name })),
     };
   });
 

@@ -310,6 +310,23 @@ function assignLanes(list) {
   if (cluster.length) closeCluster();
 }
 
+// Two acts billed on the same stage for the exact same slot (the Saturday
+// Dolores' 16:45, one DJ under two banners) become one block listing both
+// names over a single time range, rather than two half-width columns.
+// Partial overlaps are left alone — assignLanes still splits those.
+function mergeSimultaneous(list) {
+  const out = [];
+  for (const s of list) {
+    const prev = out[out.length - 1];
+    if (prev && prev.startMin === s.startMin && prev.endMin === s.endMin) {
+      prev.artists.push(s.artist);
+    } else {
+      out.push({ ...s, artists: [s.artist] });
+    }
+  }
+  return out;
+}
+
 function buildSchedule() {
   const all = [];
   for (const day of DAYS) {
@@ -320,11 +337,15 @@ function buildSchedule() {
       byStage[stageId].push({ stageId, start, end, artist });
     }
     for (const stage of STAGES) {
-      const list = byStage[stage.id].sort((a, b) => t(a.start) - t(b.start));
-      for (const cur of list) {
+      const raw = byStage[stage.id];
+      for (const cur of raw) {
         cur.startMin = t(cur.start);
         cur.endMin   = t(cur.end);
       }
+      // Sort by start then end so identical time ranges land next to each
+      // other; the sort is stable, so co-billed acts keep their listed order.
+      raw.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
+      const list = mergeSimultaneous(raw);
       assignLanes(list);
       for (let i = 0; i < list.length; i++) {
         const cur = list[i];
@@ -335,7 +356,10 @@ function buildSchedule() {
           id,
           dayId: day.id,
           stageId: stage.id,
-          artist: cur.artist,
+          artists: cur.artists,
+          // Single-string form for places that need one label: popups,
+          // long-press, SEO markup.
+          artist: cur.artists.join(' + '),
           start: cur.start,
           startMin: cur.startMin,
           endMin: cur.endMin,

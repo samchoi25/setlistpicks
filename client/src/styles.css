@@ -406,13 +406,12 @@ input[type="text"]::placeholder {
   font-size: 0.65rem;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  /* Wrap rather than truncate: --slot-h is sized so even the shortest set has
-     room for three lines, which covers every name in the current lineup.
-     The clamp is a backstop for a future name longer than that. */
+  /* Wrap rather than truncate, up to five lines. --slot-h is sized so every
+     block has room for the lines its own name needs, up to that cap. */
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
   overflow: hidden;
   /* break-word, not anywhere: only split a word that cannot fit on its own
      line. hyphens:auto softens those breaks for dictionary words; proper nouns
@@ -422,6 +421,12 @@ input[type="text"]::placeholder {
   hyphens: auto;
   line-height: 1.15;
 }
+/* Co-billed acts share a block; separate the names so two wrapped titles
+   don't read as one run-on. */
+.show-block .artist-name + .artist-name {
+  margin-top: 4px;
+}
+
 .show-block .show-time {
   font-size: 0.6rem;
   font-weight: 400;

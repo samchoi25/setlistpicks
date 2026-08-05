@@ -142,7 +142,9 @@ const ShowBlock = React.memo(function ShowBlock({
       onPointerUp={handlePointerUp}
       onPointerCancel={cancelLongPress}
     >
-      <span className="artist-name">{s.artist}</span>
+      {s.artists.map((name, i) => (
+        <span className="artist-name" key={i}>{name}</span>
+      ))}
       <span className="show-time">{fmtTimeShort(s.start)}&ndash;{fmtTimeShort(s.end)}</span>
       <WashSvg data={washDataRef.current} />
       <GroupVotesEl
