@@ -1,13 +1,17 @@
 // Outside Lands 2026 schedule.
-// Source: official interactive lineup data (https://sfoutsidelands.com/lineup/),
-// which is served from the Festuff embed at dsfestlands26.dostff.co.
+// Source: official set times at https://sfoutsidelands.com/schedule/
 // Set times are the OFFICIAL published times, not estimates.
+// Last verified against the official schedule: 2026-08-04 (all 97 sets).
 //
 // Format per set: [stageId, 'HH:MM start', 'HH:MM end', 'Artist']
 // Stage order: Lands End (main) → Twin Peaks → Sutro → Panhandle → SOMA
 //
-// Note: the Duboce Triangle pop-up area is intentionally omitted — its handful of
-// 30-min sets are all by artists who also play one of the five stages above.
+// Three secondary areas on the official schedule are intentionally omitted:
+//   - Duboce Triangle: short pop-up sets, all by artists who also play one of
+//     the five stages above — except Sunday's 'Britton', the lone exception.
+//   - Dolores' (x Hot Goth GF / x OASIS / x Polyglamorous): drag + DJ
+//     programming, unique artists, rotating name per day.
+//   - Cocktail Magic: bingo, open mic, and club nights rather than sets.
 //
 // All times are PT (24h).
 
@@ -39,9 +43,9 @@ const sets = {
     ['landsend', '13:20', '14:05', 'Grace Ives'],
     ['landsend', '14:35', '15:25', 'Durand Bernarr'],
     ['landsend', '15:55', '16:45', 'Wet Leg'],
-    ['landsend', '17:15', '18:15', 'GloRilla'],
-    ['landsend', '18:45', '19:55', 'Labrinth'],
-    ['landsend', '20:40', '21:55', 'Charli xcx'],
+    ['landsend', '17:15', '18:00', 'GloRilla'],
+    ['landsend', '18:30', '19:40', 'Labrinth'],
+    ['landsend', '20:40', '22:00', 'Charli xcx'],
 
     // ── Twin Peaks Stage ────────────────────────────────────────────────
     ['twinpeaks', '12:35', '13:20', 'NEZZA'],
@@ -49,7 +53,7 @@ const sets = {
     ['twinpeaks', '15:35', '16:25', 'ALLEYCVT'],
     ['twinpeaks', '17:10', '18:00', 'Tinashe'],
     ['twinpeaks', '18:45', '19:35', 'Clipse'],
-    ['twinpeaks', '20:25', '21:50', 'GRIZTRONICS'],
+    ['twinpeaks', '20:25', '21:55', 'GRIZTRONICS'],
 
     // ── Sutro Stage ─────────────────────────────────────────────────────
     ['sutro', '12:25', '13:10', 'Bad Nerves'],
