@@ -416,7 +416,10 @@ input[type="text"]::placeholder {
   /* Never split a word: wrap only at spaces. */
   overflow-wrap: normal;
   word-break: normal;
-  line-height: 1.15;
+  /* An em length, not a unitless ratio: fitWords shrinks individual words, and
+     a ratio would recompute leading per word and stagger the lines. As a length
+     it is inherited as-is, so every line keeps the same height. */
+  line-height: 1.15em;
 }
 /* Each word sits in its own inline-block capped at the column width. Words
    still wrap at the spaces between them, but a single word too wide to fit —

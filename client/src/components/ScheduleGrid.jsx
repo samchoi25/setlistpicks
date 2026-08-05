@@ -4,6 +4,7 @@ import {
   TOTAL_SLOTS, GRID_START_MIN, SLOT_MINS, SLOTS_PER_HOUR,
 } from '../../../shared/schedule.js';
 import { ShowBlock, minToSlot } from './ShowBlock.jsx';
+import { watchWordFit } from '../fitWords.js';
 
 function timeAxisLabel(slotIndex) {
   const totalMin = GRID_START_MIN + slotIndex * SLOT_MINS;
@@ -104,6 +105,10 @@ export default function ScheduleGrid({
 }) {
   const bodyRef = useRef(null);
   const observerRef = useRef(null);
+
+  // Scale down any word too wide for its column (see fitWords). Runs once the
+  // grid is laid out, then again on resize and after webfonts land.
+  useEffect(() => watchWordFit(), []);
 
   // Restore saved scroll position after first paint.
   // Using rAF ensures the page has laid out before we scroll, which avoids
