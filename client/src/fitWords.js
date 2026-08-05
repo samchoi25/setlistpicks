@@ -1,19 +1,22 @@
 /*
  * Shrink individual words that are wider than their stage column.
  *
- * Artist names wrap at spaces only — words are never split mid-word — so a
- * single long word ("PINKPANTHERESS") can be wider than the column it sits in.
- * Rather than truncate it, scale that one word down until it fits. Only the
- * offending word shrinks; the rest of the name keeps the base size.
+ * Artist names wrap at spaces only — words are never split mid-word — so a long
+ * word can be wider than the column it sits in. Where the name has other words
+ * to sit alongside, scaling that one word down is barely noticeable: the rest of
+ * the title holds the base size and sets the reference.
+ *
+ * A name that is a single word is left alone and allowed to ellipsize instead.
+ * There is nothing beside it at full size, so shrinking rescales the whole
+ * title and it reads as a different size from every neighbouring block.
  *
  * CSS cannot express shrink-to-fit, so this measures. It runs as one batched
  * pass over the whole grid — all reads, then all writes — rather than per
  * component, to avoid layout thrash.
  *
- * A word that would have to go below MIN_SCALE to fit is left at full size and
- * allowed to ellipsize instead. Shrinking it to the floor would truncate it
- * anyway, and a clipped word at normal size reads better than a clipped word
- * at an illegible one.
+ * A word that would have to go below MIN_SCALE to fit is also left at full size.
+ * Shrinking it that far would truncate it anyway, and a clipped word at normal
+ * size reads better than a clipped word at an illegible one.
  */
 const MIN_SCALE = 0.62;
 
@@ -49,20 +52,22 @@ export function fitWords(root = document) {
     natural: w.getBoundingClientRect().width,
     avail: w.parentElement.clientWidth,
     basePx: parseFloat(getComputedStyle(w).fontSize),
+    // A one-word name has nothing beside it to anchor the size against.
+    soleWord: w.parentElement.querySelectorAll('.word').length === 1,
   }));
 
-  for (const { el, natural, avail, basePx } of measured) {
+  for (const { el, natural, avail, basePx, soleWord } of measured) {
     el.style.maxWidth = '';
     if (!(avail > 0) || natural <= avail + 0.5) continue;
 
     const scale = (avail / natural) * SAFETY;
-    if (scale >= MIN_SCALE) {
+    if (scale >= MIN_SCALE && !soleWord) {
       el.style.fontSize = `${(basePx * scale).toFixed(2)}px`;
     } else {
-      // Too long to shrink legibly, so it ellipsizes instead. Pin an explicit
-      // pixel max-width: unlike the stylesheet's percentage, a length clamps
-      // in every engine, so the ellipsis is guaranteed rather than the word
-      // spilling out of its column.
+      // Either a one-word name, or too long to shrink legibly — ellipsize at
+      // full size. Pin an explicit pixel max-width: unlike the stylesheet's
+      // percentage, a length clamps in every engine, so the ellipsis is
+      // guaranteed rather than the word spilling out of its column.
       el.style.maxWidth = `${Math.floor(avail)}px`;
     }
   }
