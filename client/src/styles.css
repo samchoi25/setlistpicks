@@ -21,7 +21,11 @@
   --marker-pink: rgba(243, 141, 187, 0.55);
   --font-display: Georgia, 'Times New Roman', serif;
   --font-body: 'Montserrat', system-ui, sans-serif;
-  --slot-h: 13px;
+  /* Height of one 5-minute slot. Sized so the shortest set in the lineup
+     (20 min) still has room for a three-line artist name. */
+  --slot-h: 15px;
+  /* Horizontal rules stay on 15-minute intervals regardless of slot size. */
+  --rule-h: calc(var(--slot-h) * 3);
 }
 
 * {
@@ -303,9 +307,9 @@ input[type="text"]::placeholder {
   background-image: repeating-linear-gradient(
     to bottom,
     transparent 0px,
-    transparent calc(var(--slot-h) - 1px),
-    var(--rule) calc(var(--slot-h) - 1px),
-    var(--rule) var(--slot-h)
+    transparent calc(var(--rule-h) - 1px),
+    var(--rule) calc(var(--rule-h) - 1px),
+    var(--rule) var(--rule-h)
   );
   pointer-events: none;
   z-index: 0;
@@ -402,9 +406,21 @@ input[type="text"]::placeholder {
   font-size: 0.65rem;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  white-space: nowrap;
+  /* Wrap rather than truncate: --slot-h is sized so even the shortest set has
+     room for three lines, which covers every name in the current lineup.
+     The clamp is a backstop for a future name longer than that. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   overflow: hidden;
-  text-overflow: ellipsis;
+  /* break-word, not anywhere: only split a word that cannot fit on its own
+     line. hyphens:auto softens those breaks for dictionary words; proper nouns
+     aren't in the dictionary, so a name like "DOLOMEDES" — wider than a mobile
+     column at any tracking — still takes a hard break. */
+  overflow-wrap: break-word;
+  hyphens: auto;
+  line-height: 1.15;
 }
 .show-block .show-time {
   font-size: 0.6rem;

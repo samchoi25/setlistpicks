@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import {
   SCHEDULE, DAYS, stagesForDay,
-  TOTAL_SLOTS, GRID_START_MIN, SLOT_MINS,
+  TOTAL_SLOTS, GRID_START_MIN, SLOT_MINS, SLOTS_PER_HOUR,
 } from '../../../shared/schedule.js';
 import { ShowBlock, minToSlot } from './ShowBlock.jsx';
 
@@ -63,8 +63,11 @@ function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, gro
               scrolling past it don't show through the gaps between labels. */}
           <div className="time-axis-backdrop" style={{ gridColumn: 1, gridRow: `1 / -1` }} />
 
-          {/* Time axis labels */}
-          {Array.from({ length: TOTAL_SLOTS / 4 + 1 }, (_, i) => i * 4).map((slot) => (
+          {/* Time axis labels — one per hour, whatever the slot size */}
+          {Array.from(
+            { length: TOTAL_SLOTS / SLOTS_PER_HOUR + 1 },
+            (_, i) => i * SLOTS_PER_HOUR,
+          ).map((slot) => (
             <div key={slot} className="time-label"
               style={{ gridColumn: 1, gridRow: slot + 2 }}>
               {timeAxisLabel(slot)}

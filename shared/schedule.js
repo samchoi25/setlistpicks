@@ -375,7 +375,12 @@ export function stagesForDay(dayId) {
 // Grid bounds come from the data, rounded out to the hour, so a late-running
 // stage extends the grid instead of being clipped.
 const ALL_MINS = SCHEDULE.flatMap((s) => [s.startMin, s.endMin]);
-export const SLOT_MINS     = 15;
+// Every published set time lands on a 5-minute boundary, so a 5-minute slot
+// places all of them exactly. A coarser 15-minute slot rounded 124 of the 157
+// sets — up to 10 minutes each — which both misplaced blocks and shrank short
+// sets below the height their name needs.
+export const SLOT_MINS      = 5;
+export const SLOTS_PER_HOUR = 60 / SLOT_MINS;
 export const GRID_START_MIN = Math.floor(Math.min(...ALL_MINS) / 60) * 60;
 export const GRID_END_MIN   = Math.ceil(Math.max(...ALL_MINS) / 60) * 60;
 export const TOTAL_SLOTS    = (GRID_END_MIN - GRID_START_MIN) / SLOT_MINS;
