@@ -43,18 +43,25 @@ function GroupVotesEl({ votes, myVote, memberKey, memberDisplayName }) {
 
   if (!allVoters.length) return null;
 
-  const showNames = allVoters.length <= 2;
+  // Up to three voters are listed by name, one per line — side by side they
+  // ran past the edge of the block. Beyond three there is no room for names,
+  // so the icons stand on their own.
+  const showNames = allVoters.length <= 3;
   const fName = (v) => v.displayName.split(' ')[0];
   const icon = (v) => v.score === 3 ? '🔥' : '✓';
   const cls  = (v) => v.score === 3 ? 'gv-fire' : 'gv-check';
 
   return (
-    <div className="group-votes">
+    <div className={`group-votes${showNames ? ' with-names' : ''}`}>
       {allVoters.map((v, i) => (
-        <React.Fragment key={v.key ?? i}>
-          <span className={cls(v)}>{icon(v)}</span>
-          {showNames && <span className="gv-name">{fName(v)}</span>}
-        </React.Fragment>
+        showNames ? (
+          <span className="gv-row" key={v.key ?? i}>
+            <span className={cls(v)}>{icon(v)}</span>
+            <span className="gv-name">{fName(v)}</span>
+          </span>
+        ) : (
+          <span className={cls(v)} key={v.key ?? i}>{icon(v)}</span>
+        )
       ))}
     </div>
   );

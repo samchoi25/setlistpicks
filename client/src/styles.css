@@ -520,6 +520,25 @@ input[type="text"]::placeholder {
   gap: 1px;
   pointer-events: none;
   line-height: 1;
+  /* Never reach past the block: four or more icons wrap instead of running
+     off the left edge, since this is anchored to the right. */
+  max-width: calc(100% - 6px);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* One voter per line, so a name can never push the row past the block edge. */
+.group-votes.with-names {
+  flex-direction: column;
+  align-items: flex-end;
+  flex-wrap: nowrap;
+  gap: 1px;
+}
+.gv-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
 }
 .gv-check {
   font-size: 11px;
