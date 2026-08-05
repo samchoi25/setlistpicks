@@ -122,7 +122,7 @@ const ShowBlock = React.memo(function ShowBlock({
 
   return (
     <button
-      className={`show-block ${scoreClass(myVote)}`}
+      className={`show-block ${scoreClass(myVote)}${s.followsPrevious ? ' follows-prev' : ''}`}
       data-stage={s.stageId}
       data-id={s.id}
       style={{
@@ -143,7 +143,16 @@ const ShowBlock = React.memo(function ShowBlock({
       onPointerCancel={cancelLongPress}
     >
       {s.artists.map((name, i) => (
-        <span className="artist-name" key={i}>{name}</span>
+        <span className="artist-name" key={i}>
+          {/* Each word is its own box so it can ellipsize on its own when it
+              is wider than the column, instead of being split mid-word. */}
+          {name.split(/\s+/).map((word, j) => (
+            <React.Fragment key={j}>
+              {j > 0 ? ' ' : null}
+              <span className="word">{word}</span>
+            </React.Fragment>
+          ))}
+        </span>
       ))}
       <span className="show-time">{fmtTimeShort(s.start)}&ndash;{fmtTimeShort(s.end)}</span>
       <WashSvg data={washDataRef.current} />

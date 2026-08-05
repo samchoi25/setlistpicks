@@ -347,6 +347,16 @@ function buildSchedule() {
       raw.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
       const list = mergeSimultaneous(raw);
       assignLanes(list);
+      // Flag sets that start exactly when the previous one on the same stage
+      // ends. Stages like SOMA run back-to-back all day, and since every block
+      // in a column shares one colour they otherwise read as a single slab —
+      // the grid draws a divider on these. Tracked per lane so a partial
+      // overlap doesn't count as following the block beside it.
+      const lastEndByLane = {};
+      for (const cur of list) {
+        cur.followsPrevious = lastEndByLane[cur.lane] === cur.startMin;
+        lastEndByLane[cur.lane] = cur.endMin;
+      }
       for (let i = 0; i < list.length; i++) {
         const cur = list[i];
         // Index is per stage, so adding a stage never renumbers another's
@@ -366,6 +376,7 @@ function buildSchedule() {
           end: cur.end,
           lane: cur.lane,
           laneCount: cur.laneCount,
+          followsPrevious: cur.followsPrevious,
         });
       }
     }

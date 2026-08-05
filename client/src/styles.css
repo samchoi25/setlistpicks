@@ -413,14 +413,32 @@ input[type="text"]::placeholder {
   -webkit-line-clamp: 5;
   line-clamp: 5;
   overflow: hidden;
-  /* break-word, not anywhere: only split a word that cannot fit on its own
-     line. hyphens:auto softens those breaks for dictionary words; proper nouns
-     aren't in the dictionary, so a name like "DOLOMEDES" — wider than a mobile
-     column at any tracking — still takes a hard break. */
-  overflow-wrap: break-word;
-  hyphens: auto;
+  /* Never split a word: wrap only at spaces. */
+  overflow-wrap: normal;
+  word-break: normal;
   line-height: 1.15;
 }
+/* Each word sits in its own inline-block capped at the column width. Words
+   still wrap at the spaces between them, but a single word too wide to fit —
+   "DOLOMEDES" in a narrow column — truncates with an ellipsis rather than
+   being cut mid-word. */
+.show-block .artist-name .word {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+/* A set starting the moment the previous one ends gets a hairline along its
+   top edge, so consecutive acts on a stage read as separate blocks rather than
+   one continuous column of colour. box-sizing is border-box, so this costs no
+   height and keeps blocks aligned to their time slots. */
+.show-block.follows-prev {
+  border-top: 1px solid rgba(255, 255, 255, 0.6);
+}
+
 /* Co-billed acts share a block; separate the names so two wrapped titles
    don't read as one run-on. */
 .show-block .artist-name + .artist-name {
