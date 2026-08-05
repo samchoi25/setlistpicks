@@ -527,12 +527,17 @@ input[type="text"]::placeholder {
   justify-content: flex-end;
 }
 
-/* One voter per line, so a name can never push the row past the block edge. */
+/* One voter per line, so a name can never push the row past the block edge.
+   Anchored to the left edge rather than the right: the container shrink-wraps
+   its content, so right-anchoring left a gap between the icons and the side of
+   the block. Rows align to the start so the icons line up in a column. */
 .group-votes.with-names {
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   flex-wrap: nowrap;
   gap: 1px;
+  left: 3px;
+  right: auto;
 }
 .gv-row {
   display: flex;
