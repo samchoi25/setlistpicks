@@ -332,7 +332,7 @@ input[type="text"]::placeholder {
   z-index: 1;
 }
 /* Header and block colours come from each stage's `color` custom property,
-   applied inline — see STAGES in shared/schedule.js. Adding a stage needs a new
+   applied inline — see `stages` in shared/festivals/*.js. Adding a stage needs a new
    variable at the top of this file and nothing else here. */
 
 /* ─── Time axis labels ───────────────────────────────────────────── */
@@ -787,7 +787,7 @@ input[type="text"]::placeholder {
 
 /* .stage-chip removed — unused, and it hardcoded the original five stages.
    Anything needing a stage swatch should read the stage's `color` property
-   from STAGES in shared/schedule.js. */
+   from `stages` in shared/festivals/*.js. */
 
 
 /* ─── Profile badge ──────────────────────────────────────────────── */

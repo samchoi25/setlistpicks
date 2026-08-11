@@ -1,13 +1,16 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { renderLineupHtml, renderJsonLd } from './scripts/seo-prerender.js';
+import { getFestival, DEFAULT_FESTIVAL_SLUG } from './shared/festivals/index.js';
 
+// Phase 4 emits one page per festival; for now `/` is the default festival.
 function seoPrerender() {
   return {
     name: 'seo-prerender',
     transformIndexHtml(html) {
-      const lineupHtml = renderLineupHtml();
-      const jsonLd = renderJsonLd();
+      const festival = getFestival(DEFAULT_FESTIVAL_SLUG);
+      const lineupHtml = renderLineupHtml(festival);
+      const jsonLd = renderJsonLd(festival);
       return html
         .replace('<div id="app"></div>', `<div id="app"></div>\n${lineupHtml}`)
         .replace('</head>', `${jsonLd}\n  </head>`);

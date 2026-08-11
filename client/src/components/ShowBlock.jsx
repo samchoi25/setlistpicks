@@ -2,11 +2,10 @@ import React, { useRef, useCallback, useState } from 'react';
 import { computeWashData } from '../svgDefs.js';
 import { api } from '../api.js';
 import { toast } from '../toast.js';
-import {
-  SCHEDULE, GRID_START_MIN, GRID_END_MIN, SLOT_MINS, TOTAL_SLOTS,
-} from '../../../shared/schedule.js';
+import { useFestival } from '../festival-context.jsx';
 
-function minToSlot(min) { return Math.round((min - GRID_START_MIN) / SLOT_MINS); }
+const minToSlot = (min, gridStartMin, slotMins) =>
+  Math.round((min - gridStartMin) / slotMins);
 function fmtTimeShort(hhmm) {
   const [h, m] = hhmm.split(':').map(Number);
   const h12 = h % 12 === 0 ? 12 : h % 12;
@@ -71,10 +70,11 @@ const ShowBlock = React.memo(function ShowBlock({
   s, stage, myVote, groupVotes, memberKey, memberDisplayName,
   groupId, onVoteChange, onLongPress, onNotMember,
 }) {
+  const { GRID_START_MIN, GRID_END_MIN, SLOT_MINS, TOTAL_SLOTS } = useFestival();
   if (!stage) return null;
   const col = stage.col;
-  const startSlot = minToSlot(Math.max(s.startMin, GRID_START_MIN));
-  const endSlot   = minToSlot(Math.min(s.endMin, GRID_END_MIN));
+  const startSlot = minToSlot(Math.max(s.startMin, GRID_START_MIN), GRID_START_MIN, SLOT_MINS);
+  const endSlot   = minToSlot(Math.min(s.endMin, GRID_END_MIN), GRID_START_MIN, SLOT_MINS);
   if (startSlot >= TOTAL_SLOTS || endSlot <= 0) return null;
 
   // Stable wash data — created once per ShowBlock instance (useRef)
@@ -180,4 +180,4 @@ const ShowBlock = React.memo(function ShowBlock({
   prev.stage         === next.stage
 ));
 
-export { ShowBlock, minToSlot };
+export { ShowBlock };

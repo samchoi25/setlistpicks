@@ -1,6 +1,6 @@
 import { customAlphabet } from 'nanoid';
 import { db } from './db.js';
-import { SCHEDULE_BY_ID } from '../shared/schedule.js';
+import { getSetById } from '../shared/festivals/index.js';
 
 const newGroupId   = customAlphabet('23456789abcdefghjkmnpqrstuvwxyz', 10);
 const newMemberId  = customAlphabet('23456789abcdefghjkmnpqrstuvwxyz', 10);
@@ -108,7 +108,7 @@ export function listMembers(groupId) {
 const VALID_SCORES = new Set([0, 1, 3]);
 
 export function setVote(groupId, memberKey, artistId, score) {
-  if (!SCHEDULE_BY_ID[artistId]) return { error: 'invalid_artist' };
+  if (!getSetById(artistId)) return { error: 'invalid_artist' };
   const numeric = Number(score);
   if (!VALID_SCORES.has(numeric)) return { error: 'invalid_score' };
 

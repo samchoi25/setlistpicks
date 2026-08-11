@@ -1,7 +1,7 @@
 import React, {
   useState, useEffect, useCallback, useMemo, useRef,
 } from 'react';
-import { DAYS } from '../../../shared/schedule.js';
+import { useFestival } from '../festival-context.jsx';
 import { api } from '../api.js';
 import { clearIdentity } from '../storage.js';
 import Header from '../components/Header.jsx';
@@ -13,12 +13,13 @@ import ArtistPopup from '../components/ArtistPopup.jsx';
 import MemberLineupPopup from '../components/MemberLineupPopup.jsx';
 
 export default function GroupView({ groupId, member, groupMeta, freshJoin, onLeave }) {
+  const festival = useFestival();
   const [myVotes,          setMyVotes]          = useState({});
   const [perArtistRaw,     setPerArtistRaw]     = useState({});
   const [mutedMembers,     setMutedMembers]     = useState(groupMeta?.members || []);
   const [groupName,        setGroupName]        = useState(groupMeta?.name || 'Golden Gate Crew');
   const [memberDisplayName, setMemberDisplayName] = useState(member.displayName);
-  const [activeDay,        setActiveDay]        = useState(DAYS[0].id);
+  const [activeDay,        setActiveDay]        = useState(festival.DAYS[0].id);
   const [showNamePrompt,   setShowNamePrompt]   = useState(freshJoin);
   const [headerEditing,    setHeaderEditing]    = useState(false);
   // True only when joining a pre-existing group (others already present)

@@ -1,12 +1,9 @@
 import React, { useRef, useEffect, useCallback } from 'react';
-import {
-  SCHEDULE, DAYS, stagesForDay,
-  TOTAL_SLOTS, GRID_START_MIN, SLOT_MINS, SLOTS_PER_HOUR,
-} from '../../../shared/schedule.js';
-import { ShowBlock, minToSlot } from './ShowBlock.jsx';
+import { ShowBlock } from './ShowBlock.jsx';
 import { watchWordFit } from '../fitWords.js';
+import { useFestival } from '../festival-context.jsx';
 
-function timeAxisLabel(slotIndex) {
+function timeAxisLabel(slotIndex, { GRID_START_MIN, SLOT_MINS, TOTAL_SLOTS }) {
   const totalMin = GRID_START_MIN + slotIndex * SLOT_MINS;
   const hour = Math.floor(totalMin / 60);
   const h12 = hour % 12 === 0 ? 12 : hour % 12;
@@ -26,8 +23,10 @@ function ordinalSuffix(n) {
 }
 
 function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, groupId, onVoteChange, onLongPress, onNotMember }) {
+  const festival = useFestival();
+  const { SCHEDULE, TOTAL_SLOTS, SLOTS_PER_HOUR } = festival;
   const daySets = SCHEDULE.filter((s) => s.dayId === day.id);
-  const stages = stagesForDay(day.id);
+  const stages = festival.stagesForDay(day.id);
   const stageById = Object.fromEntries(stages.map((st) => [st.id, st]));
   const [dayMonth, dayNumStr] = day.date.split(' ');
   const dayNum = parseInt(dayNumStr, 10);
@@ -71,7 +70,7 @@ function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, gro
           ).map((slot) => (
             <div key={slot} className="time-label"
               style={{ gridColumn: 1, gridRow: slot + 2 }}>
-              {timeAxisLabel(slot)}
+              {timeAxisLabel(slot, festival)}
             </div>
           ))}
 
@@ -97,12 +96,16 @@ function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, gro
   );
 }
 
-const LAST_SCROLL_KEY = 'brsp.lastScroll.v1';
+// Scroll position is per festival — restoring a position from a different
+// lineup's grid would land somewhere arbitrary.
+const lastScrollKey = (slug) => `brsp.lastScroll.v2.${slug}`;
 
 export default function ScheduleGrid({
   myVotes, perArtistRaw, memberKey, memberDisplayName,
   groupId, activeDay, setActiveDay, onVoteChange, onLongPress, onNotMember,
 }) {
+  const { DAYS, slug } = useFestival();
+  const LAST_SCROLL_KEY = lastScrollKey(slug);
   const bodyRef = useRef(null);
   const observerRef = useRef(null);
 

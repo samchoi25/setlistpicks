@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { api } from '../api.js';
 import { setIdentity } from '../storage.js';
+import { useFestival } from '../festival-context.jsx';
 
 const normalize = (s) => String(s || '').trim().toLowerCase();
 
 export default function NamePrompt({ groupId, member, memberDisplayName, groupName, mutedMembers = [], onDismiss }) {
+  const festival = useFestival();
   const autoName = memberDisplayName;
   const [name, setName] = useState('');
   const inputRef = useRef(null);
@@ -50,7 +52,7 @@ export default function NamePrompt({ groupId, member, memberDisplayName, groupNa
       onClick={(e) => { if (e.target === e.currentTarget) dismiss(null); }}>
       <div className="name-prompt-card">
         <div style={{ fontWeight: 800, fontSize: '1.3rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Plan Outside Lands
+          Plan {festival.shortName}
         </div>
         <ul style={{ margin: '4px 0 0', paddingLeft: '18px', display: 'grid', gap: '4px', fontSize: '0.88rem', color: 'var(--ink-soft)' }}>
           <li>Save the shows you want to see</li>

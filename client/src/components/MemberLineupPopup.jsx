@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { SCHEDULE, DAYS, fmtTime } from '../../../shared/schedule.js';
+import { fmtTime } from '../../../shared/festival.js';
+import { useFestival } from '../festival-context.jsx';
 
 export default function MemberLineupPopup({ memberKey, memberDisplayName, perArtistRaw, onClose }) {
+  const { SCHEDULE, DAYS } = useFestival();
   // Build a votes map for this member from the already-fetched perArtistRaw
   const votes = {};
   for (const [artistId, voters] of Object.entries(perArtistRaw)) {

@@ -17,7 +17,7 @@ import {
   removeMember,
 } from './groups.js';
 import { adminRouter } from './admin.js';
-import { SCHEDULE, STAGES, DAYS } from '../shared/schedule.js';
+import { getFestival, DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -88,8 +88,17 @@ wss.on('connection', (ws, req) => {
 // ─── API routes ───────────────────────────────────────────────────────────────
 app.get('/healthz', (_req, res) => res.send('ok'));
 
-app.get('/api/schedule', (_req, res) => {
-  res.json({ stages: STAGES, days: DAYS, schedule: SCHEDULE });
+// Defaults to the festival `/` serves, so existing callers keep working;
+// `?festival=<slug>` selects another.
+app.get('/api/schedule', (req, res) => {
+  const festival = getFestival(req.query.festival ?? DEFAULT_FESTIVAL_SLUG);
+  if (!festival) return res.status(404).json({ error: 'unknown_festival' });
+  res.json({
+    festival: { slug: festival.slug, name: festival.name },
+    stages: festival.STAGES,
+    days: festival.DAYS,
+    schedule: festival.SCHEDULE,
+  });
 });
 
 app.post('/api/groups', (req, res) => {

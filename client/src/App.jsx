@@ -3,6 +3,8 @@ import { api } from './api.js';
 import { getIdentity, setIdentity, getActiveGroup, setActiveGroup, clearActiveGroup } from './storage.js';
 import { ensureSvgDefs } from './svgDefs.js';
 import GroupView from './views/GroupView.jsx';
+import { FestivalProvider, useFestival } from './festival-context.jsx';
+import { getFestival, DEFAULT_FESTIVAL_SLUG } from '../../shared/festivals/index.js';
 
 const GROUP_NAMES = [
   'Golden Gate Crew', 'The Fog Chasers', 'Polo Field Posse', 'Stage Hoppers',
@@ -21,6 +23,17 @@ const GROUP_ID_RE = /^\/([23456789abcdefghjkmnpqrstuvwxyz]{10})\/?$/;
 function getPath() { return location.pathname; }
 
 export default function App() {
+  // Until there is a festival picker, `/` is the default festival. Phase 3
+  // resolves this from the URL instead.
+  return (
+    <FestivalProvider festival={getFestival(DEFAULT_FESTIVAL_SLUG)}>
+      <AppRoutes />
+    </FestivalProvider>
+  );
+}
+
+function AppRoutes() {
+  const festival = useFestival();
   const [path, setPath] = useState(getPath);
   const [groupState, setGroupState] = useState(null); // { groupId, member, groupMeta, freshJoin }
   const [loading, setLoading] = useState(false);
@@ -134,7 +147,7 @@ export default function App() {
   const shell = (children) => (
     <div className="app">
       <div className="brand">
-        <div className="brand-logo">Outside Lands</div>
+        <div className="brand-logo">{festival.shortName}</div>
         <div><div className="brand-title">Setlist Picks</div></div>
       </div>
       {children}

@@ -1,22 +1,17 @@
-// Outside Lands 2026 schedule.
+// Outside Lands 2026 — festival definition.
+//
+// Pure data: no schedule is built here. buildFestival() in shared/festival.js
+// turns this into placed blocks, lanes and grid bounds.
+//
 // Source: official set times at https://sfoutsidelands.com/schedule/
 // Set times are the OFFICIAL published times, not estimates.
-// Last verified against the official schedule: 2026-08-04 (all 97 sets).
+// Last verified against the official schedule: 2026-08-04 (all 157 acts).
 //
 // Format per set: [stageId, 'HH:MM start', 'HH:MM end', 'Artist']
-// Stage order: Lands End (main) → Twin Peaks → Sutro → Panhandle → SOMA
-//
-// Three secondary areas on the official schedule are intentionally omitted:
-//   - Duboce Triangle: short pop-up sets, all by artists who also play one of
-//     the five stages above — except Sunday's 'Britton', the lone exception.
-//   - Dolores' (x Hot Goth GF / x OASIS / x Polyglamorous): drag + DJ
-//     programming, unique artists, rotating name per day.
-//   - Cocktail Magic: bingo, open mic, and club nights rather than sets.
-//
 // All times are PT (24h).
 
-// Adding a stage should mean editing this list and nothing else.
-//
+const slug = 'outside-lands-2026';
+
 // `color` names a CSS custom property (defined in styles.css) used for both the
 // column header and its blocks, so no per-stage CSS selectors are needed.
 // `namesByDay` overrides `name` on a given day — the Dolores' stage rebrands
@@ -24,7 +19,7 @@
 //
 // A stage is only rendered on days where it actually has sets, so a one-day
 // pop-up stage just needs entries under that day.
-export const STAGES = [
+const stages = [
   { id: 'landsend',  name: 'Lands End',       short: 'LE',   color: '--ocean-deep' },
   { id: 'twinpeaks', name: 'Twin Peaks',      short: 'TP',   color: '--pink-carnation' },
   { id: 'sutro',     name: 'Sutro',           short: 'SUT',  color: '--muted-olive' },
@@ -45,22 +40,11 @@ export const STAGES = [
   { id: 'cocktail',  name: 'Cocktail Magic',  short: 'CKM',  color: '--deep-teal' },
 ];
 
-// Display name for a stage on a given day.
-export function stageName(stage, dayId) {
-  return stage.namesByDay?.[dayId] ?? stage.name;
-}
-
-export const DAYS = [
+const days = [
   { id: 'fri', name: 'Friday',   date: 'Aug 7' },
   { id: 'sat', name: 'Saturday', date: 'Aug 8' },
   { id: 'sun', name: 'Sunday',   date: 'Aug 9' },
 ];
-
-// Helper: 'HH:MM' → minutes since midnight.
-const t = (s) => {
-  const [h, m] = s.split(':').map(Number);
-  return h * 60 + m;
-};
 
 // Each set: [stageId, start, end, artist]
 const sets = {
@@ -279,151 +263,33 @@ const sets = {
   ],
 };
 
-// Most stages run strictly back-to-back, but a stage can double-book (the
-// Saturday Dolores' 16:45 slot). Assign each set a `lane` so colliding sets sit
-// side by side inside the stage column instead of stacking on top of each
-// other, and a `laneCount` — the width to divide by, computed per run of
-// overlapping sets so an isolated collision doesn't narrow the whole day.
-function assignLanes(list) {
-  const laneFreeAt = [];
-  for (const s of list) {
-    let lane = laneFreeAt.findIndex((end) => end <= s.startMin);
-    if (lane === -1) lane = laneFreeAt.length;
-    laneFreeAt[lane] = s.endMin;
-    s.lane = lane;
-  }
-
-  // Walk the sets in start order, grouping any that transitively overlap.
-  let cluster = [];
-  let clusterEnd = -Infinity;
-  const closeCluster = () => {
-    const laneCount = Math.max(...cluster.map((s) => s.lane)) + 1;
-    for (const s of cluster) s.laneCount = laneCount;
-    cluster = [];
-    clusterEnd = -Infinity;
-  };
-  for (const s of list) {
-    if (cluster.length && s.startMin >= clusterEnd) closeCluster();
-    cluster.push(s);
-    clusterEnd = Math.max(clusterEnd, s.endMin);
-  }
-  if (cluster.length) closeCluster();
-}
-
-// Two acts billed on the same stage for the exact same slot (the Saturday
-// Dolores' 16:45, one DJ under two banners) become one block listing both
-// names over a single time range, rather than two half-width columns.
-// Partial overlaps are left alone — assignLanes still splits those.
-function mergeSimultaneous(list) {
-  const out = [];
-  for (const s of list) {
-    const prev = out[out.length - 1];
-    if (prev && prev.startMin === s.startMin && prev.endMin === s.endMin) {
-      prev.artists.push(s.artist);
-    } else {
-      out.push({ ...s, artists: [s.artist] });
-    }
-  }
-  return out;
-}
-
-function buildSchedule() {
-  const all = [];
-  for (const day of DAYS) {
-    const byStage = {};
-    for (const stage of STAGES) byStage[stage.id] = [];
-    for (const [stageId, start, end, artist] of sets[day.id]) {
-      if (!byStage[stageId]) throw new Error(`Unknown stage '${stageId}' on ${day.id}`);
-      byStage[stageId].push({ stageId, start, end, artist });
-    }
-    for (const stage of STAGES) {
-      const raw = byStage[stage.id];
-      for (const cur of raw) {
-        cur.startMin = t(cur.start);
-        cur.endMin   = t(cur.end);
-      }
-      // Sort by start then end so identical time ranges land next to each
-      // other; the sort is stable, so co-billed acts keep their listed order.
-      raw.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
-      const list = mergeSimultaneous(raw);
-      assignLanes(list);
-      // Flag sets that start exactly when the previous one on the same stage
-      // ends. Stages like SOMA run back-to-back all day, and since every block
-      // in a column shares one colour they otherwise read as a single slab —
-      // the grid draws a divider on these. Tracked per lane so a partial
-      // overlap doesn't count as following the block beside it.
-      const lastEndByLane = {};
-      for (const cur of list) {
-        cur.followsPrevious = lastEndByLane[cur.lane] === cur.startMin;
-        lastEndByLane[cur.lane] = cur.endMin;
-      }
-      for (let i = 0; i < list.length; i++) {
-        const cur = list[i];
-        // Index is per stage, so adding a stage never renumbers another's
-        // ids — existing votes stay attached to the right set.
-        const id = `${day.id}-${stage.id}-${i}`;
-        all.push({
-          id,
-          dayId: day.id,
-          stageId: stage.id,
-          artists: cur.artists,
-          // Single-string form for places that need one label: popups,
-          // long-press, SEO markup.
-          artist: cur.artists.join(' + '),
-          start: cur.start,
-          startMin: cur.startMin,
-          endMin: cur.endMin,
-          end: cur.end,
-          lane: cur.lane,
-          laneCount: cur.laneCount,
-          followsPrevious: cur.followsPrevious,
-        });
-      }
-    }
-  }
-  return all;
-}
-
-export const SCHEDULE = buildSchedule();
-
-export const SCHEDULE_BY_ID = Object.fromEntries(SCHEDULE.map((s) => [s.id, s]));
-
-// Stages that actually have sets on a given day, in canonical STAGES order,
-// each carrying the grid column it occupies (column 1 is the time axis).
-// Built once per day and cached, so React can compare stage objects by identity.
-const STAGES_BY_DAY = Object.fromEntries(
-  DAYS.map((day) => {
-    const active = new Set(
-      SCHEDULE.filter((s) => s.dayId === day.id).map((s) => s.stageId),
-    );
-    const list = STAGES
-      .filter((stage) => active.has(stage.id))
-      .map((stage, i) => ({ ...stage, name: stageName(stage, day.id), col: i + 2 }));
-    return [day.id, list];
-  }),
-);
-
-export function stagesForDay(dayId) {
-  return STAGES_BY_DAY[dayId] ?? [];
-}
-
-// Grid bounds come from the data, rounded out to the hour, so a late-running
-// stage extends the grid instead of being clipped.
-const ALL_MINS = SCHEDULE.flatMap((s) => [s.startMin, s.endMin]);
-// Every published set time lands on a 5-minute boundary, so a 5-minute slot
-// places all of them exactly. A coarser 15-minute slot rounded 124 of the 157
-// sets — up to 10 minutes each — which both misplaced blocks and shrank short
-// sets below the height their name needs.
-export const SLOT_MINS      = 5;
-export const SLOTS_PER_HOUR = 60 / SLOT_MINS;
-export const GRID_START_MIN = Math.floor(Math.min(...ALL_MINS) / 60) * 60;
-export const GRID_END_MIN   = Math.ceil(Math.max(...ALL_MINS) / 60) * 60;
-export const TOTAL_SLOTS    = (GRID_END_MIN - GRID_START_MIN) / SLOT_MINS;
-
-// Format 'HH:MM' (24h) into 'H:MMa/p' friendly form.
-export function fmtTime(hhmm) {
-  const [h, m] = hhmm.split(':').map(Number);
-  const ampm = h >= 12 ? 'p' : 'a';
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  return m === 0 ? `${h12}${ampm}` : `${h12}:${String(m).padStart(2, '0')}${ampm}`;
-}
+export default {
+  slug,
+  name: 'Outside Lands 2026',
+  shortName: 'Outside Lands',
+  year: 2026,
+  venue: 'Golden Gate Park, San Francisco',
+  // Structured form for the JSON-LD MusicFestival schema.
+  place: {
+    name: 'Golden Gate Park',
+    streetAddress: '501 Stanyan St',
+    addressLocality: 'San Francisco',
+    addressRegion: 'CA',
+    postalCode: '94117',
+    addressCountry: 'US',
+  },
+  // Timezone offset used when turning 'HH:MM' into ISO datetimes.
+  utcOffset: '-07:00',
+  // Human-readable range used in copy; `days` carries the per-day dates.
+  dateRange: 'August 7\u20139, 2026',
+  officialUrl: 'https://sfoutsidelands.com/lineup/',
+  // Headliners drive the <title> and meta description for this festival's page.
+  headliners: ['Charli xcx', 'The Strokes', 'R\u00dcF\u00dcS DU SOL', 'Baby Keem'],
+  notableActs: [
+    'Turnstile', 'The xx', 'PinkPantheress', 'Death Cab for Cutie',
+    'Ethel Cain', 'Lucy Dacus',
+  ],
+  stages,
+  days,
+  sets,
+};
