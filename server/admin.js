@@ -1,5 +1,6 @@
 import express from 'express';
 import { db } from './db.js';
+import { listFestivals, getFestival } from '../shared/festivals/index.js';
 
 const router = express.Router();
 const parseForm = express.urlencoded({ extended: false });
@@ -20,6 +21,19 @@ const stmts = {
       (SELECT COUNT(*) FROM groups)  AS total_groups,
       (SELECT COUNT(*) FROM members) AS total_members,
       (SELECT COUNT(*) FROM votes)   AS total_votes
+  `),
+
+  byFestival: db.prepare(`
+    SELECT g.festival_slug,
+           COUNT(DISTINCT g.id)                                    AS groups,
+           COUNT(DISTINCT m.group_id || ':' || m.member_key)       AS members,
+           (SELECT COUNT(*) FROM votes v
+              JOIN groups vg ON vg.id = v.group_id
+             WHERE vg.festival_slug = g.festival_slug)             AS votes
+    FROM groups g
+    LEFT JOIN members m ON m.group_id = g.id AND m.left_at IS NULL
+    GROUP BY g.festival_slug
+    ORDER BY groups DESC
   `),
 
   hourlyTraffic: db.prepare(`
@@ -47,19 +61,20 @@ const stmts = {
   `),
 
   allGroups: db.prepare(`
-    SELECT g.id, g.name, g.creator_ip, g.created_at, g.last_active,
+    SELECT g.id, g.name, g.creator_ip, g.created_at, g.last_active, g.festival_slug,
            COUNT(m.member_key) AS member_count
     FROM groups g
-    LEFT JOIN members m ON m.group_id = g.id
+    LEFT JOIN members m ON m.group_id = g.id AND m.left_at IS NULL
+    WHERE (:festival IS NULL OR g.festival_slug = :festival)
     GROUP BY g.id
     ORDER BY g.created_at DESC
   `),
 
   groupsByIp: db.prepare(`
-    SELECT g.id, g.name, g.creator_ip, g.created_at, g.last_active,
+    SELECT g.id, g.name, g.creator_ip, g.created_at, g.last_active, g.festival_slug,
            COUNT(m.member_key) AS member_count
     FROM groups g
-    LEFT JOIN members m ON m.group_id = g.id
+    LEFT JOIN members m ON m.group_id = g.id AND m.left_at IS NULL
     WHERE g.creator_ip = ?
     GROUP BY g.id
     ORDER BY g.created_at DESC
@@ -75,17 +90,17 @@ const stmts = {
   `),
 
   groupById: db.prepare(`
-    SELECT g.id, g.name, g.creator_ip, g.created_at, g.last_active,
+    SELECT g.id, g.name, g.creator_ip, g.created_at, g.last_active, g.festival_slug,
            COUNT(m.member_key) AS member_count
     FROM groups g
-    LEFT JOIN members m ON m.group_id = g.id
+    LEFT JOIN members m ON m.group_id = g.id AND m.left_at IS NULL
     WHERE g.id = ?
     GROUP BY g.id
   `),
 
   membersByGroup: db.prepare(`
     SELECT
-      m.member_key, m.display_name, m.joined_at, m.last_seen, m.creator_ip,
+      m.member_key, m.display_name, m.joined_at, m.last_seen, m.creator_ip, m.left_at,
       (SELECT COUNT(*) FROM groups  WHERE creator_ip = m.creator_ip) AS ip_groups,
       (SELECT COUNT(*) FROM members WHERE creator_ip = m.creator_ip) AS ip_members,
       (SELECT COUNT(*) FROM votes WHERE group_id = m.group_id AND member_key = m.member_key) AS vote_count
@@ -238,10 +253,31 @@ function deleteMemberForm(secret, groupId, memberKey, redirectTo) {
 // Dashboard
 router.get('/:secret', requireSecret, (req, res) => {
   const { secret } = req.params;
-  const stats   = stmts.stats.get();
-  const traffic = stmts.hourlyTraffic.all();
-  const ipRows  = stmts.ipSummary.all();
-  const groups  = stmts.allGroups.all();
+  // ?festival=<slug> narrows the group list. An unrecognised slug shows
+  // everything rather than an empty table pretending to be a real result.
+  const filter = getFestival(req.query.festival)?.slug ?? null;
+  const stats     = stmts.stats.get();
+  const perFest   = stmts.byFestival.all();
+  const traffic   = stmts.hourlyTraffic.all();
+  const ipRows    = stmts.ipSummary.all();
+  const groups    = stmts.allGroups.all({ festival: filter });
+
+  const festivalName = (slug) => getFestival(slug)?.name ?? slug;
+  const festivalLink = (slug) =>
+    `<a href="/admin/${esc(secret)}?festival=${encodeURIComponent(slug)}">${esc(festivalName(slug))}</a>`;
+
+  // Every registered festival appears, including ones with no groups yet, so
+  // a newly added festival is visibly live rather than merely absent.
+  const festivalRows = listFestivals().map((f) => {
+    const row = perFest.find((r) => r.festival_slug === f.slug);
+    return { slug: f.slug, groups: row?.groups ?? 0, members: row?.members ?? 0, votes: row?.votes ?? 0 };
+  });
+  // Groups whose slug is no longer in the registry would otherwise vanish.
+  for (const row of perFest) {
+    if (!getFestival(row.festival_slug)) {
+      festivalRows.push({ slug: row.festival_slug, groups: row.groups, members: row.members, votes: row.votes, unknown: true });
+    }
+  }
 
   const breadcrumb = `<span class="sep">/</span> Dashboard`;
 
@@ -251,6 +287,25 @@ router.get('/:secret', requireSecret, (req, res) => {
       <div class="stat"><div class="stat-value">${stats.total_members}</div><div class="stat-label">Members</div></div>
       <div class="stat"><div class="stat-value">${stats.total_votes}</div><div class="stat-label">Votes</div></div>
     </div>
+
+    <section>
+      <h2>Festivals</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Festival</th><th>Slug</th><th>Groups</th><th>Members</th><th>Votes</th></tr></thead>
+          <tbody>
+            ${festivalRows.map(r => `
+              <tr>
+                <td>${festivalLink(r.slug)}${r.unknown ? '<span class="badge badge-red">not in registry</span>' : ''}</td>
+                <td class="mono muted">${esc(r.slug)}</td>
+                <td>${r.groups}</td>
+                <td>${r.members}</td>
+                <td>${r.votes}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </section>
 
     <section>
       <h2>IPs</h2>
@@ -287,12 +342,14 @@ router.get('/:secret', requireSecret, (req, res) => {
     </section>
 
     <section>
-      <h2>All Groups</h2>
+      <h2>${filter ? `Groups — ${esc(festivalName(filter))}` : 'All Groups'}
+        ${filter ? `<a href="/admin/${esc(secret)}" style="font-size:13px;font-weight:400;margin-left:10px">clear filter</a>` : ''}
+      </h2>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>ID</th><th>Name</th><th>Creator IP</th>
+              <th>ID</th><th>Name</th><th>Festival</th><th>Creator IP</th>
               <th>Created</th><th>Last Active</th><th>Members</th><th></th>
             </tr>
           </thead>
@@ -302,6 +359,7 @@ router.get('/:secret', requireSecret, (req, res) => {
                 <tr>
                   <td class="mono"><a href="/admin/${esc(secret)}/group/${esc(g.id)}">${esc(g.id)}</a></td>
                   <td>${g.name ? esc(g.name) : '<span class="muted">(unnamed)</span>'}</td>
+                  <td>${festivalLink(g.festival_slug)}</td>
                   <td class="mono">${g.creator_ip
                     ? `<a href="/admin/${esc(secret)}/ip/${esc(g.creator_ip)}">${esc(g.creator_ip)}</a>`
                     : '<span class="muted">—</span>'}</td>
@@ -310,7 +368,7 @@ router.get('/:secret', requireSecret, (req, res) => {
                   <td>${g.member_count}</td>
                   <td>${deleteGroupForm(secret, g.id, `/admin/${secret}`)}</td>
                 </tr>`).join('')
-              : `<tr><td colspan="7" class="empty">No groups</td></tr>`}
+              : `<tr><td colspan="8" class="empty">No groups</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -420,6 +478,7 @@ router.get('/:secret/group/:groupId', requireSecret, (req, res) => {
     <div class="page-title">${group.name ? esc(group.name) : '<span class="muted">(unnamed)</span>'} <span class="mono" style="font-size:13px;color:#64748b">${esc(groupId)}</span></div>
 
     <dl class="info-grid" style="margin-bottom:24px">
+      <div><dt>Festival</dt><dd><a href="/admin/${esc(secret)}?festival=${encodeURIComponent(group.festival_slug)}">${esc(getFestival(group.festival_slug)?.name ?? group.festival_slug)}</a></dd></div>
       <div><dt>Created</dt><dd>${fmt(group.created_at)}</dd></div>
       <div><dt>Last Active</dt><dd>${fmt(group.last_active)}</dd></div>
       <div><dt>Members</dt><dd>${group.member_count}</dd></div>
@@ -427,7 +486,7 @@ router.get('/:secret/group/:groupId', requireSecret, (req, res) => {
     </dl>
 
     <section>
-      <h2>Members (${members.length})</h2>
+      <h2>Members (${group.member_count}${members.length > group.member_count ? ` active, ${members.length - group.member_count} left` : ''})</h2>
       <div class="table-wrap">
         <table>
           <thead>
@@ -437,7 +496,7 @@ router.get('/:secret/group/:groupId', requireSecret, (req, res) => {
             ${members.length
               ? members.map(m => `
                 <tr>
-                  <td style="font-weight:500">${esc(m.display_name)}</td>
+                  <td style="font-weight:500">${esc(m.display_name)}${m.left_at ? '<span class="badge badge-blue">left</span>' : ''}</td>
                   <td>${m.vote_count > 0 ? m.vote_count : '<span class="muted">—</span>'}</td>
                   <td class="mono muted">${fmt(m.joined_at)}</td>
                   <td class="mono muted">${fmt(m.last_seen)}</td>
