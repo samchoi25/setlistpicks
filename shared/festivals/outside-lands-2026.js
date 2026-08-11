@@ -283,6 +283,9 @@ export default {
   // Human-readable range used in copy; `days` carries the per-day dates.
   dateRange: 'August 7\u20139, 2026',
   officialUrl: 'https://sfoutsidelands.com/lineup/',
+  // When the set times were last checked against the official source.
+  // Published as <lastmod> in the sitemap.
+  dataVerifiedOn: '2026-08-04',
   // Headliners drive the <title> and meta description for this festival's page.
   headliners: ['Charli xcx', 'The Strokes', 'R\u00dcF\u00dcS DU SOL', 'Baby Keem'],
   notableActs: [

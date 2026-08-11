@@ -4,15 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#f1e9d7" />
-    <title>Outside Lands 2026 Setlist Picker | Charli xcx, The Strokes, RÜFÜS DU SOL, Baby Keem</title>
-    <meta name="description" content="Outside Lands 2026 (Aug 7-9, Golden Gate Park): full lineup with official set times across all 5 stages. Charli xcx, The Strokes, RÜFÜS DU SOL, Baby Keem, Turnstile, The xx, PinkPantheress, Death Cab for Cutie, and 90+ more. Plan your weekend with friends." />
-    <link rel="canonical" href="https://setlistpicks.com/" />
+    <!--
+      The double-brace placeholders below are filled per festival: by the dev
+      plugin while serving, and by scripts/build-pages.js once per festival at
+      build time. Leaving one unresolved in a built file is a bug the SEO tests
+      catch.
+    -->
+    <title>{{TITLE}}</title>
+    <meta name="description" content="{{DESCRIPTION}}" />
+    <link rel="canonical" href="{{CANONICAL}}" />
     <meta name="robots" content="index, follow" />
-    <meta property="og:title" content="Outside Lands 2026 Setlist Picker | Charli xcx, The Strokes, RÜFÜS DU SOL, Baby Keem" />
-    <meta property="og:description" content="Outside Lands 2026 (Aug 7-9, Golden Gate Park): full lineup with official set times across all 5 stages. Charli xcx, The Strokes, RÜFÜS DU SOL, Baby Keem, Turnstile, The xx, PinkPantheress, Death Cab for Cutie, and 90+ more. Plan your weekend with friends." />
+    <meta property="og:title" content="{{TITLE}}" />
+    <meta property="og:description" content="{{DESCRIPTION}}" />
     <meta property="og:image" content="/og-image.png" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://setlistpicks.com/" />
+    <meta property="og:url" content="{{CANONICAL}}" />
     <meta property="og:site_name" content="Setlist Picker" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="/og-image.png" />
@@ -20,9 +26,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="/src/styles.css" />
+    {{JSON_LD}}
   </head>
   <body>
     <div id="app"></div>
+    {{SEO_BODY}}
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

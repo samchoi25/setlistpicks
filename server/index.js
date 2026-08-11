@@ -18,7 +18,7 @@ import {
   removeMember,
 } from './groups.js';
 import { adminRouter } from './admin.js';
-import { getFestival, DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
+import { getFestival, listFestivals, DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
 import { parsePath, canonicalRedirect, isGroupPath } from '../shared/routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -187,23 +187,35 @@ const distDir = path.join(ROOT, 'dist');
 if (fs.existsSync(distDir)) {
   // index:false so `/` falls through to the route handler below — otherwise
   // static serves dist/index.html directly and the redirect never runs.
-  app.use(express.static(distDir, { index: false }));
+  // redirect:false because dist now holds a directory per festival, and
+  // serve-static would otherwise bounce /outside-lands-2026 to a trailing
+  // slash before our router ever sees it.
+  app.use(express.static(distDir, { index: false, redirect: false }));
 
-  // Build two cached HTML variants from the single dist/index.html:
-  //   indexHtml — the festival page, fully indexable
-  //   groupHtml — served for group routes, noindex so a crew's private page
-  //               doesn't dilute the festival page it duplicates
-  const indexHtml = fs.readFileSync(path.join(distDir, 'index.html'), 'utf8');
-  const defaultFestival = getFestival(DEFAULT_FESTIVAL_SLUG);
-  const groupHtml = indexHtml
-    .replace(
-      /<title>[^<]*<\/title>/,
-      `<title>${defaultFestival.shortName} Setlist Picker</title>`,
-    )
-    .replace(
-      '</head>',
-      '  <meta name="robots" content="noindex, follow" />\n  </head>',
-    );
+  /*
+   * Two cached variants per festival, read once at boot from the pages
+   * build-pages.js generated:
+   *   festivalHtml — that festival's page, indexable
+   *   groupHtml    — the same page marked noindex, for a crew's private URL,
+   *                  which would otherwise duplicate the festival page
+   */
+  const readPage = (slug) => {
+    const file = slug
+      ? path.join(distDir, slug, 'index.html')
+      : path.join(distDir, 'index.html');
+    return fs.readFileSync(fs.existsSync(file) ? file : path.join(distDir, 'index.html'), 'utf8');
+  };
+
+  const noindex = (html) => html
+    .replace('<meta name="robots" content="index, follow" />',
+             '<meta name="robots" content="noindex, follow" />');
+
+  const pages = new Map(); // slug -> { festivalHtml, groupHtml }
+  for (const festival of listFestivals()) {
+    const html = readPage(festival.slug);
+    pages.set(festival.slug, { festivalHtml: html, groupHtml: noindex(html) });
+  }
+  const fallbackHtml = readPage(null);
 
   app.get(/^(?!\/api\/|\/healthz).*/, (req, res) => {
     const parsed = parsePath(req.path);
@@ -221,7 +233,13 @@ if (fs.existsSync(distDir)) {
     }
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(isGroupPath(req.path) ? groupHtml : indexHtml);
+
+    const page = pages.get(parsed.canonicalSlug);
+    if (parsed.kind === 'festival') return res.send(page.festivalHtml);
+    if (parsed.kind === 'group') return res.send(page.groupHtml);
+    // A legacy code whose group is gone, or an unrecognised path: the SPA
+    // handles it, and it should not be indexed under any festival.
+    return res.send(noindex(fallbackHtml));
   });
 } else if (process.env.NODE_ENV === 'production') {
   console.warn('[server] dist/ not found; did you run `npm run build`?');

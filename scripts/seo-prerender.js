@@ -127,3 +127,53 @@ function escHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+/* ─── Page assembly ──────────────────────────────────────────────────────── */
+
+export function pageTitle(festival) {
+  return `${festival.name} Setlist Picker | ${festival.headliners.join(', ')}`;
+}
+
+export function pageDescription(festival) {
+  const actCount = festival.SCHEDULE.reduce((n, s) => n + s.artists.length, 0);
+  const named = [...festival.headliners, ...(festival.notableActs ?? [])];
+  const rest = actCount - named.length;
+  return `${festival.name} (${festival.dateRange}, ${festival.venue}): full lineup with `
+    + `official set times across all ${festival.STAGES.length} stages. `
+    + `${named.join(', ')}, and ${rest}+ more. Plan your weekend with friends.`;
+}
+
+// Tokens the template carries. Kept in one place so the tests can assert that
+// a built page has none left unresolved.
+export const PAGE_TOKENS = ['{{TITLE}}', '{{DESCRIPTION}}', '{{CANONICAL}}', '{{JSON_LD}}', '{{SEO_BODY}}'];
+
+/*
+ * Fill a template for one festival. Used by the dev-server plugin and by the
+ * build script that writes a page per festival, so what you see while
+ * developing is assembled the same way as what ships.
+ */
+export function renderPage(template, festival) {
+  return template
+    .replaceAll('{{TITLE}}', escHtml(pageTitle(festival)))
+    .replaceAll('{{DESCRIPTION}}', escHtml(pageDescription(festival)))
+    .replaceAll('{{CANONICAL}}', escHtml(canonicalUrl(festival)))
+    .replace('{{JSON_LD}}', renderJsonLd(festival))
+    .replace('{{SEO_BODY}}', renderLineupHtml(festival));
+}
+
+export function renderSitemap(festivals) {
+  const urls = festivals.map((f) => [
+    '  <url>',
+    `    <loc>${escHtml(canonicalUrl(f))}</loc>`,
+    f.dataVerifiedOn ? `    <lastmod>${f.dataVerifiedOn}</lastmod>` : '',
+    '    <changefreq>weekly</changefreq>',
+    '    <priority>1.0</priority>',
+    '  </url>',
+  ].filter(Boolean).join('\n')).join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>
+`;
+}
