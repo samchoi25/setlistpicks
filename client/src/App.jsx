@@ -121,7 +121,7 @@ function AppRoutes() {
 
     (async () => {
       try {
-        const group = await api.createGroup(randomGroupName());
+        const group = await api.createGroup(randomGroupName(), festival.slug);
         navigating.current = false;
         navigate(`/${group.id}`, { replace: true });
       } catch (e) {

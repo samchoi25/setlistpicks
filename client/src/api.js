@@ -20,7 +20,8 @@ const encKey = (k) => encodeURIComponent(k);
 
 export const api = {
   schedule: () => req('GET', '/api/schedule'),
-  createGroup: (groupName) => req('POST', '/api/groups', { groupName }),
+  createGroup: (groupName, festivalSlug) =>
+    req('POST', '/api/groups', { groupName, festivalSlug }),
   getGroup: (id) => req('GET', `/api/groups/${id}`),
   join: (id, displayName) => req('POST', `/api/groups/${id}/join`, { displayName }),
   myVotes: (id, memberKey) => req('GET', `/api/groups/${id}/votes/${encKey(memberKey)}`),

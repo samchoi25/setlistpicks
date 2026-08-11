@@ -103,8 +103,13 @@ app.get('/api/schedule', (req, res) => {
 
 app.post('/api/groups', (req, res) => {
   try {
-    const meta = createGroup({ groupName: req.body?.groupName, creatorIp: clientIp(req) });
+    const meta = createGroup({
+      groupName: req.body?.groupName,
+      festivalSlug: req.body?.festivalSlug,
+      creatorIp: clientIp(req),
+    });
     if (meta.error === 'rate_limited') return res.status(429).json(meta);
+    if (meta.error === 'unknown_festival') return res.status(400).json(meta);
     res.json(meta);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -164,6 +169,7 @@ app.get('/api/groups/:groupId/votes/:memberKey', (req, res) => {
 app.post('/api/groups/:groupId/votes/:memberKey', (req, res) => {
   const { artistId, score } = req.body || {};
   const result = setVote(req.params.groupId, req.params.memberKey, artistId, score);
+  if (result.error === 'group_not_found') return res.status(404).json(result);
   if (result.error) return res.status(400).json(result);
   // Push live vote update to everyone in the group
   broadcastVotes(req.params.groupId);
