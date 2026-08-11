@@ -5,6 +5,7 @@ import { ensureSvgDefs } from './svgDefs.js';
 import GroupView from './views/GroupView.jsx';
 import { FestivalProvider, useFestival } from './festival-context.jsx';
 import { getFestival, DEFAULT_FESTIVAL_SLUG } from '../../shared/festivals/index.js';
+import { parsePath, groupPath, festivalPath } from '../../shared/routes.js';
 
 const GROUP_NAMES = [
   'Golden Gate Crew', 'The Fog Chasers', 'Polo Field Posse', 'Stage Hoppers',
@@ -17,8 +18,6 @@ const MEMBER_NOUNS = ['Dune', 'Cypress', 'Stage', 'Trail', 'Wave', 'Riff', 'Chor
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function randomMemberName() { return `${pick(MEMBER_ADJS)} ${pick(MEMBER_NOUNS)} ${Math.floor(10 + Math.random() * 90)}`; }
 function randomGroupName() { return pick(GROUP_NAMES); }
-
-const GROUP_ID_RE = /^\/([23456789abcdefghjkmnpqrstuvwxyz]{10})\/?$/;
 
 function getPath() { return location.pathname; }
 
@@ -94,10 +93,10 @@ function AppRoutes() {
         freshJoin = true;
       }
 
-      setActiveGroup(groupId);
+      setActiveGroup(groupMeta.festivalSlug ?? festival.slug, groupId);
       setGroupState({ groupId, member: identity, groupMeta, freshJoin });
     } catch (e) {
-      if (e.status === 404) { clearActiveGroup(); setError({ msg: 'That group link looks expired or invalid.', canRetry: true }); }
+      if (e.status === 404) { clearActiveGroup(festival.slug); setError({ msg: 'That group link looks expired or invalid.', canRetry: true }); }
       else if (e.status === 429) setError({ msg: 'Too many groups or users created from this network. Try again later.', canRetry: false });
       else setError({ msg: e.message, canRetry: true });
     } finally {
@@ -106,43 +105,51 @@ function AppRoutes() {
     }
   }
 
-  // Route: / → resume stored group or auto-create a new one
+  const route = parsePath(path);
+
+  // A festival page (or `/`, which the server redirects but the SPA can also
+  // reach via history): resume this festival's stored group, else start one.
   useEffect(() => {
-    if (path !== '/' && path !== '') return;
+    if (route.kind !== 'festival' && route.kind !== 'home') return;
     if (navigating.current) return;
     navigating.current = true;
 
-    const stored = getActiveGroup();
+    const slug = route.canonicalSlug ?? festival.slug;
+    const stored = getActiveGroup(slug);
     if (stored) {
       navigating.current = false;
-      navigate(`/${stored}`, { replace: true });
+      navigate(groupPath(slug, stored), { replace: true });
       return;
     }
 
     (async () => {
       try {
-        const group = await api.createGroup(randomGroupName(), festival.slug);
+        const group = await api.createGroup(randomGroupName(), slug);
         navigating.current = false;
-        navigate(`/${group.id}`, { replace: true });
+        navigate(groupPath(slug, group.id), { replace: true });
       } catch (e) {
         navigating.current = false;
         if (e.status === 429) setError({ msg: 'Too many groups created from this network. Try again later.', canRetry: false });
         else setError({ msg: e.message, canRetry: true });
       }
     })();
-  }, [path, navigate]);
+  }, [path, navigate]); // eslint-disable-line
 
-  // Route: /:groupId → load group
+  // A group page. Legacy bare-code links are normally redirected by the
+  // server; handling them here too covers in-app history navigation.
   useEffect(() => {
-    const m = path.match(GROUP_ID_RE);
-    if (!m) return;
-    const groupId = m[1];
-    if (groupState?.groupId === groupId) return;
-    loadGroup(groupId);
+    if (route.kind !== 'group' && route.kind !== 'legacy-group') return;
+    if (groupState?.groupId === route.code) return;
+    loadGroup(route.code);
   }, [path]); // eslint-disable-line
 
-  // Render
-  const m = path.match(GROUP_ID_RE);
+  // Once a group is loaded, put the URL on its festival's canonical path —
+  // an old link or an alias should settle on one address.
+  useEffect(() => {
+    if (!groupState?.groupMeta?.festivalSlug) return;
+    const want = groupPath(groupState.groupMeta.festivalSlug, groupState.groupId);
+    if (path !== want) navigate(want, { replace: true });
+  }, [groupState, path, navigate]);
 
   const shell = (children) => (
     <div className="app">
@@ -159,13 +166,17 @@ function AppRoutes() {
       <div className="card stack">
         <p style={{ margin: 0 }}>{error.msg}</p>
         {error.canRetry && (
-          <button className="btn" onClick={() => { clearActiveGroup(); setError(null); navigate('/'); }}>Start over</button>
+          <button className="btn" onClick={() => {
+            clearActiveGroup(festival.slug);
+            setError(null);
+            navigate(festivalPath(festival.slug));
+          }}>Start over</button>
         )}
       </div>
     );
   }
 
-  if (loading || (path === '/' || path === '')) {
+  if (loading || route.kind === 'home' || route.kind === 'festival') {
     return shell(
       <div className="card center" style={{ padding: '40px 20px', color: 'var(--ink-soft)', fontSize: '0.9rem' }}>
         Setting up your crew…
@@ -173,7 +184,7 @@ function AppRoutes() {
     );
   }
 
-  if (m && groupState?.groupId === m[1]) {
+  if (groupState?.groupId === route.code) {
     return (
       <GroupView
         key={groupState.groupId}
@@ -181,7 +192,10 @@ function AppRoutes() {
         member={groupState.member}
         groupMeta={groupState.groupMeta}
         freshJoin={groupState.freshJoin}
-        onLeave={() => { clearActiveGroup(); navigate('/'); }}
+        onLeave={() => {
+          clearActiveGroup(festival.slug);
+          navigate(festivalPath(festival.slug));
+        }}
       />
     );
   }

@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import {
   createGroup,
   getGroupMeta,
+  getGroupFestivalSlug,
   joinGroup,
   listMembers,
   setVote,
@@ -18,6 +19,7 @@ import {
 } from './groups.js';
 import { adminRouter } from './admin.js';
 import { getFestival, DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
+import { parsePath, canonicalRedirect, isGroupPath } from '../shared/routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -182,20 +184,21 @@ app.use('/admin', adminRouter);
 // ─── Static / SPA ─────────────────────────────────────────────────────────────
 const distDir = path.join(ROOT, 'dist');
 
-// Nanoid alphabet used for group IDs (10 chars from this set).
-const GROUP_PATH_RE = /^\/[23456789abcdefghjkmnpqrstuvwxyz]{10}\/?$/;
-
 if (fs.existsSync(distDir)) {
-  app.use(express.static(distDir));
+  // index:false so `/` falls through to the route handler below — otherwise
+  // static serves dist/index.html directly and the redirect never runs.
+  app.use(express.static(distDir, { index: false }));
 
   // Build two cached HTML variants from the single dist/index.html:
-  //   homepageHtml — served for `/`, fully indexable
-  //   groupHtml    — served for group routes, noindex so they don't dilute `/`
+  //   indexHtml — the festival page, fully indexable
+  //   groupHtml — served for group routes, noindex so a crew's private page
+  //               doesn't dilute the festival page it duplicates
   const indexHtml = fs.readFileSync(path.join(distDir, 'index.html'), 'utf8');
+  const defaultFestival = getFestival(DEFAULT_FESTIVAL_SLUG);
   const groupHtml = indexHtml
     .replace(
       /<title>[^<]*<\/title>/,
-      '<title>Outside Lands Setlist Picker</title>',
+      `<title>${defaultFestival.shortName} Setlist Picker</title>`,
     )
     .replace(
       '</head>',
@@ -203,8 +206,22 @@ if (fs.existsSync(distDir)) {
     );
 
   app.get(/^(?!\/api\/|\/healthz).*/, (req, res) => {
+    const parsed = parsePath(req.path);
+    const target = canonicalRedirect(parsed, {
+      defaultSlug: DEFAULT_FESTIVAL_SLUG,
+      lookupFestival: getGroupFestivalSlug,
+    });
+
+    if (target) {
+      const qs = req.originalUrl.slice(req.path.length); // keep ?utm=… intact
+      // `/` is temporary — it becomes a festival picker, so it must not be
+      // cached as permanent. Aliases and legacy group links are permanent.
+      const status = parsed.kind === 'home' ? 302 : 301;
+      return res.redirect(status, target + qs);
+    }
+
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(GROUP_PATH_RE.test(req.path) ? groupHtml : indexHtml);
+    res.send(isGroupPath(req.path) ? groupHtml : indexHtml);
   });
 } else if (process.env.NODE_ENV === 'production') {
   console.warn('[server] dist/ not found; did you run `npm run build`?');

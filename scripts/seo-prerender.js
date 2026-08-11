@@ -6,14 +6,12 @@
 // Everything here is a function of the festival passed in — nothing reads a
 // module-level schedule — so one build can emit a page per festival.
 
-import { DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
-
 export const SITE_ORIGIN = 'https://setlistpicks.com';
 
-// The default festival is served at the site root until there is a picker;
-// every other festival lives under its slug.
+// Every festival is canonical at its own slug. `/` redirects to the default
+// one rather than serving it, so `/` is never a canonical address.
 export function canonicalPath(festival) {
-  return festival.slug === DEFAULT_FESTIVAL_SLUG ? '/' : `/${festival.slug}/`;
+  return `/${festival.slug}/`;
 }
 
 export function canonicalUrl(festival) {

@@ -75,6 +75,13 @@ export function createStore(db) {
     return { id, name, createdAt: now, festivalSlug: festival.slug };
   }
 
+  // Which festival a group belongs to, without touching last_active — this
+  // answers redirects for legacy links, and a bot following an old URL should
+  // not keep a dead group alive past the prune window.
+  function getGroupFestivalSlug(groupId) {
+    return stmts.getGroup.get(groupId)?.festival_slug ?? null;
+  }
+
   function getGroupMeta(groupId) {
     const row = stmts.getGroup.get(groupId);
     if (!row) return null;
@@ -216,7 +223,7 @@ export function createStore(db) {
   }
 
   return {
-    createGroup, getGroupMeta, joinGroup, listMembers, setVote,
+    createGroup, getGroupMeta, getGroupFestivalSlug, joinGroup, listMembers, setVote,
     getMyVotes, getAllVotes, updateGroupName, removeMember,
     updateMemberDisplayName,
   };
@@ -225,7 +232,7 @@ export function createStore(db) {
 export const store = createStore(defaultDb);
 
 export const {
-  createGroup, getGroupMeta, joinGroup, listMembers, setVote,
+  createGroup, getGroupMeta, getGroupFestivalSlug, joinGroup, listMembers, setVote,
   getMyVotes, getAllVotes, updateGroupName, removeMember,
   updateMemberDisplayName,
 } = store;
