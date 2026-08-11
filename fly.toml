@@ -1,9 +1,12 @@
-# fly.toml app configuration file for Outside Lands 2026
+# fly.toml — setlistpicks.com
+#
+# Named for the product rather than any one festival: the app serves a page
+# per festival from shared/festivals/, and `/` redirects to the current one.
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'outsidelands-picks'
+app = 'setlistpicks'
 org = 'setlistpicks'
 primary_region = 'sjc'
 
@@ -11,12 +14,12 @@ primary_region = 'sjc'
   dockerfile = 'Dockerfile'
 
 [env]
-  DB_PATH = '/data/outsidelands.db'
+  DB_PATH = '/data/setlistpicks.db'
   NODE_ENV = 'production'
   PORT = '8080'
 
 [[mounts]]
-  source = 'outsidelands_data'
+  source = 'setlistpicks_data'
   destination = '/data'
 
 [http_service]

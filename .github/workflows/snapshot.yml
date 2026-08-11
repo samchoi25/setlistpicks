@@ -19,8 +19,8 @@ jobs:
       - name: Create volume snapshot
         run: |
           set -euo pipefail
-          VOLUME_ID=$(flyctl volumes list --app outsidelands-picks --json | jq -r '.[0].id')
+          VOLUME_ID=$(flyctl volumes list --app setlistpicks --json | jq -r '.[0].id')
           test -n "$VOLUME_ID" && test "$VOLUME_ID" != "null"
-          flyctl volumes snapshots create "$VOLUME_ID" --app outsidelands-picks
+          flyctl volumes snapshots create "$VOLUME_ID" --app setlistpicks
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

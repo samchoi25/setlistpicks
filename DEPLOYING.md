@@ -1,6 +1,6 @@
 # Deploying to Fly.io
 
-The app is live at **https://setlistpicks.com** (also https://outsidelands-picks.fly.dev).
+The app is live at **https://setlistpicks.com** (also https://setlistpicks.fly.dev).
 Every push to `main` deploys automatically via GitHub Actions.
 
 ## First-time setup (for a new fork/clone)
@@ -18,7 +18,7 @@ fly auth login
 fly launch --no-deploy --org <your-org>
 ```
 
-Accept the existing `fly.toml`. The app name (`outsidelands-picks`) and org (`bottlerock`)
+Accept the existing `fly.toml`. The app name (`setlistpicks`) and org (`setlistpicks`)
 are already set — update `fly.toml` if you're deploying to a different account.
 
 ### 3. Create the persistent volume
@@ -26,12 +26,12 @@ are already set — update `fly.toml` if you're deploying to a different account
 SQLite lives on a Fly volume that survives deploys and machine restarts. Create it once:
 
 ```bash
-fly volumes create outsidelands_data --size 1 --region sjc --yes
+fly volumes create setlistpicks_data --size 1 --region sjc --yes
 ```
 
 - `--size 1` = 1 GB (each group is < 10 KB; this handles tens of thousands of groups)
 - `--region sjc` = San Jose; match your `primary_region` in `fly.toml`
-- The volume name **must** match `source = "outsidelands_data"` in `fly.toml`
+- The volume name **must** match `source = "setlistpicks_data"` in `fly.toml`
 
 > ⚠️ A Fly volume is pinned to one machine in one region. This app runs a
 > **single instance** (`min_machines_running = 0`). For multi-region HA,
@@ -40,7 +40,7 @@ fly volumes create outsidelands_data --size 1 --region sjc --yes
 ### 4. Add the GitHub Actions deploy secret
 
 ```bash
-fly tokens create deploy --app outsidelands-picks -x 999999h
+fly tokens create deploy --app setlistpicks -x 999999h
 ```
 
 Copy the token, then in GitHub → repo → **Settings → Secrets and variables →
@@ -55,8 +55,8 @@ Every push to `main` now triggers `.github/workflows/deploy.yml`.
 ### 5. Custom domain (optional)
 
 ```bash
-fly certs add yourdomain.com --app outsidelands-picks
-fly certs add www.yourdomain.com --app outsidelands-picks
+fly certs add yourdomain.com --app setlistpicks
+fly certs add www.yourdomain.com --app setlistpicks
 ```
 
 Add DNS records in your registrar (gray cloud / DNS-only if using Cloudflare).
@@ -64,7 +64,7 @@ Get the app's actual IPs — **they differ per app**, so don't copy them from an
 older deployment:
 
 ```bash
-fly ips list --app outsidelands-picks
+fly ips list --app setlistpicks
 ```
 
 | Type | Name | Value |
@@ -74,7 +74,7 @@ fly ips list --app outsidelands-picks
 | `A` | `www` | same `v4` address |
 | `AAAA` | `www` | same `v6` address |
 
-Check validation progress: `fly certs check yourdomain.com --app outsidelands-picks`
+Check validation progress: `fly certs check yourdomain.com --app setlistpicks`
 
 ---
 
@@ -90,7 +90,7 @@ fly deploy
 
 ```bash
 fly releases list
-fly deploy --image registry.fly.io/outsidelands-picks:<version>
+fly deploy --image registry.fly.io/setlistpicks:<version>
 ```
 
 ## Backups
@@ -106,20 +106,17 @@ No setup needed. The workflow looks the volume ID up at runtime via
 (for example when restoring from a snapshot). It only needs the
 `FLY_API_TOKEN` secret, which the deploy workflow already requires.
 
-The `FLY_API_TOKEN` secret is already present from the deploy workflow. Once the variable is set,
-the hourly snapshot workflow runs automatically.
-
 ### Restore from a snapshot
 
 ```bash
 # List available snapshots (daily + hourly)
-fly volumes snapshots list <volume-id> --app outsidelands-picks
+fly volumes snapshots list <volume-id> --app setlistpicks
 
 # Create a new volume restored from a specific snapshot
-fly volumes create outsidelands_data_restored \
-  --snapshot-id <snap_id> --size 1 --region sjc --app outsidelands-picks
+fly volumes create setlistpicks_data_restored \
+  --snapshot-id <snap_id> --size 1 --region sjc --app setlistpicks
 
-# Swap it in: edit fly.toml → change source to 'outsidelands_data_restored', then deploy
+# Swap it in: edit fly.toml → change source to 'setlistpicks_data_restored', then deploy
 fly deploy
 ```
 
@@ -128,10 +125,10 @@ fly deploy
 ## Monitoring
 
 ```bash
-fly logs --app outsidelands-picks        # live log tail
-fly status --app outsidelands-picks      # machine + volume health
-fly ssh console --app outsidelands-picks # shell into running machine
-sqlite3 /data/outsidelands.db ".tables"  # inspect DB (inside console)
+fly logs --app setlistpicks        # live log tail
+fly status --app setlistpicks      # machine + volume health
+fly ssh console --app setlistpicks # shell into running machine
+sqlite3 /data/setlistpicks.db ".tables"  # inspect DB (inside console)
 ```
 
 ## Environment variables
@@ -142,7 +139,7 @@ Configured in `fly.toml`. Override secrets with `fly secrets set KEY=value`.
 |---|---|---|
 | `PORT` | `8080` | HTTP + WebSocket listen port |
 | `NODE_ENV` | `production` | Disables Vite dev mode |
-| `DB_PATH` | `/data/outsidelands.db` | SQLite file on the persistent volume |
+| `DB_PATH` | `/data/setlistpicks.db` | SQLite file on the persistent volume |
 
 ## Architecture
 
@@ -166,7 +163,7 @@ git push → GitHub Actions → flyctl deploy --remote-only
                          Fly machine (256 MB shared CPU, sjc)
                          ├─ Express HTTP + WebSocket server (:8080)
                          ├─ better-sqlite3 (WAL mode, in-process)
-                         └─ /data/outsidelands.db  ←── persistent volume
+                         └─ /data/setlistpicks.db  ←── persistent volume
 ```
 
 ## Scaling notes
