@@ -85,28 +85,34 @@ function mergeSimultaneous(list) {
   return out;
 }
 
-// A day's `sets` entries come in three shapes, distinguished by their own
+// A day's `sets` entries come in two shapes, distinguished by their own
 // arity — no separate flag is needed:
 //   [stageId, start, end, artist, meta?]  fully timed (4-5 elements)
-//   [stageId, artist]                     stage known, time not yet (2 elements)
-//   'Artist'                              nothing known but the name (a string)
-// A day must be entirely one shape: a lineup announcement doesn't reveal set
-// times for some acts and not others.
+//   [stageId, artist]                     untimed — stage known (2 elements).
+//     `artist` is a name, or an array of names for a B2B slot sharing one
+//     container (e.g. ['Erika', 'SF Cowboy']).
+//   'Artist'                              untimed — nothing known but the
+//     name (a bare string): not yet placed on any stage.
+// A day must be entirely timed, or entirely untimed — a lineup announcement
+// doesn't reveal set times for some acts and not others. Untimed days can
+// freely mix the staged and unstaged shapes, though: a per-stage flyer rarely
+// places every act on the bill, and the rest still need to show up somewhere.
 function entryKind(entry) {
-  if (typeof entry === 'string') return 'unstaged-untimed';
-  if (entry.length === 2) return 'staged-untimed';
+  if (typeof entry === 'string') return 'unstaged';
+  if (entry.length === 2) return 'staged';
   return 'timed';
 }
 
 function dayModeOf(entries) {
   if (!entries || !entries.length) return 'timed';
-  const kind = entryKind(entries[0]);
-  for (const entry of entries) {
-    if (entryKind(entry) !== kind) {
-      throw new Error(`mixed set shapes within one day: ${JSON.stringify(entry)}`);
+  const kinds = new Set(entries.map(entryKind));
+  if (kinds.has('timed')) {
+    if (kinds.size > 1) {
+      throw new Error(`mixed timed and untimed entries within one day`);
     }
+    return 'timed';
   }
-  return kind;
+  return 'untimed';
 }
 
 // Alphabetical sort used for every untimed listing, so the same act name
@@ -177,50 +183,54 @@ function buildTimedDay(slug, day, stages, entries) {
   return all;
 }
 
-// Stage known, times not announced yet: one block per act, stacked in
-// alphabetical order down its stage's column instead of positioned by time.
-function buildStagedUntimedDay(slug, day, stages, entries) {
+// No set times yet. Acts placed on a stage (see entryKind) keep the flyer's
+// own order down that stage's column — that ordering is the only signal a
+// per-stage flyer gives about how the day unfolds, so re-alphabetizing it
+// would throw that away. Acts not yet placed on any stage have no such
+// signal, so they fall back to one alphabetical pool, stageless.
+function buildUntimedDay(slug, day, stages, entries) {
   const all = [];
   const byStage = {};
   for (const stage of stages) byStage[stage.id] = [];
-  for (const [stageId, artist] of entries) {
+  const unstaged = [];
+  for (const entry of entries) {
+    if (typeof entry === 'string') {
+      unstaged.push(entry);
+      continue;
+    }
+    const [stageId, artistOrArtists] = entry;
     if (!byStage[stageId]) {
       throw new Error(`${slug}: unknown stage '${stageId}' on ${day.id}`);
     }
-    byStage[stageId].push(artist);
+    byStage[stageId].push(Array.isArray(artistOrArtists) ? artistOrArtists : [artistOrArtists]);
   }
   for (const stage of stages) {
-    const list = [...byStage[stage.id]].sort(byName);
-    list.forEach((artist, i) => {
+    byStage[stage.id].forEach((artists, i) => {
       all.push({
         id: `${slug}:${day.id}-${stage.id}-${i}`,
         festivalSlug: slug,
         dayId: day.id,
         stageId: stage.id,
-        artists: [artist],
-        artist,
+        artists,
+        artist: artists.join(' + '),
         timed: false,
         order: i,
       });
     });
   }
+  [...unstaged].sort(byName).forEach((artist, i) => {
+    all.push({
+      id: `${slug}:${day.id}-lineup-${i}`,
+      festivalSlug: slug,
+      dayId: day.id,
+      stageId: null,
+      artists: [artist],
+      artist,
+      timed: false,
+      order: i,
+    });
+  });
   return all;
-}
-
-// Nothing announced but the name yet: one flat alphabetical list for the
-// whole day, with no stage to place it against.
-function buildUnstagedUntimedDay(slug, day, entries) {
-  const sorted = [...entries].sort(byName);
-  return sorted.map((artist, i) => ({
-    id: `${slug}:${day.id}-lineup-${i}`,
-    festivalSlug: slug,
-    dayId: day.id,
-    stageId: null,
-    artists: [artist],
-    artist,
-    timed: false,
-    order: i,
-  }));
 }
 
 function buildSchedule(def) {
@@ -230,8 +240,7 @@ function buildSchedule(def) {
     const entries = sets[day.id] ?? [];
     const mode = dayModeOf(entries);
     if (mode === 'timed') all.push(...buildTimedDay(slug, day, stages, entries));
-    else if (mode === 'staged-untimed') all.push(...buildStagedUntimedDay(slug, day, stages, entries));
-    else all.push(...buildUnstagedUntimedDay(slug, day, entries));
+    else all.push(...buildUntimedDay(slug, day, stages, entries));
   }
   return all;
 }
@@ -256,8 +265,10 @@ function build(def) {
     }),
   );
 
-  // Which of the three shapes (see dayModeOf) each day's data is in, so the
-  // grid knows whether to position blocks by time or list them alphabetically.
+  // Whether each day is positioned by time or not (see dayModeOf) — the grid
+  // uses this to pick a layout. A day with no stages announced either (see
+  // stagesByDay above) renders as one flowing alphabetical list instead of
+  // columns; see ScheduleGrid.jsx.
   const modeByDay = Object.fromEntries(
     def.days.map((day) => [day.id, dayModeOf(def.sets[day.id] ?? [])]),
   );
@@ -276,7 +287,7 @@ function build(def) {
     STAGES: def.stages,
     DAYS: def.days,
     stagesForDay: (dayId) => stagesByDay[dayId] ?? [],
-    // 'timed' | 'staged-untimed' | 'unstaged-untimed' — which layout a day needs.
+    // 'timed' | 'untimed' — whether a day is positioned by time.
     dayMode: (dayId) => modeByDay[dayId] ?? 'timed',
     SLOT_MINS,
     SLOTS_PER_HOUR,

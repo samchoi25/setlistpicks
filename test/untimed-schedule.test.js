@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { buildFestival } from '../shared/festival.js';
 
 /*
- * Coverage for the two untimed lineup modes (see dayModeOf() in
+ * Coverage for the untimed lineup path (see dayModeOf()/buildUntimedDay() in
  * shared/festival.js): a festival that has announced a lineup but not its
- * set times yet, either with stages assigned or without.
+ * set times yet, with some, all, or none of it assigned to a stage.
  *
  * Fixtures are synthetic, not the real registered festivals — modeled on
  * Daisy Chain Fields' two-stage shape (Dandelion/Marigold) since that's the
@@ -34,7 +34,7 @@ const baseDef = {
   days,
 };
 
-test('staged-untimed: acts stack alphabetically within their known stage', () => {
+test('staged, untimed: acts keep the flyer\'s own order within their stage, not alphabetical', () => {
   const f = buildFestival({
     ...baseDef,
     slug: 'untimed-test-fixture-staged',
@@ -49,10 +49,10 @@ test('staged-untimed: acts stack alphabetically within their known stage', () =>
     },
   });
 
-  assert.equal(f.dayMode('sat'), 'staged-untimed');
+  assert.equal(f.dayMode('sat'), 'untimed');
 
   const dandelion = f.SCHEDULE.filter((s) => s.stageId === 'dandelion');
-  assert.deepEqual(dandelion.map((s) => s.artist), ['Aardvark Sound', 'Marmoset', 'Zebra Parade']);
+  assert.deepEqual(dandelion.map((s) => s.artist), ['Zebra Parade', 'Aardvark Sound', 'Marmoset']);
   assert.deepEqual(dandelion.map((s) => s.order), [0, 1, 2]);
   for (const s of dandelion) {
     assert.equal(s.timed, false);
@@ -60,7 +60,7 @@ test('staged-untimed: acts stack alphabetically within their known stage', () =>
   }
 
   const marigold = f.SCHEDULE.filter((s) => s.stageId === 'marigold');
-  assert.deepEqual(marigold.map((s) => s.artist), ['Beetle Kids', 'Wildflower Choir']);
+  assert.deepEqual(marigold.map((s) => s.artist), ['Wildflower Choir', 'Beetle Kids']);
 
   // Same column/id invariants a timed festival gets.
   const cols = f.stagesForDay('sat').map((s) => s.col);
@@ -74,7 +74,26 @@ test('staged-untimed: acts stack alphabetically within their known stage', () =>
   assert.equal(f.GRID_END_MIN, 0);
 });
 
-test('unstaged-untimed: whole day flows as one alphabetical list, no stages', () => {
+test('a B2B entry becomes one block with both names', () => {
+  const f = buildFestival({
+    ...baseDef,
+    slug: 'untimed-test-fixture-b2b',
+    sets: {
+      sat: [
+        ['dandelion', ['Aardvark Sound', 'Marmoset']],
+        ['dandelion', 'Zebra Parade'],
+      ],
+    },
+  });
+
+  const dandelion = f.SCHEDULE.filter((s) => s.stageId === 'dandelion');
+  assert.equal(dandelion.length, 2);
+  assert.deepEqual(dandelion[0].artists, ['Aardvark Sound', 'Marmoset']);
+  assert.equal(dandelion[0].artist, 'Aardvark Sound + Marmoset');
+  assert.deepEqual(dandelion[1].artists, ['Zebra Parade']);
+});
+
+test('unstaged, untimed: whole day flows as one alphabetical list, no stages', () => {
   const f = buildFestival({
     ...baseDef,
     slug: 'untimed-test-fixture-unstaged',
@@ -83,7 +102,7 @@ test('unstaged-untimed: whole day flows as one alphabetical list, no stages', ()
     },
   });
 
-  assert.equal(f.dayMode('sat'), 'unstaged-untimed');
+  assert.equal(f.dayMode('sat'), 'untimed');
   assert.deepEqual(f.stagesForDay('sat'), []);
 
   assert.deepEqual(
@@ -98,11 +117,37 @@ test('unstaged-untimed: whole day flows as one alphabetical list, no stages', ()
   }
 });
 
+test('a day can mix staged and unstaged entries: unplaced acts stay alphabetical alongside ordered stage columns', () => {
+  const f = buildFestival({
+    ...baseDef,
+    slug: 'untimed-test-fixture-mixed-shapes',
+    sets: {
+      sat: [
+        ['dandelion', 'Zebra Parade'],
+        ['dandelion', 'Aardvark Sound'],
+        'Marmoset',
+        'Beetle Kids',
+        ['marigold', 'Wildflower Choir'],
+      ],
+    },
+  });
+
+  assert.equal(f.dayMode('sat'), 'untimed');
+  // Only the stage that actually got an entry shows up.
+  assert.deepEqual(f.stagesForDay('sat').map((s) => s.id), ['dandelion', 'marigold']);
+
+  const dandelion = f.SCHEDULE.filter((s) => s.stageId === 'dandelion');
+  assert.deepEqual(dandelion.map((s) => s.artist), ['Zebra Parade', 'Aardvark Sound']);
+
+  const unstaged = f.SCHEDULE.filter((s) => s.stageId === null);
+  assert.deepEqual(unstaged.map((s) => s.artist), ['Beetle Kids', 'Marmoset']);
+});
+
 test('a day mixing timed and untimed entry shapes is rejected', () => {
   assert.throws(() => {
     buildFestival({
       ...baseDef,
-      slug: 'untimed-test-fixture-mixed',
+      slug: 'untimed-test-fixture-mixed-timed',
       sets: {
         sat: [
           ['dandelion', '12:00', '12:30', 'Zebra Parade'],
@@ -110,7 +155,7 @@ test('a day mixing timed and untimed entry shapes is rejected', () => {
         ],
       },
     });
-  }, /mixed set shapes/);
+  }, /mixed timed and untimed/);
 });
 
 test('one timed day and one untimed day coexist: grid bounds come from the timed day only', () => {
@@ -134,7 +179,7 @@ test('one timed day and one untimed day coexist: grid bounds come from the timed
   });
 
   assert.equal(f.dayMode('fri'), 'timed');
-  assert.equal(f.dayMode('sat'), 'staged-untimed');
+  assert.equal(f.dayMode('sat'), 'untimed');
   assert.equal(f.GRID_START_MIN, 12 * 60);
   assert.equal(f.GRID_END_MIN, 14 * 60);
 

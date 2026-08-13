@@ -27,6 +27,10 @@
   --slot-h: 15px;
   /* Horizontal rules stay on 15-minute intervals regardless of slot size. */
   --rule-h: calc(var(--slot-h) * 3);
+  /* Rendered height of .day-heading — stage headers stick just below it, so
+     the two don't overlap when both are pinned at once. Redefined for the
+     shorter mobile heading in the breakpoint below. */
+  --day-heading-h: 50px;
 }
 
 * {
@@ -38,6 +42,12 @@ html {
      orientation change, which causes the "everything is huge" effect */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* No horizontal scroll anywhere on the site. Set on html only, not body —
+     giving both elements a non-visible overflow makes body its own nested
+     scroll container (distinct from the page's actual scroller), which
+     silently breaks `position: sticky; top:` for every descendant of body
+     since its sticky containing block stops being the viewport. */
+  overflow-x: hidden;
 }
 
 html,
@@ -51,7 +61,6 @@ body {
   font-size: 16px;
   line-height: 1.4;
   min-height: 100vh;
-  overflow-x: hidden; /* no horizontal scroll anywhere on the site */
 }
 
 a {
@@ -254,6 +263,12 @@ input[type="text"]::placeholder {
   align-items: baseline;
   gap: 10px;
   padding: 6px 2px 14px;
+  /* Pinned so you always know which day you're looking at once you've
+     scrolled into its grid. Opaque background: blocks scroll up behind it. */
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
 }
 .day-heading .day-name {
   font-weight: 800;
@@ -270,12 +285,49 @@ input[type="text"]::placeholder {
   line-height: 1;
 }
 
+/* ─── Frozen stage-header row ─────────────────────────────────────────
+   A sibling of .schedule-wrap, not a row inside it — see ScheduleGrid.jsx's
+   HeaderBar comment for why: an overflow-x:auto ancestor becomes a sticky
+   element's positioning reference instead of the viewport, so a header row
+   nested in .schedule-wrap could never stick to the page. This bar sticks
+   correctly because it's outside that wrapper; DayGrid mirrors
+   .schedule-wrap's scrollLeft onto its transform so it still tracks the
+   columns sideways. */
+.day-header-bar {
+  position: sticky;
+  top: var(--day-heading-h);
+  z-index: 4;
+  overflow: hidden;
+  background: var(--bg);
+  /* Matches .schedule-wrap's horizontal padding exactly, so column 1 starts
+     at the same x position in both — anything else and the mirrored
+     transform below would be offset from the columns it's meant to label. */
+  padding: 4px 10px 4px 0;
+}
+.day-header-bar-row {
+  display: grid;
+  column-gap: var(--col-gap, 20px);
+}
+/* Column template duplicated from .schedule-grid / .lineup-grid below — kept
+   in sync manually since the two live in different elements now. */
+.day-header-bar-row--timed {
+  grid-template-columns: 48px repeat(var(--stage-count, 5), minmax(0, 1fr));
+  min-width: calc(48px + var(--stage-count, 5) * (var(--stage-col-min, 76px) + var(--col-gap, 20px)));
+}
+.day-header-bar-row--lineup {
+  grid-template-columns:
+    12px
+    repeat(var(--stage-count, 5), minmax(0, 1fr))
+    repeat(var(--flow-count, 0), minmax(0, 1fr));
+  min-width: calc(12px + (var(--stage-count, 5) + var(--flow-count, 0)) * (var(--stage-col-min, 76px) + var(--col-gap, 20px)));
+}
+
 /* ─── Schedule grid ─────────────────────────────────────────────────── */
 .schedule-wrap {
   position: relative;
   /* Stage columns hold a readable minimum width, so past roughly six stages
      the grid outgrows the viewport and scrolls sideways in here rather than
-     squeezing every column into illegibility. html/body keep overflow-x:hidden,
+     squeezing every column into illegibility. html keeps overflow-x:hidden,
      so this is the only horizontal scroll on the page.
      The vertical padding is headroom for the marker wash, which bleeds 5px
      above and below each block and would otherwise clip against this box. */
@@ -292,8 +344,10 @@ input[type="text"]::placeholder {
      that decides when this grid starts scrolling. */
   min-width: calc(48px + var(--stage-count, 5) * (var(--stage-col-min, 76px) + var(--col-gap, 20px)));
   column-gap: var(--col-gap, 20px);
-  /* header row + one row per 15-min slot, from --total-slots */
-  grid-template-rows: 28px repeat(var(--total-slots, 40), var(--slot-h));
+  /* Row 1 is unused — the header row that used to live here now renders in
+     the frozen .day-header-bar above instead — one row per 15-min slot from
+     --total-slots starts straight away. */
+  grid-template-rows: 0px repeat(var(--total-slots, 40), var(--slot-h));
   position: relative;
 }
 
@@ -303,7 +357,7 @@ input[type="text"]::placeholder {
   position: absolute;
   left: 48px;
   right: 0;
-  top: 28px; /* skip header row */
+  top: 0;
   bottom: 0;
   background-image: repeating-linear-gradient(
     to bottom,
@@ -320,24 +374,32 @@ input[type="text"]::placeholder {
    Used before set times (or stages) are announced — see festival.dayMode()
    in shared/festival.js. Both reuse .show-block/.stage-header styling. */
 
-/* Stage known, times not yet: same column-per-stage shape as .schedule-grid,
-   minus the time axis, with each stage's acts stacked alphabetically instead
-   of positioned by time. The first column stays as an empty gutter so stage
-   columns line up at the same width as the timed grid would use. */
+/* At least one stage's lineup is known, times aren't: named-stage columns
+   keep the flyer's own act order (see buildUntimedDay in shared/festival.js).
+   Acts not yet placed on any stage fill the remaining --flow-count columns,
+   alphabetically. The first column stays an empty gutter so stage columns
+   line up at the same width as the timed grid would use. */
 .lineup-grid {
   display: grid;
-  grid-template-columns: 12px repeat(var(--stage-count, 5), minmax(0, 1fr));
+  grid-template-columns:
+    12px
+    repeat(var(--stage-count, 5), minmax(0, 1fr))
+    repeat(var(--flow-count, 0), minmax(0, 1fr));
   /* Same horizontal-scroll floor as .schedule-grid, so a crowded day scrolls
      sideways in .schedule-wrap instead of squeezing columns illegible. */
-  min-width: calc(12px + var(--stage-count, 5) * (var(--stage-col-min, 76px) + var(--col-gap, 20px)));
+  min-width: calc(12px + (var(--stage-count, 5) + var(--flow-count, 0)) * (var(--stage-col-min, 76px) + var(--col-gap, 20px)));
   grid-auto-rows: minmax(36px, auto);
   column-gap: var(--col-gap, 20px);
   row-gap: 8px;
-  padding: 6px 10px 6px 0;
 }
 .lineup-grid .show-block {
   height: auto;
   min-height: 36px;
+}
+/* Acts not yet placed on a stage default to the same blue as a fully
+   stageless day (.lineup-flow), rather than borrowing a named stage's color. */
+.lineup-grid .show-block:not([data-stage]) {
+  background: var(--btn-primary);
 }
 
 /* Nothing announced but the artist names yet: no stages to group by, so the
@@ -360,7 +422,6 @@ input[type="text"]::placeholder {
 
 /* ─── Stage column headers ────────────────────────────────────────── */
 .stage-header {
-  grid-row: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -369,10 +430,13 @@ input[type="text"]::placeholder {
   font-size: 0.65rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  padding: 0 4px;
+  padding: 4px 4px;
   line-height: 1.15;
-  position: relative;
-  z-index: 1;
+  /* Stickiness comes from the .day-header-bar wrapper around this row, not
+     this element — see the comment there. */
+}
+.stage-header--tba {
+  color: var(--ink-dim);
 }
 /* Header and block colours come from each stage's `color` custom property,
    applied inline — see `stages` in shared/festivals/*.js. Adding a stage needs a new
@@ -887,6 +951,12 @@ input[type="text"]::placeholder {
 
 /* ─── Mobile layout ──────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
+  :root {
+    /* Shorter heading font on mobile (see .day-heading .day-name below)
+       means stage headers can sit closer beneath it. */
+    --day-heading-h: 40px;
+  }
+
   .app {
     padding-left: 10px;
     padding-right: 10px;
@@ -925,9 +995,30 @@ input[type="text"]::placeholder {
   }
 
   .lineup-grid {
-    grid-template-columns: 4px repeat(var(--stage-count, 5), minmax(0, 1fr));
+    grid-template-columns:
+      4px
+      repeat(var(--stage-count, 5), minmax(0, 1fr))
+      repeat(var(--flow-count, 0), minmax(0, 1fr));
     --stage-col-min: 68px;
-    min-width: calc(4px + var(--stage-count, 5) * var(--stage-col-min));
+    min-width: calc(4px + (var(--stage-count, 5) + var(--flow-count, 0)) * var(--stage-col-min));
+    column-gap: 2px;
+  }
+
+  /* .day-header-bar-row lives outside .schedule-grid/.lineup-grid (see the
+     comment by .day-header-bar), so it doesn't inherit the --stage-col-min
+     redefined on those — repeated here so its width formula stays in lock
+     step with the body it's mirroring via scroll sync. */
+  .day-header-bar-row--timed {
+    grid-template-columns: 16px repeat(var(--stage-count, 5), minmax(0, 1fr));
+    min-width: calc(16px + var(--stage-count, 5) * 68px);
+    column-gap: 2px;
+  }
+  .day-header-bar-row--lineup {
+    grid-template-columns:
+      4px
+      repeat(var(--stage-count, 5), minmax(0, 1fr))
+      repeat(var(--flow-count, 0), minmax(0, 1fr));
+    min-width: calc(4px + (var(--stage-count, 5) + var(--flow-count, 0)) * 68px);
     column-gap: 2px;
   }
 

@@ -34,6 +34,46 @@ function makeVoteProps({ myVotes, perArtistRaw, memberKey, memberDisplayName, gr
   });
 }
 
+/*
+ * The stage-name header row, kept OUTSIDE .schedule-wrap on purpose.
+ *
+ * .schedule-wrap needs overflow-x:auto for wide days to scroll sideways, but
+ * per the CSS overflow spec, any non-visible overflow on an ancestor makes
+ * that ancestor the element's sticky positioning reference — not the
+ * viewport. A header row placed inside it can never stick to the top of the
+ * page; it can only "stick" to a box that never itself scrolls vertically,
+ * which looks identical to not being sticky at all.
+ *
+ * So this row lives beside .schedule-wrap instead of inside it, which lets
+ * `position: sticky` bind to the real viewport — DayGrid mirrors
+ * .schedule-wrap's scrollLeft onto this row's transform on every scroll so
+ * the labels still track their columns sideways.
+ */
+function HeaderBar({ variant, stages, flowColumns, colGap, headerRowRef }) {
+  return (
+    <div className="day-header-bar">
+      <div
+        ref={headerRowRef}
+        className={`day-header-bar-row day-header-bar-row--${variant}`}
+        style={{ '--stage-count': stages.length, '--flow-count': flowColumns, '--col-gap': colGap }}
+      >
+        {stages.map((stage) => (
+          <div key={stage.id} className="stage-header" data-stage={stage.id}
+            style={{ gridColumn: stage.col, color: `var(${stage.color})` }}>
+            {stage.name}
+          </div>
+        ))}
+        {flowColumns > 0 && (
+          <div className="stage-header stage-header--tba"
+            style={{ gridColumn: `${stages.length + 2} / span ${flowColumns}` }}>
+            Stage TBA
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function TimedDayBody({ festival, stages, daySets, stageById, voteProps }) {
   const { TOTAL_SLOTS, SLOTS_PER_HOUR } = festival;
   return (
@@ -49,14 +89,6 @@ function TimedDayBody({ festival, stages, daySets, stageById, voteProps }) {
         '--col-gap': stages.length > 6 ? '10px' : '20px',
       }}
     >
-      {/* Stage headers */}
-      {stages.map((stage) => (
-        <div key={stage.id} className="stage-header" data-stage={stage.id}
-          style={{ gridColumn: stage.col, gridRow: 1, color: `var(${stage.color})` }}>
-          {stage.name}
-        </div>
-      ))}
-
       {/* Opaque strip behind the sticky time axis, so stage columns
           scrolling past it don't show through the gaps between labels. */}
       <div className="time-axis-backdrop" style={{ gridColumn: 1, gridRow: `1 / -1` }} />
@@ -80,26 +112,32 @@ function TimedDayBody({ festival, stages, daySets, stageById, voteProps }) {
   );
 }
 
-// Stage known, times not announced yet: same column-per-stage shape as the
-// timed grid, minus the time axis, with each stage's acts listed
-// alphabetically instead of positioned by time.
-function StagedLineupBody({ stages, daySets, stageById, voteProps }) {
+// At least one stage's lineup is announced, times aren't: named-stage
+// columns keep the flyer's own act order (see buildUntimedDay). Acts not
+// placed on any stage flow alphabetically into the leftover columns, capped
+// so the row stays around 7 columns wide total same as a stageless day.
+// (Column headers for both are rendered by the sibling HeaderBar, not here.)
+function StagedLineupBody({ stages, staged, unstaged, flowColumns, stageById, voteProps }) {
   return (
     <div
       className="lineup-grid"
       style={{
         '--stage-count': stages.length,
+        '--flow-count': flowColumns,
         '--col-gap': stages.length > 6 ? '10px' : '20px',
       }}
     >
-      {stages.map((stage) => (
-        <div key={stage.id} className="stage-header" data-stage={stage.id}
-          style={{ gridColumn: stage.col, gridRow: 1, color: `var(${stage.color})` }}>
-          {stage.name}
-        </div>
-      ))}
-      {daySets.map((s) => (
+      {staged.map((s) => (
         <LineupBlock key={s.id} s={s} stage={stageById[s.stageId]} {...voteProps(s)} />
+      ))}
+      {unstaged.map((s, i) => (
+        <LineupBlock
+          key={s.id}
+          s={s}
+          flowColumn={stages.length + 2 + (i % flowColumns)}
+          flowRow={2 + Math.floor(i / flowColumns)}
+          {...voteProps(s)}
+        />
       ))}
     </div>
   );
@@ -133,21 +171,45 @@ function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, gro
     myVotes, perArtistRaw, memberKey, memberDisplayName, groupId, onVoteChange, onLongPress, onNotMember,
   });
 
+  const staged = mode === 'untimed' ? daySets.filter((s) => s.stageId) : [];
+  const unstaged = mode === 'untimed' ? daySets.filter((s) => !s.stageId) : [];
+  const flowColumns = unstaged.length ? Math.max(1, 7 - stages.length) : 0;
+  const colGap = stages.length > 6 ? '10px' : '20px';
+
+  // Mirror .schedule-wrap's horizontal scroll onto the frozen header row so
+  // its labels stay lined up with their columns. A ref, not state — this
+  // fires on every scroll tick and would otherwise re-render the whole day.
+  const wrapRef = useRef(null);
+  const headerRowRef = useRef(null);
+  const onWrapScroll = useCallback(() => {
+    if (headerRowRef.current && wrapRef.current) {
+      headerRowRef.current.style.transform = `translateX(${-wrapRef.current.scrollLeft}px)`;
+    }
+  }, []);
+
   return (
     <div data-day={day.id}>
       <div className="day-heading">
         <span className="day-name">{day.name}</span>
         <span className="day-date">{dayMonth} {dayDate}</span>
       </div>
-      <div className="schedule-wrap">
+      {stages.length > 0 && (
+        <HeaderBar
+          variant={mode === 'timed' ? 'timed' : 'lineup'}
+          stages={stages}
+          flowColumns={flowColumns}
+          colGap={colGap}
+          headerRowRef={headerRowRef}
+        />
+      )}
+      <div className="schedule-wrap" ref={wrapRef} onScroll={onWrapScroll}>
         {mode === 'timed' && (
           <TimedDayBody festival={festival} stages={stages} daySets={daySets} stageById={stageById} voteProps={voteProps} />
         )}
-        {mode === 'staged-untimed' && (
-          <StagedLineupBody stages={stages} daySets={daySets} stageById={stageById} voteProps={voteProps} />
-        )}
-        {mode === 'unstaged-untimed' && (
-          <FlowLineupBody daySets={daySets} voteProps={voteProps} />
+        {mode === 'untimed' && (
+          stages.length > 0
+            ? <StagedLineupBody stages={stages} staged={staged} unstaged={unstaged} flowColumns={flowColumns} stageById={stageById} voteProps={voteProps} />
+            : <FlowLineupBody daySets={daySets} voteProps={voteProps} />
         )}
       </div>
     </div>
