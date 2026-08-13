@@ -80,6 +80,7 @@ export function fitWords(root = document) {
 export function watchWordFit() {
   let queued = false;
   const run = () => {
+    if (!queued) return;
     queued = false;
     fitWords();
   };
@@ -87,6 +88,11 @@ export function watchWordFit() {
     if (queued) return;
     queued = true;
     requestAnimationFrame(run);
+    // A hidden tab never paints, so requestAnimationFrame does not fire there.
+    // Without this a grid first rendered in a background tab stays unsized —
+    // every over-wide word ellipsized — until something triggers a resize.
+    // Timers still run while hidden; `queued` means whichever fires first wins.
+    setTimeout(run, 200);
   };
 
   schedule();

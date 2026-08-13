@@ -91,11 +91,14 @@ function buildSchedule(def) {
   for (const day of days) {
     const byStage = {};
     for (const stage of stages) byStage[stage.id] = [];
-    for (const [stageId, start, end, artist] of sets[day.id] ?? []) {
+    // The optional fifth element carries per-set metadata (currently just
+    // `asl` for interpreted performances). Kept out of the tuple's required
+    // shape so the vast majority of sets stay four short fields.
+    for (const [stageId, start, end, artist, meta] of sets[day.id] ?? []) {
       if (!byStage[stageId]) {
         throw new Error(`${slug}: unknown stage '${stageId}' on ${day.id}`);
       }
-      byStage[stageId].push({ stageId, start, end, artist });
+      byStage[stageId].push({ stageId, start, end, artist, ...meta });
     }
     for (const stage of stages) {
       const raw = byStage[stage.id];
@@ -140,6 +143,7 @@ function buildSchedule(def) {
           lane: cur.lane,
           laneCount: cur.laneCount,
           followsPrevious: cur.followsPrevious,
+          ...(cur.asl ? { asl: true } : null),
         });
       }
     }

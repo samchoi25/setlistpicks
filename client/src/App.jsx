@@ -3,7 +3,7 @@ import { api } from './api.js';
 import { getIdentity, setIdentity, getActiveGroup, setActiveGroup, clearActiveGroup } from './storage.js';
 import { ensureSvgDefs } from './svgDefs.js';
 import GroupView from './views/GroupView.jsx';
-import { FestivalProvider, useFestival } from './festival-context.jsx';
+import { FestivalProvider } from './festival-context.jsx';
 import { getFestival, DEFAULT_FESTIVAL_SLUG } from '../../shared/festivals/index.js';
 import { parsePath, groupPath, festivalPath } from '../../shared/routes.js';
 
@@ -22,17 +22,10 @@ function randomGroupName() { return pick(GROUP_NAMES); }
 function getPath() { return location.pathname; }
 
 export default function App() {
-  // Until there is a festival picker, `/` is the default festival. Phase 3
-  // resolves this from the URL instead.
-  return (
-    <FestivalProvider festival={getFestival(DEFAULT_FESTIVAL_SLUG)}>
-      <AppRoutes />
-    </FestivalProvider>
-  );
+  return <AppRoutes />;
 }
 
 function AppRoutes() {
-  const festival = useFestival();
   const [path, setPath] = useState(getPath);
   const [groupState, setGroupState] = useState(null); // { groupId, member, groupMeta, freshJoin }
   const [loading, setLoading] = useState(false);
@@ -107,6 +100,20 @@ function AppRoutes() {
 
   const route = parsePath(path);
 
+  /*
+   * Which festival this page is showing. Read from the URL, not fixed to the
+   * default — that was the bug: with only one festival a hardcoded default
+   * looked correct, and the second one rendered the first one's lineup.
+   *
+   * A legacy bare-code link carries no slug, so until the group loads and
+   * reports its festival we fall back to the default. The server 301s those
+   * links anyway, so this is only reachable via in-app history.
+   */
+  const festival =
+    getFestival(groupState?.groupMeta?.festivalSlug)
+    ?? getFestival(route.canonicalSlug)
+    ?? getFestival(DEFAULT_FESTIVAL_SLUG);
+
   // A festival page (or `/`, which the server redirects but the SPA can also
   // reach via history): resume this festival's stored group, else start one.
   useEffect(() => {
@@ -161,44 +168,54 @@ function AppRoutes() {
     </div>
   );
 
-  if (error) {
-    return shell(
-      <div className="card stack">
-        <p style={{ margin: 0 }}>{error.msg}</p>
-        {error.canRetry && (
-          <button className="btn" onClick={() => {
+  const content = (() => {
+    if (error) {
+      return shell(
+        <div className="card stack">
+          <p style={{ margin: 0 }}>{error.msg}</p>
+          {error.canRetry && (
+            <button className="btn" onClick={() => {
+              clearActiveGroup(festival.slug);
+              setError(null);
+              navigate(festivalPath(festival.slug));
+            }}>Start over</button>
+          )}
+        </div>
+      );
+    }
+
+    if (loading || route.kind === 'home' || route.kind === 'festival') {
+      return shell(
+        <div className="card center" style={{ padding: '40px 20px', color: 'var(--ink-soft)', fontSize: '0.9rem' }}>
+          Setting up your crew…
+        </div>
+      );
+    }
+
+    if (groupState?.groupId === route.code) {
+      return (
+        <GroupView
+          key={groupState.groupId}
+          groupId={groupState.groupId}
+          member={groupState.member}
+          groupMeta={groupState.groupMeta}
+          freshJoin={groupState.freshJoin}
+          onLeave={() => {
             clearActiveGroup(festival.slug);
-            setError(null);
             navigate(festivalPath(festival.slug));
-          }}>Start over</button>
-        )}
-      </div>
-    );
-  }
+          }}
+        />
+      );
+    }
 
-  if (loading || route.kind === 'home' || route.kind === 'festival') {
-    return shell(
-      <div className="card center" style={{ padding: '40px 20px', color: 'var(--ink-soft)', fontSize: '0.9rem' }}>
-        Setting up your crew…
-      </div>
-    );
-  }
+    return null;
+  })();
 
-  if (groupState?.groupId === route.code) {
-    return (
-      <GroupView
-        key={groupState.groupId}
-        groupId={groupState.groupId}
-        member={groupState.member}
-        groupMeta={groupState.groupMeta}
-        freshJoin={groupState.freshJoin}
-        onLeave={() => {
-          clearActiveGroup(festival.slug);
-          navigate(festivalPath(festival.slug));
-        }}
-      />
-    );
-  }
-
-  return null;
+  // Keyed by slug so switching festivals remounts the tree rather than
+  // reusing grid state built for a different lineup.
+  return (
+    <FestivalProvider key={festival.slug} festival={festival}>
+      {content}
+    </FestivalProvider>
+  );
 }

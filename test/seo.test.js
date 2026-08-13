@@ -50,7 +50,8 @@ test('a rendered page has no placeholders left', () => {
 
 test('title and description come from the festival', () => {
   const html = renderPage(TEMPLATE, real);
-  assert.ok(html.includes(`<title>${pageTitle(real)}</title>`));
+  // Compared escaped: a title containing '&' must appear as '&amp;'.
+  assert.ok(html.includes(`<title>${escapeForHtml(pageTitle(real))}</title>`));
   assert.ok(pageTitle(real).includes('Outside Lands 2026'));
   assert.ok(pageTitle(real).includes('Charli xcx'));
 
@@ -153,11 +154,11 @@ test('the build writes a page per festival, a fallback and a sitemap', () => {
     const file = path.join(dist, f.slug, 'index.html');
     assert.ok(existsSync(file), `missing ${f.slug}/index.html`);
     const html = readFileSync(file, 'utf8');
-    assert.ok(html.includes(`<title>${pageTitle(f)}</title>`));
+    assert.ok(html.includes(`<title>${escapeForHtml(pageTitle(f))}</title>`), f.slug);
   }
 
   const fallback = readFileSync(path.join(dist, 'index.html'), 'utf8');
-  assert.ok(fallback.includes(pageTitle(getFestival(DEFAULT_FESTIVAL_SLUG))));
+  assert.ok(fallback.includes(escapeForHtml(pageTitle(getFestival(DEFAULT_FESTIVAL_SLUG)))));
 
   const xml = readFileSync(path.join(dist, 'sitemap.xml'), 'utf8');
   assert.ok(xml.includes(canonicalUrl(real)));
