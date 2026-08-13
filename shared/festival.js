@@ -37,6 +37,28 @@ export function fmtTime(hhmm) {
   return m === 0 ? `${h12}${ampm}` : `${h12}:${String(m).padStart(2, '0')}${ampm}`;
 }
 
+const MONTHS = {
+  Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
+  Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12,
+};
+
+// Midnight-to-midnight of the festival's last day, in its own timezone —
+// used to decide whether it still belongs in "upcoming" listings (see the
+// festival switcher in Header.jsx). Calendar-day granularity: an untimed
+// lineup (see dayModeOf) has no real closing time to be more precise than
+// this, and a day-level cutoff is precise enough for that decision either way.
+export function festivalEndsAt(festival) {
+  const lastDay = festival.days[festival.days.length - 1];
+  const [mon, day] = lastDay.date.split(' ');
+  const month = String(MONTHS[mon]).padStart(2, '0');
+  const dayPad = String(day).padStart(2, '0');
+  return new Date(`${festival.year}-${month}-${dayPad}T23:59:59${festival.utcOffset}`);
+}
+
+export function hasFestivalEnded(festival, now = new Date()) {
+  return now.getTime() > festivalEndsAt(festival).getTime();
+}
+
 // Most stages run strictly back-to-back, but a stage can double-book (the
 // Saturday Dolores' 16:45 slot). Assign each set a `lane` so colliding sets sit
 // side by side inside the stage column instead of stacking on top of each

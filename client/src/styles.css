@@ -116,6 +116,54 @@ input[type="text"]::placeholder {
   line-height: 1;
   letter-spacing: 0.01em;
 }
+/* Button reset — .brand-logo becomes a <button> once there's more than one
+   live festival to switch to (see FestivalSwitcher.jsx); everything above
+   still applies, this just undoes the browser's default button chrome. */
+.brand-logo-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+}
+.brand-logo-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.brand-logo-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 10;
+  min-width: 160px;
+  background: var(--paper);
+  border: 1px solid rgba(36, 103, 177, 0.18);
+  box-shadow: 0 8px 24px rgba(36, 103, 177, 0.15);
+  padding: 6px;
+  display: grid;
+  gap: 2px;
+}
+.brand-logo-option {
+  display: block;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+a.brand-logo-option:hover {
+  background: rgba(36, 103, 177, 0.08);
+}
+.brand-logo-option.current {
+  color: var(--ink-soft);
+  font-weight: 700;
+}
 .brand-title {
   font-weight: 800;
   font-size: 1.05rem;

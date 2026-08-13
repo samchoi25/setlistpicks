@@ -3,6 +3,7 @@ import { api } from './api.js';
 import { getIdentity, setIdentity, getActiveGroup, setActiveGroup, clearActiveGroup, getMostRecentGroup } from './storage.js';
 import { ensureSvgDefs } from './svgDefs.js';
 import GroupView from './views/GroupView.jsx';
+import FestivalSwitcher from './components/FestivalSwitcher.jsx';
 import { FestivalProvider } from './festival-context.jsx';
 import { getFestival, DEFAULT_FESTIVAL_SLUG } from '../../shared/festivals/index.js';
 import { parsePath, groupPath, festivalPath } from '../../shared/routes.js';
@@ -179,7 +180,7 @@ function AppRoutes() {
   const shell = (children) => (
     <div className="app">
       <div className="brand">
-        <div className="brand-logo">{festival.shortName}</div>
+        <FestivalSwitcher />
         <div><div className="brand-title">Setlist Picks</div></div>
       </div>
       {children}

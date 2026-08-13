@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { api } from '../api.js';
 import { setIdentity, clearIdentity, setActiveGroup } from '../storage.js';
 import { toast } from '../toast.js';
-import { useFestival } from '../festival-context.jsx';
+import FestivalSwitcher from './FestivalSwitcher.jsx';
 
 function initials(name) {
   return name.split(/\s+/).filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
@@ -33,7 +33,6 @@ export default function Header({
   memberDisplayName, setMemberDisplayName,
   mutedMembers, setMutedMembers, memberVoteCounts = {}, onLeave, onEditingChange,
 }) {
-  const festival = useFestival();
   const [editing, setEditing] = useState(false);
 
   function applyEditing(val) {
@@ -244,7 +243,7 @@ export default function Header({
 
   const brandRow = (
     <div className="brand">
-      <div className="brand-logo">{festival.shortName}</div>
+      <FestivalSwitcher />
       <div className="brand-info" style={{ flex: 1, minWidth: 0 }}>
         <div className="brand-title">{displayGroupName}</div>
         <div className="brand-sub" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

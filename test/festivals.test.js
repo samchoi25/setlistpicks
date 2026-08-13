@@ -4,6 +4,7 @@ import {
   listFestivals, getFestival, isFestivalSlug, isCanonicalSlug,
   FESTIVAL_ALIASES, RESERVED_SLUGS, DEFAULT_FESTIVAL_SLUG, GROUP_CODE_RE,
 } from '../shared/festivals/index.js';
+import { festivalEndsAt, hasFestivalEnded } from '../shared/festival.js';
 
 test('registry is non-empty and slugs are unique', () => {
   const slugs = listFestivals().map((f) => f.slug);
@@ -96,4 +97,14 @@ test('buildFestival is memoised per slug', () => {
   // build would silently break memoisation.
   assert.equal(getFestival('outside-lands-2026'), getFestival('outside-lands-2026'));
   assert.ok(Object.isFrozen(getFestival('outside-lands-2026')));
+});
+
+test('festivalEndsAt / hasFestivalEnded: the boundary is midnight after the last day, in the festival\'s own timezone', () => {
+  const f = getFestival('daisy-chain-fields-2026'); // single day: 2026-08-29, utcOffset -07:00
+  const end = festivalEndsAt(f);
+  assert.equal(end.toISOString(), new Date('2026-08-29T23:59:59-07:00').toISOString());
+
+  assert.equal(hasFestivalEnded(f, new Date('2026-08-29T12:00:00-07:00')), false, 'still happening');
+  assert.equal(hasFestivalEnded(f, new Date('2026-08-29T23:59:58-07:00')), false, 'one second before the cutoff');
+  assert.equal(hasFestivalEnded(f, new Date('2026-08-30T00:00:01-07:00')), true, 'the next day');
 });
