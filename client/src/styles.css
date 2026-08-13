@@ -870,6 +870,29 @@ a.brand-logo-option:hover {
   margin-bottom: 12px;
   border-bottom: 1px solid var(--rule);
 }
+/* One row per artist with a link on file (see artistLinks in
+   shared/festivals/*.js) — a B2B pair with no per-person data shows nothing. */
+.listen-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -4px 0 12px;
+}
+.listen-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.listen-link-spotify     { background: #1DB954; }
+.listen-link-apple       { background: #FA243C; }
+.listen-link-soundcloud  { background: #FF5500; }
 .picks-section {
   margin-bottom: 12px;
 }

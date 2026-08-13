@@ -116,8 +116,8 @@ export default function GroupView({ groupId, member, groupMeta, freshJoin, onLea
   }, []);
 
   // ── Long-press popup ─────────────────────────────────────────────────────────
-  const handleLongPress = useCallback((artistId, artistName) => {
-    setPopup({ id: artistId, artist: artistName });
+  const handleLongPress = useCallback((artistId, artistName, artists) => {
+    setPopup({ id: artistId, artist: artistName, artists: artists ?? [artistName] });
   }, []);
 
   // ── Name prompt dismiss ──────────────────────────────────────────────────────
@@ -228,10 +228,12 @@ export default function GroupView({ groupId, member, groupMeta, freshJoin, onLea
         <ArtistPopup
           artistId={popup.id}
           artistName={popup.artist}
+          artists={popup.artists}
           votes={popupVotes}
           memberKey={member.key}
           onClose={() => setPopup(null)}
         />
+
       )}
     </div>
   );

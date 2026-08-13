@@ -63,7 +63,7 @@ export function GroupVotesEl({ votes, myVote, memberKey, memberDisplayName }) {
 // (ShowBlock's time-positioned version and LineupBlock's untimed one). Both
 // only differ in how they're laid out on the grid, not in how a tap or a
 // long-press behaves, so that logic lives here once.
-export function useVoteBlock({ id, artist, myVote, groupId, memberKey, onVoteChange, onLongPress, onNotMember }) {
+export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, onVoteChange, onLongPress, onNotMember }) {
   // Stable wash data — created once per block instance (useRef)
   const washDataRef = useRef(null);
   if (!washDataRef.current) washDataRef.current = computeWashData(id);
@@ -101,9 +101,9 @@ export function useVoteBlock({ id, artist, myVote, groupId, memberKey, onVoteCha
     longPressFired.current = false;
     longPressTimer.current = setTimeout(() => {
       longPressFired.current = true;
-      onLongPress(id, artist);
+      onLongPress(id, artist, artists);
     }, 500);
-  }, [id, artist, onLongPress]);
+  }, [id, artist, artists, onLongPress]);
 
   const cancelLongPress = useCallback(() => {
     clearTimeout(longPressTimer.current);

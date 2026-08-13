@@ -15,7 +15,7 @@ const LineupBlock = React.memo(function LineupBlock({
   groupId, onVoteChange, onLongPress, onNotMember,
 }) {
   const { washDataRef, handleClick, startLongPress, cancelLongPress, handlePointerUp, longPressFired } =
-    useVoteBlock({ id: s.id, artist: s.artist, myVote, groupId, memberKey, onVoteChange, onLongPress, onNotMember });
+    useVoteBlock({ id: s.id, artist: s.artist, artists: s.artists, myVote, groupId, memberKey, onVoteChange, onLongPress, onNotMember });
 
   const style = stage
     ? { gridColumn: String(stage.col), gridRow: String(s.order + 2), background: `var(${stage.color})` }
