@@ -402,6 +402,16 @@ input[type="text"]::placeholder {
   background: var(--btn-primary);
 }
 
+/* Untimed blocks aren't held to a time slot's height the way .show-block
+   normally is, so votes get real layout space instead of the usual overlay
+   in the block's bottom corner — the row grows to fit them instead of the
+   two colliding once more than a couple of people have voted. */
+.lineup-block .group-votes {
+  position: static;
+  margin-top: 16px;
+  max-width: 100%;
+}
+
 /* Nothing announced but the artist names yet: no stages to group by, so the
    whole day flows alphabetically into a grid capped around 7 columns wide.
    The cap comes from the minmax floor plus a max-width rather than a fixed
