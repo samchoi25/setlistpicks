@@ -73,15 +73,19 @@ export function renderLineupHtml(festival) {
   }).join('');
 
   const actCount = festival.SCHEDULE.reduce((n, s) => n + s.artists.length, 0);
-  const stageSentence = list(festival.STAGES.map((s) => s.name));
   const headliners = list(festival.headliners);
   const notable = festival.notableActs?.length
     ? `, plus ${list(festival.notableActs)}`
     : '';
+  // A lineup announced before stages are assigned (see festival.dayMode())
+  // has nothing to name here — drop the clause rather than claim "0 stages".
+  const stageSentence = festival.STAGES.length
+    ? ` across ${festival.STAGES.length} stages &mdash; ${escHtml(list(festival.STAGES.map((s) => s.name)))}`
+    : '';
 
   return `<div id="seo-prerender" aria-hidden="true" style="display:none">
 <h1>${escHtml(festival.name)} Lineup &amp; Set Times</h1>
-<p>${escHtml(festival.name)} runs ${escHtml(festival.dateRange)} at ${escHtml(festival.venue)}. ${actCount} sets across ${festival.STAGES.length} stages &mdash; ${escHtml(stageSentence)}. Headliners include ${escHtml(headliners)}${escHtml(notable)}. Use this tool to pick your must-see shows and plan with your crew.</p>
+<p>${escHtml(festival.name)} runs ${escHtml(festival.dateRange)} at ${escHtml(festival.venue)}. ${actCount} sets${stageSentence}. Headliners include ${escHtml(headliners)}${escHtml(notable)}. Use this tool to pick your must-see shows and plan with your crew.</p>
 <p><a href="${escHtml(festival.officialUrl)}" rel="noopener noreferrer">Official ${escHtml(festival.shortName)} lineup &rarr;</a></p>
 ${dayGroups}
 </div>`;
@@ -155,8 +159,13 @@ export function pageDescription(festival) {
   const actCount = festival.SCHEDULE.reduce((n, s) => n + s.artists.length, 0);
   const named = [...festival.headliners, ...(festival.notableActs ?? [])];
   const rest = actCount - named.length;
-  return `${festival.name} (${festival.dateRange}, ${festival.venue}): full lineup with `
-    + `official set times across all ${festival.STAGES.length} stages. `
+  const hasTimes = festival.SCHEDULE.some((s) => s.timed);
+  // Before stages/times are announced (see festival.dayMode()) neither claim
+  // is true yet — describe it as a lineup rather than a schedule.
+  const scheduleClause = hasTimes
+    ? `full lineup with official set times${festival.STAGES.length ? ` across all ${festival.STAGES.length} stages` : ''}`
+    : 'full lineup';
+  return `${festival.name} (${festival.dateRange}, ${festival.venue}): ${scheduleClause}. `
     + `${named.join(', ')}, and ${rest}+ more. Plan your weekend with friends.`;
 }
 

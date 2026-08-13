@@ -73,7 +73,10 @@ test('each festival carries the metadata the SEO pages need', () => {
     }
     assert.ok(Array.isArray(f.headliners) && f.headliners.length > 0, `${f.slug}.headliners`);
     assert.ok(f.DAYS.length > 0, `${f.slug}.DAYS`);
-    assert.ok(f.STAGES.length > 0, `${f.slug}.STAGES`);
+    // Zero stages is legitimate for a lineup announced before any stage
+    // assignment (see festival.dayMode()'s 'unstaged-untimed' mode) — just an
+    // array, not necessarily a non-empty one.
+    assert.ok(Array.isArray(f.STAGES), `${f.slug}.STAGES`);
   }
 });
 

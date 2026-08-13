@@ -3,29 +3,26 @@
 // Pure data: no schedule is built here. buildFestival() in shared/festival.js
 // turns this into placed blocks, lanes and grid bounds.
 //
-// NOT YET REGISTERED — see shared/festivals/index.js. As of 2026-08-12 the
-// official site (https://portolamusicfestival.com/lineup/) has not announced
-// a lineup: the page just promotes the Portola app ("add your favorite
-// artists & be prepared when the set times drop"). Checked the raw HTML, not
-// just the rendered page — there is no poster image or embedded lineup data
-// to seed this from yet, on that URL or the homepage.
+// Source: the lineup poster at
+// https://aegwebprod.blob.core.windows.net/content/portola/2026/portola-2026-lineup.jpg
+// (linked from https://portolamusicfestival.com/lineup/, which otherwise only
+// promotes the Portola app). Names transcribed from the poster art at full
+// resolution on 2026-08-13 — there is no text/JSON source, so re-check against
+// the poster if it is reissued.
 //
-// buildFestival() throws if a festival has zero sets, so this stays out of
-// DEFINITIONS until there's real data. To bring it online:
-//   1. Fill in `sets.sat` / `sets.sun` below. If the poster names stages but
-//      not times yet, use `[stageId, 'Artist']` pairs; if it's just a name
-//      list, use plain strings — see shared/festival.js's dayModeOf() for the
-//      three shapes a day's entries can take. Swap in `[stageId, 'HH:MM
-//      start', 'HH:MM end', 'Artist']` tuples once official set times land.
-//   2. Add stage entries to `stages` below once stage names are known.
-//   3. Import and add to DEFINITIONS in shared/festivals/index.js, and add a
-//      'portola' entry to FESTIVAL_ALIASES there.
+// The poster names no stages, so every set is `[dayId]: 'Artist'` — the
+// 'unstaged-untimed' shape (see dayModeOf() in shared/festival.js). It also
+// has no set times, which the app expects: once official set times (and
+// likely stage names) are announced, add `stages` entries and swap these
+// plain strings for `[stageId, 'HH:MM start', 'HH:MM end', 'Artist']` tuples.
 //
-// Dates/venue confirmed from https://portolamusicfestival.com/general-info.
+// Despacio — an ambient, continuous sound-system installation billed "ALL
+// WEEKEND LONG" rather than under either day — is listed on both days since
+// the data model has no day-less slot; it isn't a headliner-scale duplicate.
 
 const slug = 'portola-2026';
 
-// Stage names not yet announced.
+// No stage names announced yet.
 const stages = [];
 
 const days = [
@@ -33,10 +30,73 @@ const days = [
   { id: 'sun', name: 'Sunday', date: 'Sep 27' },
 ];
 
-// No lineup announced yet — fill in per the shapes described above once it is.
 const sets = {
-  sat: [],
-  sun: [],
+  sat: [
+    'Robyn',
+    'Dog Blood',
+    'Soulwax',
+    'Prospa',
+    'KETTAMA',
+    'Fatboy Slim',
+    'Skepta',
+    'Tove Lo',
+    'Max Styler',
+    'Beltran b2b Ben Sterling',
+    'FCUKERS',
+    'Mike D 5D',
+    'Groove Armada',
+    'DJ Shadow Celebrates 30 Years of Endtroducing…',
+    'Bassvictim',
+    'Nimino',
+    'Melanie C (DJ Set)',
+    'Oskar Med K',
+    'Jigitz',
+    'Tricky',
+    'Chloé Caillet',
+    'Jyoty',
+    'Ranger Trucco b2b Alisha',
+    'Six Sex',
+    'Nate Sib',
+    'Mgna Crrrta',
+    'Sam Alfred',
+    'Gelli Haha',
+    'Airwolf Paradise',
+    'Erika b2b SFCowboy',
+    'Felly Fell',
+    'Despacio (All Weekend)',
+  ],
+  sun: [
+    'Swedish House Mafia',
+    'Tiësto (In The Warehouse)',
+    'Zara Larsson',
+    'Four Tet',
+    'Parcels',
+    'Mochakk',
+    'Marlon Hoffstadt',
+    'Horsegiirl',
+    'Overmono',
+    'Zulan',
+    'Ninajirachi',
+    'Underscores',
+    'Adéla',
+    'SG Lewis (Live)',
+    'Kelela',
+    'Daphni',
+    'JT',
+    'Baby J',
+    'Channel Tres',
+    'VTSS',
+    'Ear Brunello',
+    'Ben UFO',
+    'Silva Bumpa',
+    'Mind Enterprises',
+    'Azzecca',
+    'Dean Turnley',
+    'Riria',
+    'Torren Foot',
+    'Clearcast',
+    'Despacio (All Weekend)',
+  ],
 };
 
 export default {
@@ -54,9 +114,9 @@ export default {
   utcOffset: '-07:00',
   dateRange: 'September 26–27, 2026',
   officialUrl: 'https://portolamusicfestival.com/lineup/',
-  dataVerifiedOn: '2026-08-12',
-  headliners: [],
-  notableActs: [],
+  dataVerifiedOn: '2026-08-13',
+  headliners: ['Robyn', 'Dog Blood', 'Swedish House Mafia'],
+  notableActs: ['Fatboy Slim', 'Skepta', 'Tove Lo', 'Tiësto (In The Warehouse)', 'Zara Larsson', 'Four Tet'],
   stages,
   days,
   sets,

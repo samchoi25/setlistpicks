@@ -7,8 +7,9 @@
 import { buildFestival } from '../festival.js';
 import outsideLands2026 from './outside-lands-2026.js';
 import daisyChainFields2026 from './daisy-chain-fields-2026.js';
+import portola2026 from './portola-2026.js';
 
-const DEFINITIONS = [outsideLands2026, daisyChainFields2026];
+const DEFINITIONS = [outsideLands2026, daisyChainFields2026, portola2026];
 
 // A slug must never be mistakable for a group code, which is exactly 10
 // characters from this alphabet. `outside-lands-2026` is safe because it
@@ -65,6 +66,7 @@ for (const def of DEFINITIONS) {
 export const FESTIVAL_ALIASES = Object.freeze({
   'outside-lands': 'outside-lands-2026',
   'daisy-chain-fields': 'daisy-chain-fields-2026',
+  'portola': 'portola-2026',
 });
 
 // Where `/` sends visitors until there is a festival picker — the edition
