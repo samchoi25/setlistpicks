@@ -219,21 +219,22 @@ if (fs.existsSync(distDir)) {
 
   app.get(/^(?!\/api\/|\/healthz).*/, (req, res) => {
     const parsed = parsePath(req.path);
-    const target = canonicalRedirect(parsed, {
-      defaultSlug: DEFAULT_FESTIVAL_SLUG,
-      lookupFestival: getGroupFestivalSlug,
-    });
+    const target = canonicalRedirect(parsed, { lookupFestival: getGroupFestivalSlug });
 
     if (target) {
       const qs = req.originalUrl.slice(req.path.length); // keep ?utm=… intact
-      // `/` is temporary — it becomes a festival picker, so it must not be
-      // cached as permanent. Aliases and legacy group links are permanent.
-      const status = parsed.kind === 'home' ? 302 : 301;
-      return res.redirect(status, target + qs);
+      // Aliases and legacy group links are permanently relocated.
+      return res.redirect(301, target + qs);
     }
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
 
+    // `/` serves the default festival's page. Its canonical points at that
+    // festival's own URL, so this is not a duplicate; the client then replaces
+    // it with the visitor's most recent group if they have one.
+    if (parsed.kind === 'home') {
+      return res.send(pages.get(DEFAULT_FESTIVAL_SLUG).festivalHtml);
+    }
     const page = pages.get(parsed.canonicalSlug);
     if (parsed.kind === 'festival') return res.send(page.festivalHtml);
     if (parsed.kind === 'group') return res.send(page.groupHtml);

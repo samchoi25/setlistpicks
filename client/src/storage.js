@@ -4,10 +4,18 @@
 // browser is for each group.
 
 const KEY = 'brsp.identities.v1';
-// v1 held a single group id. With several festivals you can be mid-plan in
-// more than one, so v2 maps festival slug -> group id.
+/*
+ * Active-group history, by version:
+ *   v1  a single group id — predates festivals
+ *   v2  { slug: groupId } — one in-progress group per festival
+ *   v3  { slug: { groupId, at } } — same, plus when it was last opened, so `/`
+ *       can send you to the group you actually used last rather than to
+ *       whichever festival happens to be the default
+ * Older shapes are carried forward on read.
+ */
 const ACTIVE_KEY_V1 = 'brsp.activeGroup.v1';
-const ACTIVE_KEY = 'brsp.activeGroup.v2';
+const ACTIVE_KEY_V2 = 'brsp.activeGroup.v2';
+const ACTIVE_KEY = 'brsp.activeGroup.v3';
 
 function readAll() {
   try {
@@ -37,40 +45,87 @@ export function clearIdentity(groupId) {
   writeAll(all);
 }
 
-function readActive() {
-  let map = {};
-  try {
-    map = JSON.parse(localStorage.getItem(ACTIVE_KEY)) || {};
-  } catch {
-    map = {};
+const LEGACY_SLUG = 'outside-lands-2026';
+
+/*
+ * Normalise any stored shape into { slug: { groupId, at } }.
+ *
+ * Pure so it can be tested without a browser. Entries carried over from v1/v2
+ * have no timestamp and get `at: 0` — they lose to anything opened since, which
+ * is the right tie-break: a visit recorded under the new scheme is by
+ * definition more recent than one that predates it.
+ */
+export function normalizeActive({ v1, v2, v3 } = {}) {
+  const out = {};
+  const put = (slug, groupId, at) => {
+    if (typeof slug !== 'string' || typeof groupId !== 'string' || !groupId) return;
+    if (!out[slug] || at > out[slug].at) out[slug] = { groupId, at };
+  };
+
+  if (typeof v1 === 'string' && v1) put(LEGACY_SLUG, v1, 0);
+  for (const [slug, groupId] of Object.entries(v2 ?? {})) put(slug, groupId, 0);
+  for (const [slug, entry] of Object.entries(v3 ?? {})) {
+    if (typeof entry === 'string') put(slug, entry, 0);
+    else if (entry) put(slug, entry.groupId, Number(entry.at) || 0);
   }
-  // One-time carry-over: a v1 value predates slugs, so it can only have been
-  // for the festival that existed then.
-  const legacy = localStorage.getItem(ACTIVE_KEY_V1);
-  if (legacy) {
+  return out;
+}
+
+// The group opened most recently, across every festival, or null. Ties and
+// untimestamped entries resolve to whichever sorts first — deterministic
+// rather than arbitrary.
+export function pickMostRecent(map) {
+  const entries = Object.entries(map ?? {});
+  if (!entries.length) return null;
+  entries.sort(([slugA, a], [slugB, b]) => (b.at - a.at) || slugA.localeCompare(slugB));
+  const [slug, { groupId }] = entries[0];
+  return { slug, groupId };
+}
+
+const readJson = (key) => {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+function readActive() {
+  const map = normalizeActive({
+    v1: localStorage.getItem(ACTIVE_KEY_V1) || undefined,
+    v2: readJson(ACTIVE_KEY_V2),
+    v3: readJson(ACTIVE_KEY),
+  });
+  // Retire the old keys once their contents have been folded in.
+  if (localStorage.getItem(ACTIVE_KEY_V1) || localStorage.getItem(ACTIVE_KEY_V2)) {
     localStorage.removeItem(ACTIVE_KEY_V1);
-    if (!map[LEGACY_SLUG]) {
-      map[LEGACY_SLUG] = legacy;
-      localStorage.setItem(ACTIVE_KEY, JSON.stringify(map));
-    }
+    localStorage.removeItem(ACTIVE_KEY_V2);
+    writeActive(map);
   }
   return map;
 }
 
-const LEGACY_SLUG = 'outside-lands-2026';
+function writeActive(map) {
+  localStorage.setItem(ACTIVE_KEY, JSON.stringify(map));
+}
 
 export function getActiveGroup(festivalSlug) {
-  return readActive()[festivalSlug] || null;
+  return readActive()[festivalSlug]?.groupId || null;
 }
 
 export function setActiveGroup(festivalSlug, groupId) {
   const map = readActive();
-  map[festivalSlug] = groupId;
-  localStorage.setItem(ACTIVE_KEY, JSON.stringify(map));
+  map[festivalSlug] = { groupId, at: Date.now() };
+  writeActive(map);
 }
 
 export function clearActiveGroup(festivalSlug) {
   const map = readActive();
   delete map[festivalSlug];
-  localStorage.setItem(ACTIVE_KEY, JSON.stringify(map));
+  writeActive(map);
+}
+
+// Where `/` should send a returning visitor.
+export function getMostRecentGroup() {
+  return pickMostRecent(readActive());
 }

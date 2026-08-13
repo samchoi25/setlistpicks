@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from './api.js';
-import { getIdentity, setIdentity, getActiveGroup, setActiveGroup, clearActiveGroup } from './storage.js';
+import { getIdentity, setIdentity, getActiveGroup, setActiveGroup, clearActiveGroup, getMostRecentGroup } from './storage.js';
 import { ensureSvgDefs } from './svgDefs.js';
 import GroupView from './views/GroupView.jsx';
 import { FestivalProvider } from './festival-context.jsx';
@@ -114,10 +114,28 @@ function AppRoutes() {
     ?? getFestival(route.canonicalSlug)
     ?? getFestival(DEFAULT_FESTIVAL_SLUG);
 
-  // A festival page (or `/`, which the server redirects but the SPA can also
-  // reach via history): resume this festival's stored group, else start one.
+  /*
+   * `/` sends you back to the group you were last in, whichever festival it
+   * belongs to — the server cannot do this, since the answer lives in your
+   * browser. With nothing stored we fall through to the default festival,
+   * which then starts a group.
+   */
   useEffect(() => {
-    if (route.kind !== 'festival' && route.kind !== 'home') return;
+    if (route.kind !== 'home') return;
+    if (navigating.current) return;
+    navigating.current = true;
+
+    const recent = getMostRecentGroup();
+    navigating.current = false;
+    navigate(
+      recent ? groupPath(recent.slug, recent.groupId) : festivalPath(DEFAULT_FESTIVAL_SLUG),
+      { replace: true },
+    );
+  }, [path, navigate]); // eslint-disable-line
+
+  // A festival page: resume this festival's stored group, else start one.
+  useEffect(() => {
+    if (route.kind !== 'festival') return;
     if (navigating.current) return;
     navigating.current = true;
 

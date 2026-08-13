@@ -75,18 +75,17 @@ test('reserved paths never resolve to a festival', () => {
   }
 });
 
-test('home redirects to the default festival', () => {
-  assert.equal(
-    canonicalRedirect(parsePath('/'), { defaultSlug: DEFAULT_FESTIVAL_SLUG }),
-    `/${DEFAULT_FESTIVAL_SLUG}`,
-  );
+test('home is answered, never redirected', () => {
+  // Which group a returning visitor belongs in lives in their browser, so the
+  // server must not settle `/` before the client can read it.
+  assert.equal(canonicalRedirect(parsePath('/')), null);
+  assert.equal(canonicalRedirect(parsePath('')), null);
 });
 
 test('canonical paths are left alone', () => {
-  const opts = { defaultSlug: DEFAULT_FESTIVAL_SLUG };
-  assert.equal(canonicalRedirect(parsePath(`/${SLUG}`), opts), null);
-  assert.equal(canonicalRedirect(parsePath(`/${SLUG}/${CODE}`), opts), null);
-  assert.equal(canonicalRedirect(parsePath('/nope'), opts), null);
+  assert.equal(canonicalRedirect(parsePath(`/${SLUG}`)), null);
+  assert.equal(canonicalRedirect(parsePath(`/${SLUG}/${CODE}`)), null);
+  assert.equal(canonicalRedirect(parsePath('/nope')), null);
 });
 
 test('an alias redirects to the canonical slug, keeping the code', () => {

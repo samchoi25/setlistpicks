@@ -77,10 +77,13 @@ export function parsePath(pathname) {
  * `lookupFestival` maps a bare group code to its festival slug; it is the only
  * part that needs a database, which is why it is injected rather than imported.
  */
-export function canonicalRedirect(parsed, { defaultSlug, lookupFestival } = {}) {
+export function canonicalRedirect(parsed, { lookupFestival } = {}) {
   switch (parsed.kind) {
     case 'home':
-      return defaultSlug ? festivalPath(defaultSlug) : null;
+      // `/` is answered, not redirected. Which group a returning visitor
+      // belongs in lives in their browser, so only the client can decide —
+      // a server redirect would settle it before that could be read.
+      return null;
     case 'festival':
       return parsed.isAlias ? festivalPath(parsed.canonicalSlug) : null;
     case 'group':
