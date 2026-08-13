@@ -12,7 +12,10 @@ import { listFestivals, getFestival, DEFAULT_FESTIVAL_SLUG } from '../shared/fes
 import { buildFestival } from '../shared/festival.js';
 
 const TEMPLATE = readFileSync(new URL('../client/index.html', import.meta.url), 'utf8');
-const real = getFestival(DEFAULT_FESTIVAL_SLUG);
+// A specific real festival, not "whichever is default" — the assertions below
+// are about this lineup's stages, venue and per-day stage names, and were
+// silently coupled to the default until the two stopped being the same.
+const real = getFestival('outside-lands-2026');
 
 /*
  * A second festival, invented here. There is only one real one, so without
