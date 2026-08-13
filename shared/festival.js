@@ -85,68 +85,153 @@ function mergeSimultaneous(list) {
   return out;
 }
 
+// A day's `sets` entries come in three shapes, distinguished by their own
+// arity — no separate flag is needed:
+//   [stageId, start, end, artist, meta?]  fully timed (4-5 elements)
+//   [stageId, artist]                     stage known, time not yet (2 elements)
+//   'Artist'                              nothing known but the name (a string)
+// A day must be entirely one shape: a lineup announcement doesn't reveal set
+// times for some acts and not others.
+function entryKind(entry) {
+  if (typeof entry === 'string') return 'unstaged-untimed';
+  if (entry.length === 2) return 'staged-untimed';
+  return 'timed';
+}
+
+function dayModeOf(entries) {
+  if (!entries || !entries.length) return 'timed';
+  const kind = entryKind(entries[0]);
+  for (const entry of entries) {
+    if (entryKind(entry) !== kind) {
+      throw new Error(`mixed set shapes within one day: ${JSON.stringify(entry)}`);
+    }
+  }
+  return kind;
+}
+
+// Alphabetical sort used for every untimed listing, so the same act name
+// always lands in the same place regardless of the order it was typed in.
+const byName = (a, b) => a.localeCompare(b);
+
+function buildTimedDay(slug, day, stages, entries) {
+  const all = [];
+  const byStage = {};
+  for (const stage of stages) byStage[stage.id] = [];
+  // The optional fifth element carries per-set metadata (currently just
+  // `asl` for interpreted performances). Kept out of the tuple's required
+  // shape so the vast majority of sets stay four short fields.
+  for (const [stageId, start, end, artist, meta] of entries) {
+    if (!byStage[stageId]) {
+      throw new Error(`${slug}: unknown stage '${stageId}' on ${day.id}`);
+    }
+    byStage[stageId].push({ stageId, start, end, artist, ...meta });
+  }
+  for (const stage of stages) {
+    const raw = byStage[stage.id];
+    for (const cur of raw) {
+      cur.startMin = toMin(cur.start);
+      cur.endMin = toMin(cur.end);
+    }
+    // Sort by start then end so identical time ranges land next to each
+    // other; the sort is stable, so co-billed acts keep their listed order.
+    raw.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
+    const list = mergeSimultaneous(raw);
+    assignLanes(list);
+    // Flag sets that start exactly when the previous one on the same stage
+    // ends. Stages like SOMA run back-to-back all day, and since every block
+    // in a column shares one colour they otherwise read as a single slab —
+    // the grid draws a divider on these. Tracked per lane so a partial
+    // overlap doesn't count as following the block beside it.
+    const lastEndByLane = {};
+    for (const cur of list) {
+      cur.followsPrevious = lastEndByLane[cur.lane] === cur.startMin;
+      lastEndByLane[cur.lane] = cur.endMin;
+    }
+    for (let i = 0; i < list.length; i++) {
+      const cur = list[i];
+      // Namespaced by festival so an id is meaningful on its own — every
+      // festival would otherwise generate 'fri-landsend-0'. Index is per
+      // stage, so adding a stage never renumbers another's ids.
+      const id = `${slug}:${day.id}-${stage.id}-${i}`;
+      all.push({
+        id,
+        festivalSlug: slug,
+        dayId: day.id,
+        stageId: stage.id,
+        artists: cur.artists,
+        // Single-string form for places that need one label: popups,
+        // long-press, SEO markup.
+        artist: cur.artists.join(' + '),
+        start: cur.start,
+        startMin: cur.startMin,
+        endMin: cur.endMin,
+        end: cur.end,
+        lane: cur.lane,
+        laneCount: cur.laneCount,
+        followsPrevious: cur.followsPrevious,
+        timed: true,
+        ...(cur.asl ? { asl: true } : null),
+      });
+    }
+  }
+  return all;
+}
+
+// Stage known, times not announced yet: one block per act, stacked in
+// alphabetical order down its stage's column instead of positioned by time.
+function buildStagedUntimedDay(slug, day, stages, entries) {
+  const all = [];
+  const byStage = {};
+  for (const stage of stages) byStage[stage.id] = [];
+  for (const [stageId, artist] of entries) {
+    if (!byStage[stageId]) {
+      throw new Error(`${slug}: unknown stage '${stageId}' on ${day.id}`);
+    }
+    byStage[stageId].push(artist);
+  }
+  for (const stage of stages) {
+    const list = [...byStage[stage.id]].sort(byName);
+    list.forEach((artist, i) => {
+      all.push({
+        id: `${slug}:${day.id}-${stage.id}-${i}`,
+        festivalSlug: slug,
+        dayId: day.id,
+        stageId: stage.id,
+        artists: [artist],
+        artist,
+        timed: false,
+        order: i,
+      });
+    });
+  }
+  return all;
+}
+
+// Nothing announced but the name yet: one flat alphabetical list for the
+// whole day, with no stage to place it against.
+function buildUnstagedUntimedDay(slug, day, entries) {
+  const sorted = [...entries].sort(byName);
+  return sorted.map((artist, i) => ({
+    id: `${slug}:${day.id}-lineup-${i}`,
+    festivalSlug: slug,
+    dayId: day.id,
+    stageId: null,
+    artists: [artist],
+    artist,
+    timed: false,
+    order: i,
+  }));
+}
+
 function buildSchedule(def) {
   const { slug, stages, days, sets } = def;
   const all = [];
   for (const day of days) {
-    const byStage = {};
-    for (const stage of stages) byStage[stage.id] = [];
-    // The optional fifth element carries per-set metadata (currently just
-    // `asl` for interpreted performances). Kept out of the tuple's required
-    // shape so the vast majority of sets stay four short fields.
-    for (const [stageId, start, end, artist, meta] of sets[day.id] ?? []) {
-      if (!byStage[stageId]) {
-        throw new Error(`${slug}: unknown stage '${stageId}' on ${day.id}`);
-      }
-      byStage[stageId].push({ stageId, start, end, artist, ...meta });
-    }
-    for (const stage of stages) {
-      const raw = byStage[stage.id];
-      for (const cur of raw) {
-        cur.startMin = toMin(cur.start);
-        cur.endMin = toMin(cur.end);
-      }
-      // Sort by start then end so identical time ranges land next to each
-      // other; the sort is stable, so co-billed acts keep their listed order.
-      raw.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
-      const list = mergeSimultaneous(raw);
-      assignLanes(list);
-      // Flag sets that start exactly when the previous one on the same stage
-      // ends. Stages like SOMA run back-to-back all day, and since every block
-      // in a column shares one colour they otherwise read as a single slab —
-      // the grid draws a divider on these. Tracked per lane so a partial
-      // overlap doesn't count as following the block beside it.
-      const lastEndByLane = {};
-      for (const cur of list) {
-        cur.followsPrevious = lastEndByLane[cur.lane] === cur.startMin;
-        lastEndByLane[cur.lane] = cur.endMin;
-      }
-      for (let i = 0; i < list.length; i++) {
-        const cur = list[i];
-        // Namespaced by festival so an id is meaningful on its own — every
-        // festival would otherwise generate 'fri-landsend-0'. Index is per
-        // stage, so adding a stage never renumbers another's ids.
-        const id = `${slug}:${day.id}-${stage.id}-${i}`;
-        all.push({
-          id,
-          festivalSlug: slug,
-          dayId: day.id,
-          stageId: stage.id,
-          artists: cur.artists,
-          // Single-string form for places that need one label: popups,
-          // long-press, SEO markup.
-          artist: cur.artists.join(' + '),
-          start: cur.start,
-          startMin: cur.startMin,
-          endMin: cur.endMin,
-          end: cur.end,
-          lane: cur.lane,
-          laneCount: cur.laneCount,
-          followsPrevious: cur.followsPrevious,
-          ...(cur.asl ? { asl: true } : null),
-        });
-      }
-    }
+    const entries = sets[day.id] ?? [];
+    const mode = dayModeOf(entries);
+    if (mode === 'timed') all.push(...buildTimedDay(slug, day, stages, entries));
+    else if (mode === 'staged-untimed') all.push(...buildStagedUntimedDay(slug, day, stages, entries));
+    else all.push(...buildUnstagedUntimedDay(slug, day, entries));
   }
   return all;
 }
@@ -156,12 +241,13 @@ function build(def) {
   if (!schedule.length) throw new Error(`${def.slug}: festival has no sets`);
 
   // Stages that actually have sets on a given day, in canonical order, each
-  // carrying the grid column it occupies (column 1 is the time axis). Built
-  // once per day so React can compare stage objects by identity.
+  // carrying the grid column it occupies (column 1 is the time axis, or an
+  // empty gutter of the same width on an untimed day). Built once per day so
+  // React can compare stage objects by identity.
   const stagesByDay = Object.fromEntries(
     def.days.map((day) => {
       const active = new Set(
-        schedule.filter((s) => s.dayId === day.id).map((s) => s.stageId),
+        schedule.filter((s) => s.dayId === day.id && s.stageId).map((s) => s.stageId),
       );
       const list = def.stages
         .filter((stage) => active.has(stage.id))
@@ -170,11 +256,18 @@ function build(def) {
     }),
   );
 
-  // Grid bounds come from the data, rounded out to the hour, so a late-running
-  // stage extends the grid instead of being clipped.
-  const allMins = schedule.flatMap((s) => [s.startMin, s.endMin]);
-  const gridStartMin = Math.floor(Math.min(...allMins) / 60) * 60;
-  const gridEndMin = Math.ceil(Math.max(...allMins) / 60) * 60;
+  // Which of the three shapes (see dayModeOf) each day's data is in, so the
+  // grid knows whether to position blocks by time or list them alphabetically.
+  const modeByDay = Object.fromEntries(
+    def.days.map((day) => [day.id, dayModeOf(def.sets[day.id] ?? [])]),
+  );
+
+  // Grid bounds come from the timed sets only — an untimed day contributes no
+  // start/end minutes, so it can't skew the grid built for the timed ones.
+  const timedSchedule = schedule.filter((s) => s.timed);
+  const allMins = timedSchedule.flatMap((s) => [s.startMin, s.endMin]);
+  const gridStartMin = allMins.length ? Math.floor(Math.min(...allMins) / 60) * 60 : 0;
+  const gridEndMin = allMins.length ? Math.ceil(Math.max(...allMins) / 60) * 60 : 0;
 
   return Object.freeze({
     ...def,
@@ -183,6 +276,8 @@ function build(def) {
     STAGES: def.stages,
     DAYS: def.days,
     stagesForDay: (dayId) => stagesByDay[dayId] ?? [],
+    // 'timed' | 'staged-untimed' | 'unstaged-untimed' — which layout a day needs.
+    dayMode: (dayId) => modeByDay[dayId] ?? 'timed',
     SLOT_MINS,
     SLOTS_PER_HOUR,
     GRID_START_MIN: gridStartMin,

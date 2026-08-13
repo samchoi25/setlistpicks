@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { ShowBlock } from './ShowBlock.jsx';
+import { LineupBlock } from './LineupBlock.jsx';
 import { watchWordFit } from '../fitWords.js';
 import { useFestival } from '../festival-context.jsx';
 
@@ -22,15 +23,115 @@ function ordinalSuffix(n) {
   return s[(v - 20) % 10] || s[v] || s[0];
 }
 
+// Every act block, whichever grid it renders in, needs the same per-set vote
+// data plus the handful of callbacks passed straight down from GroupView.
+// Bundled into one helper so each grid body just spreads `voteProps(s)`.
+function makeVoteProps({ myVotes, perArtistRaw, memberKey, memberDisplayName, groupId, onVoteChange, onLongPress, onNotMember }) {
+  return (s) => ({
+    myVote: myVotes[s.id] || 0,
+    groupVotes: perArtistRaw[s.id] || [],
+    memberKey, memberDisplayName, groupId, onVoteChange, onLongPress, onNotMember,
+  });
+}
+
+function TimedDayBody({ festival, stages, daySets, stageById, voteProps }) {
+  const { TOTAL_SLOTS, SLOTS_PER_HOUR } = festival;
+  return (
+    // --stage-count drives the column template, so the grid widens to
+    // whatever this day's stage list holds.
+    <div
+      className="schedule-grid"
+      style={{
+        '--stage-count': stages.length,
+        '--total-slots': TOTAL_SLOTS,
+        // Tighten the gutters once the day is crowded, so eight stages
+        // still fit a desktop window instead of forcing a sideways scroll.
+        '--col-gap': stages.length > 6 ? '10px' : '20px',
+      }}
+    >
+      {/* Stage headers */}
+      {stages.map((stage) => (
+        <div key={stage.id} className="stage-header" data-stage={stage.id}
+          style={{ gridColumn: stage.col, gridRow: 1, color: `var(${stage.color})` }}>
+          {stage.name}
+        </div>
+      ))}
+
+      {/* Opaque strip behind the sticky time axis, so stage columns
+          scrolling past it don't show through the gaps between labels. */}
+      <div className="time-axis-backdrop" style={{ gridColumn: 1, gridRow: `1 / -1` }} />
+
+      {/* Time axis labels — one per hour, whatever the slot size */}
+      {Array.from(
+        { length: TOTAL_SLOTS / SLOTS_PER_HOUR + 1 },
+        (_, i) => i * SLOTS_PER_HOUR,
+      ).map((slot) => (
+        <div key={slot} className="time-label"
+          style={{ gridColumn: 1, gridRow: slot + 2 }}>
+          {timeAxisLabel(slot, festival)}
+        </div>
+      ))}
+
+      {/* Show blocks */}
+      {daySets.map((s) => (
+        <ShowBlock key={s.id} s={s} stage={stageById[s.stageId]} {...voteProps(s)} />
+      ))}
+    </div>
+  );
+}
+
+// Stage known, times not announced yet: same column-per-stage shape as the
+// timed grid, minus the time axis, with each stage's acts listed
+// alphabetically instead of positioned by time.
+function StagedLineupBody({ stages, daySets, stageById, voteProps }) {
+  return (
+    <div
+      className="lineup-grid"
+      style={{
+        '--stage-count': stages.length,
+        '--col-gap': stages.length > 6 ? '10px' : '20px',
+      }}
+    >
+      {stages.map((stage) => (
+        <div key={stage.id} className="stage-header" data-stage={stage.id}
+          style={{ gridColumn: stage.col, gridRow: 1, color: `var(${stage.color})` }}>
+          {stage.name}
+        </div>
+      ))}
+      {daySets.map((s) => (
+        <LineupBlock key={s.id} s={s} stage={stageById[s.stageId]} {...voteProps(s)} />
+      ))}
+    </div>
+  );
+}
+
+// Nothing announced but the artist names yet: no stages to group by, so the
+// whole day's lineup flows alphabetically into a grid capped around 7
+// columns wide (see .lineup-flow), narrowing on smaller screens.
+function FlowLineupBody({ daySets, voteProps }) {
+  return (
+    <div className="lineup-flow">
+      {daySets.map((s) => (
+        <LineupBlock key={s.id} s={s} {...voteProps(s)} />
+      ))}
+    </div>
+  );
+}
+
 function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, groupId, onVoteChange, onLongPress, onNotMember }) {
   const festival = useFestival();
-  const { SCHEDULE, TOTAL_SLOTS, SLOTS_PER_HOUR } = festival;
+  const { SCHEDULE } = festival;
   const daySets = SCHEDULE.filter((s) => s.dayId === day.id);
   const stages = festival.stagesForDay(day.id);
   const stageById = Object.fromEntries(stages.map((st) => [st.id, st]));
+  const mode = festival.dayMode(day.id);
   const [dayMonth, dayNumStr] = day.date.split(' ');
   const dayNum = parseInt(dayNumStr, 10);
   const dayDate = `${dayNum}${ordinalSuffix(dayNum)}`;
+
+  const voteProps = makeVoteProps({
+    myVotes, perArtistRaw, memberKey, memberDisplayName, groupId, onVoteChange, onLongPress, onNotMember,
+  });
 
   return (
     <div data-day={day.id}>
@@ -39,58 +140,15 @@ function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, gro
         <span className="day-date">{dayMonth} {dayDate}</span>
       </div>
       <div className="schedule-wrap">
-        {/* --stage-count drives the column template, so the grid widens to
-            whatever this day's stage list holds. */}
-        <div
-          className="schedule-grid"
-          style={{
-            '--stage-count': stages.length,
-            '--total-slots': TOTAL_SLOTS,
-            // Tighten the gutters once the day is crowded, so eight stages
-            // still fit a desktop window instead of forcing a sideways scroll.
-            '--col-gap': stages.length > 6 ? '10px' : '20px',
-          }}
-        >
-          {/* Stage headers */}
-          {stages.map((stage) => (
-            <div key={stage.id} className="stage-header" data-stage={stage.id}
-              style={{ gridColumn: stage.col, gridRow: 1, color: `var(${stage.color})` }}>
-              {stage.name}
-            </div>
-          ))}
-
-          {/* Opaque strip behind the sticky time axis, so stage columns
-              scrolling past it don't show through the gaps between labels. */}
-          <div className="time-axis-backdrop" style={{ gridColumn: 1, gridRow: `1 / -1` }} />
-
-          {/* Time axis labels — one per hour, whatever the slot size */}
-          {Array.from(
-            { length: TOTAL_SLOTS / SLOTS_PER_HOUR + 1 },
-            (_, i) => i * SLOTS_PER_HOUR,
-          ).map((slot) => (
-            <div key={slot} className="time-label"
-              style={{ gridColumn: 1, gridRow: slot + 2 }}>
-              {timeAxisLabel(slot, festival)}
-            </div>
-          ))}
-
-          {/* Show blocks */}
-          {daySets.map((s) => (
-            <ShowBlock
-              key={s.id}
-              s={s}
-              stage={stageById[s.stageId]}
-              myVote={myVotes[s.id] || 0}
-              groupVotes={perArtistRaw[s.id] || []}
-              memberKey={memberKey}
-              memberDisplayName={memberDisplayName}
-              groupId={groupId}
-              onVoteChange={onVoteChange}
-              onLongPress={onLongPress}
-              onNotMember={onNotMember}
-            />
-          ))}
-        </div>
+        {mode === 'timed' && (
+          <TimedDayBody festival={festival} stages={stages} daySets={daySets} stageById={stageById} voteProps={voteProps} />
+        )}
+        {mode === 'staged-untimed' && (
+          <StagedLineupBody stages={stages} daySets={daySets} stageById={stageById} voteProps={voteProps} />
+        )}
+        {mode === 'unstaged-untimed' && (
+          <FlowLineupBody daySets={daySets} voteProps={voteProps} />
+        )}
       </div>
     </div>
   );

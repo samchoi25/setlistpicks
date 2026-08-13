@@ -316,6 +316,48 @@ input[type="text"]::placeholder {
   z-index: 0;
 }
 
+/* ─── Untimed lineup grids ───────────────────────────────────────────
+   Used before set times (or stages) are announced — see festival.dayMode()
+   in shared/festival.js. Both reuse .show-block/.stage-header styling. */
+
+/* Stage known, times not yet: same column-per-stage shape as .schedule-grid,
+   minus the time axis, with each stage's acts stacked alphabetically instead
+   of positioned by time. The first column stays as an empty gutter so stage
+   columns line up at the same width as the timed grid would use. */
+.lineup-grid {
+  display: grid;
+  grid-template-columns: 12px repeat(var(--stage-count, 5), minmax(0, 1fr));
+  /* Same horizontal-scroll floor as .schedule-grid, so a crowded day scrolls
+     sideways in .schedule-wrap instead of squeezing columns illegible. */
+  min-width: calc(12px + var(--stage-count, 5) * (var(--stage-col-min, 76px) + var(--col-gap, 20px)));
+  grid-auto-rows: minmax(36px, auto);
+  column-gap: var(--col-gap, 20px);
+  row-gap: 8px;
+  padding: 6px 10px 6px 0;
+}
+.lineup-grid .show-block {
+  height: auto;
+  min-height: 36px;
+}
+
+/* Nothing announced but the artist names yet: no stages to group by, so the
+   whole day flows alphabetically into a grid capped around 7 columns wide.
+   The cap comes from the minmax floor plus a max-width rather than a fixed
+   column count, so it narrows gracefully instead of jumping between layouts. */
+.lineup-flow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  max-width: calc(130px * 7 + 10px * 6);
+  margin: 0 auto;
+}
+.lineup-flow .show-block {
+  background: var(--btn-primary);
+  height: auto;
+  min-height: 44px;
+  justify-content: center;
+}
+
 /* ─── Stage column headers ────────────────────────────────────────── */
 .stage-header {
   grid-row: 1;
@@ -880,6 +922,19 @@ input[type="text"]::placeholder {
 
   .schedule-grid::after {
     left: 16px;
+  }
+
+  .lineup-grid {
+    grid-template-columns: 4px repeat(var(--stage-count, 5), minmax(0, 1fr));
+    --stage-col-min: 68px;
+    min-width: calc(4px + var(--stage-count, 5) * var(--stage-col-min));
+    column-gap: 2px;
+  }
+
+  .lineup-flow {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 6px;
+    max-width: calc(100px * 7 + 6px * 6);
   }
 
   .time-label {

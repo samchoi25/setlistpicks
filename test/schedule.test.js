@@ -10,8 +10,11 @@ import { listFestivals, getFestival } from '../shared/festivals/index.js';
 for (const f of listFestivals()) {
   const label = f.slug;
 
-  test(`${label}: every set sits inside the derived grid bounds`, () => {
-    for (const s of f.SCHEDULE) {
+  // Untimed sets (no set times announced yet — see festival.dayMode()) carry
+  // no startMin/endMin/lane data, so every check below that depends on those
+  // only applies to the timed ones.
+  test(`${label}: every timed set sits inside the derived grid bounds`, () => {
+    for (const s of f.SCHEDULE.filter((s) => s.timed)) {
       assert.ok(
         s.startMin >= f.GRID_START_MIN && s.endMin <= f.GRID_END_MIN,
         `${s.artist} (${s.start}-${s.end}) falls outside ${f.GRID_START_MIN}-${f.GRID_END_MIN}`,
@@ -28,11 +31,11 @@ for (const f of listFestivals()) {
     }
   });
 
-  test(`${label}: sets never overlap within a lane`, () => {
+  test(`${label}: timed sets never overlap within a lane`, () => {
     for (const day of f.DAYS) {
       for (const stage of f.STAGES) {
         const list = f.SCHEDULE.filter(
-          (s) => s.dayId === day.id && s.stageId === stage.id,
+          (s) => s.dayId === day.id && s.stageId === stage.id && s.timed,
         );
         for (let i = 0; i < list.length; i++) {
           for (let j = i + 1; j < list.length; j++) {
@@ -61,7 +64,7 @@ for (const f of listFestivals()) {
       for (const stage of f.STAGES) {
         const seen = new Set();
         for (const s of f.SCHEDULE.filter(
-          (x) => x.dayId === day.id && x.stageId === stage.id,
+          (x) => x.dayId === day.id && x.stageId === stage.id && x.timed,
         )) {
           const key = `${s.startMin}-${s.endMin}`;
           assert.ok(
@@ -90,7 +93,7 @@ for (const f of listFestivals()) {
   });
 
   test(`${label}: followsPrevious marks exactly the back-to-back sets`, () => {
-    for (const s of f.SCHEDULE) {
+    for (const s of f.SCHEDULE.filter((s) => s.timed)) {
       const hasPredecessor = f.SCHEDULE.some(
         (p) =>
           p.dayId === s.dayId &&

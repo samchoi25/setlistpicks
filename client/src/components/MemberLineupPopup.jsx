@@ -12,11 +12,13 @@ export default function MemberLineupPopup({ memberKey, memberDisplayName, perArt
     if (v && v.score > 0) votes[artistId] = v.score;
   }
 
-  // Group picked shows by day, sorted chronologically
+  // Group picked shows by day. Timed sets sort chronologically; a day with no
+  // set times yet (see festival.dayMode()) has no startMin to sort by, so
+  // those fall back to the alphabetical order they were built in.
   const byDay = DAYS.map((day) => {
     const shows = SCHEDULE
       .filter((s) => s.dayId === day.id && votes[s.id])
-      .sort((a, b) => a.startMin - b.startMin);
+      .sort((a, b) => (a.timed ? a.startMin - b.startMin : a.artist.localeCompare(b.artist)));
     return { day, shows };
   }).filter(({ shows }) => shows.length > 0);
 
@@ -53,7 +55,7 @@ export default function MemberLineupPopup({ memberKey, memberDisplayName, perArt
                     {s.artist}
                   </span>
                   <span style={{ fontSize: '0.75rem', color: 'var(--ink-soft)', flexShrink: 0 }}>
-                    {fmtTime(s.start)}
+                    {s.timed ? fmtTime(s.start) : 'TBA'}
                   </span>
                 </div>
               ))}

@@ -52,14 +52,24 @@ export function renderLineupHtml(festival) {
     const stageBlocks = festival.stagesForDay(day.id).map((stage) => {
       const stageSets = sets
         .filter((s) => s.stageId === stage.id)
-        .sort((a, b) => a.startMin - b.startMin);
+        .sort((a, b) => (a.timed ? a.startMin - b.startMin : a.artist.localeCompare(b.artist)));
       if (!stageSets.length) return '';
+      // A stage's sets are all timed or all not (see festival.dayMode()) — no
+      // set times yet means no <time> tag, just the name.
       const items = stageSets
-        .map((s) => `<li><time datetime="${toIso(festival, s.start, day.date)}">${fmtTime(s.start)}</time> &ndash; ${escHtml(s.artist)}</li>`)
+        .map((s) => s.timed
+          ? `<li><time datetime="${toIso(festival, s.start, day.date)}">${fmtTime(s.start)}</time> &ndash; ${escHtml(s.artist)}</li>`
+          : `<li>${escHtml(s.artist)}</li>`)
         .join('');
       return `<div class="seo-stage"><h3>${escHtml(stage.name)}</h3><ul>${items}</ul></div>`;
     }).join('');
-    return `<section class="seo-day"><h2>${escHtml(day.name)}, ${escHtml(day.date)}</h2>${stageBlocks}</section>`;
+    // Acts with no stage assigned yet (nothing announced but the name) sit in
+    // their own section, alphabetically.
+    const unstaged = sets.filter((s) => !s.stageId).sort((a, b) => a.artist.localeCompare(b.artist));
+    const unstagedBlock = unstaged.length
+      ? `<div class="seo-stage"><ul>${unstaged.map((s) => `<li>${escHtml(s.artist)}</li>`).join('')}</ul></div>`
+      : '';
+    return `<section class="seo-day"><h2>${escHtml(day.name)}, ${escHtml(day.date)}</h2>${stageBlocks}${unstagedBlock}</section>`;
   }).join('');
 
   const actCount = festival.SCHEDULE.reduce((n, s) => n + s.artists.length, 0);
@@ -82,7 +92,10 @@ export function renderJsonLd(festival) {
   const pad = (n) => String(n).padStart(2, '0');
   const hhmm = (min) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
 
-  const subEvents = festival.SCHEDULE.map((s) => {
+  // A MusicEvent needs a real date to be worth emitting — an act with no set
+  // time yet (see festival.dayMode()) is skipped here, though it still shows
+  // up in the visible HTML lineup above.
+  const subEvents = festival.SCHEDULE.filter((s) => s.timed).map((s) => {
     const day = days.find((d) => d.id === s.dayId);
     const stage = festival.stagesForDay(s.dayId).find((st) => st.id === s.stageId);
     return {
@@ -105,9 +118,13 @@ export function renderJsonLd(festival) {
     '@type': 'MusicFestival',
     name: festival.name,
     // Derived from the schedule's own bounds rather than restated, so they
-    // cannot drift from the set times below them.
-    startDate: toIso(festival, hhmm(festival.GRID_START_MIN), days[0].date),
-    endDate: toIso(festival, hhmm(festival.GRID_END_MIN), days[days.length - 1].date),
+    // cannot drift from the set times below them. Omitted entirely if no set
+    // times have been announced yet — GRID_START_MIN/END_MIN are both 0 then,
+    // which would otherwise assert a false midnight start.
+    ...(festival.SCHEDULE.some((s) => s.timed) && {
+      startDate: toIso(festival, hhmm(festival.GRID_START_MIN), days[0].date),
+      endDate: toIso(festival, hhmm(festival.GRID_END_MIN), days[days.length - 1].date),
+    }),
     location: {
       '@type': 'Place',
       name: festival.place.name,
