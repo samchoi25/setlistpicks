@@ -27,10 +27,10 @@
 // A B2B slot (two acts sharing one time, once times exist) is one entry with
 // both names, e.g. Erika b2b SF Cowboy → ['Erika', 'SF Cowboy'].
 //
-// Despacio — an ambient, continuous sound-system installation billed "ALL
-// WEEKEND LONG" rather than under either day or either stage — is listed
-// unstaged on both days since the data model has no day-less slot; it isn't
-// a headliner-scale duplicate.
+// Despacio — the ambient, continuous "ALL WEEKEND LONG" sound-system
+// installation from the poster — is left off entirely rather than listed
+// as an act: it isn't a musical act with its own sets or releases, so it
+// doesn't fit the data model (no day-less slot, no artist streaming links).
 //
 // Once official set times land, add start/end and swap the two-element
 // staged tuples for `[stageId, 'HH:MM start', 'HH:MM end', 'Artist']`.
@@ -73,7 +73,6 @@ const sets = {
     // ── Not yet placed on a stage ───────────────────────────────────────
     'Airwolf Paradise',
     'Bassvictim',
-    'Despacio (All Weekend)',
     'Dog Blood',
     'FCUKERS',
     'Felly Fell',
@@ -116,7 +115,6 @@ const sets = {
     'Channel Tres',
     'Clearcast',
     'Daphni',
-    'Despacio (All Weekend)',
     'Ear',
     'JT',
     'Kelela',
@@ -142,9 +140,7 @@ const sets = {
 // The festival's own source only had links for about half the lineup; the
 // rest were filled in on 2026-08-14 by looking up each artist's official
 // Spotify/Apple Music/SoundCloud profile individually (verified by name,
-// bio and follower count, not just first search hit). Despacio has no
-// entry — it's James Murphy/2ManyDJs' soundsystem installation, not an act
-// with its own releases, so there's no artist profile to link. B2B pairs
+// bio and follower count, not just first search hit). B2B pairs
 // (Beltran b2b Ben Sterling, Ranger Trucco b2b Alisha, Erika b2b SF Cowboy)
 // aren't split here — the source data doesn't attribute those links to one
 // half of the pair over the other, so they're left out rather than guessed.
@@ -229,7 +225,7 @@ export default {
   officialUrl: 'https://portolamusicfestival.com/lineup/',
   dataVerifiedOn: '2026-08-13',
   headliners: ['Robyn', 'Dog Blood', 'Swedish House Mafia'],
-  notableActs: ['Fatboy Slim', 'Skepta', 'Tove Lo', 'Tiësto', 'Zara Larsson', 'Four Tet'],
+  notableActs: ['Fatboy Slim', 'Skepta', 'Tove Lo', 'Tiësto', 'Zara Larsson', 'Four Tet', 'DJ Shadow'],
   stages,
   days,
   sets,
