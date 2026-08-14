@@ -49,23 +49,25 @@ function MarkCheck() {
 
 export default function Legend() {
   return (
-    <div className="legend">
-      <span style={{ marginRight: 4 }}>Tap to cycle:</span>
-      <span className="pill">Skip</span>
+    <div className="legend-wrap">
+      <div className="legend">
+        <span style={{ marginRight: 4 }}>Tap to cycle:</span>
+        <span className="pill">Skip</span>
 
-      <LegendPill variant="want" washId="legend-want">
-        <MarkCheck />
-        Want
-      </LegendPill>
+        <LegendPill variant="want" washId="legend-want">
+          <MarkCheck />
+          Want
+        </LegendPill>
 
-      <LegendPill variant="must" washId="legend-must">
-        🔥 Must See
-      </LegendPill>
+        <LegendPill variant="must" washId="legend-must">
+          🔥 Must See
+        </LegendPill>
 
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.85rem', fontWeight: 600, color: 'var(--ink-soft)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
-        <InfoIcon />
-        Long press &#x2192; see who&#x2019;s in
-      </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.85rem', fontWeight: 600, color: 'var(--ink-soft)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
+          <InfoIcon />
+          Long press &#x2192; see who&#x2019;s in
+        </span>
+      </div>
     </div>
   );
 }

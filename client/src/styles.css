@@ -924,16 +924,33 @@ a.brand-logo-option:hover {
 }
 
 /* ─── Legend ─────────────────────────────────────────────────────── */
+/* .legend-wrap is the scroll container (mirrors .schedule-wrap below): a
+   fixed-width box with its own overflow-x so a narrow viewport scrolls the
+   legend in place instead of wrapping "Tap to cycle:" onto its own line —
+   or, without this wrapper, getting silently clipped by html's page-wide
+   overflow-x:hidden (see the comment on html above). */
+.legend-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
 .legend {
   padding: 8px 0 10px;
   border-bottom: 1px solid rgba(36, 103, 177, 0.15);
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 22px;
+  min-width: 280px;
   font-size: 0.85rem;
   color: var(--ink-soft);
   font-weight: 600;
+}
+/* Every direct child keeps its natural size — nothing squishes or wraps its
+   own text internally as the row narrows. min-width above is the floor for
+   the row as a whole; below that, .legend-wrap scrolls instead. */
+.legend > * {
+  flex-shrink: 0;
 }
 .legend .pill {
   padding: 3px 9px;
@@ -1107,6 +1124,12 @@ a.brand-logo-option:hover {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 6px;
     max-width: calc(100px * 7 + 6px * 6);
+  }
+
+  /* Tighter gap so the row's natural width comes closer to fitting a phone
+     screen without scrolling; .legend-wrap picks up the slack below that. */
+  .legend {
+    gap: 12px;
   }
 
   .time-label {
