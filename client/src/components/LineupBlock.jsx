@@ -1,5 +1,5 @@
 import React from 'react';
-import { useVoteBlock, WashSvg, GroupVotesEl, ArtistName, scoreClass } from './blockShared.jsx';
+import { useVoteBlock, WashSvg, GroupVotesEl, ArtistNames, scoreClass } from './blockShared.jsx';
 
 // An act with no set time yet — used for both untimed layouts (see
 // shared/festival.js dayModeOf). Three ways it can be positioned:
@@ -33,7 +33,7 @@ const LineupBlock = React.memo(function LineupBlock({
       onPointerUp={handlePointerUp}
       onPointerCancel={cancelLongPress}
     >
-      {s.artists.map((name, i) => <ArtistName key={i} name={name} />)}
+      <ArtistNames names={s.artists} />
       <WashSvg data={washDataRef.current} />
       <GroupVotesEl
         votes={groupVotes}

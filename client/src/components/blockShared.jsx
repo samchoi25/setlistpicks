@@ -131,3 +131,20 @@ export function ArtistName({ name }) {
     </span>
   );
 }
+
+// LineupBlock-only: in the untimed lineup data (shared/festivals/*.js,
+// buildUntimedDay), a multi-artist entry only ever comes from an explicit
+// `[stageId, [name1, name2]]` B2B tuple in the source flyer data — so "b2b"
+// between names is always accurate there. ShowBlock (timed data) doesn't use
+// this — its multi-artist blocks can also come from mergeSimultaneous
+// coincidentally merging two different, unrelated acts that just share a
+// time slot (e.g. one DJ billed under two different stage names for the
+// same set), where "b2b" would misdescribe what's actually being shown.
+export function ArtistNames({ names }) {
+  return names.map((name, i) => (
+    <React.Fragment key={i}>
+      {i > 0 && <span className="artist-b2b">b2b</span>}
+      <ArtistName name={name} />
+    </React.Fragment>
+  ));
+}

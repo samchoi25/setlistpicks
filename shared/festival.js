@@ -189,7 +189,7 @@ function buildTimedDay(slug, day, stages, entries) {
         artists: cur.artists,
         // Single-string form for places that need one label: popups,
         // long-press, SEO markup.
-        artist: cur.artists.join(' + '),
+        artist: cur.artists.join(' b2b '),
         start: cur.start,
         startMin: cur.startMin,
         endMin: cur.endMin,
@@ -234,7 +234,7 @@ function buildUntimedDay(slug, day, stages, entries) {
         dayId: day.id,
         stageId: stage.id,
         artists,
-        artist: artists.join(' + '),
+        artist: artists.join(' b2b '),
         timed: false,
         order: i,
       });

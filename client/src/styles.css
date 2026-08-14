@@ -613,6 +613,22 @@ a.brand-logo-option:hover {
   margin-top: 4px;
 }
 
+/* B2B separator between stacked names — see ArtistNames in blockShared.jsx
+   for which blocks actually get this (LineupBlock only). Lowercase and
+   unbolded against the all-caps artist names above/below it so it reads as
+   a connector, not a third billed name. */
+.show-block .artist-b2b {
+  display: block;
+  text-transform: none;
+  font-weight: 600;
+  font-size: 0.6rem;
+  opacity: 0.75;
+  margin: 3px 0;
+}
+.show-block .artist-b2b + .artist-name {
+  margin-top: 0;
+}
+
 .show-block .show-time {
   font-size: 0.6rem;
   font-weight: 400;
@@ -870,13 +886,29 @@ a.brand-logo-option:hover {
   margin-bottom: 12px;
   border-bottom: 1px solid var(--rule);
 }
-/* One row per artist with a link on file (see artistLinks in
-   shared/festivals/*.js) — a B2B pair with no per-person data shows nothing. */
+/* One group per artist with a link on file (see artistLinks in
+   shared/festivals/*.js) — an artist with none on file is skipped entirely,
+   which for a B2B pair can mean only one half shows up here. -4px on the
+   first group's top pulls it up against .picks-artist's own bottom margin,
+   same as the single-group case did before this was split in two. */
+.listen-links-group {
+  margin-bottom: 12px;
+}
+.listen-links-group:first-child {
+  margin-top: -4px;
+}
+/* Only rendered when the popup covers more than one artist (a B2B pair) —
+   labels whose links are whose. */
+.listen-links-name {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin: 0 0 4px;
+}
 .listen-links {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: -4px 0 12px;
 }
 .listen-link {
   display: inline-flex;

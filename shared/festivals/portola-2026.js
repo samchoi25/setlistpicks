@@ -140,19 +140,31 @@ const sets = {
 // The festival's own source only had links for about half the lineup; the
 // rest were filled in on 2026-08-14 by looking up each artist's official
 // Spotify/Apple Music/SoundCloud profile individually (verified by name,
-// bio and follower count, not just first search hit). B2B pairs
-// (Beltran b2b Ben Sterling, Ranger Trucco b2b Alisha, Erika b2b SF Cowboy)
-// aren't split here — the source data doesn't attribute those links to one
-// half of the pair over the other, so they're left out rather than guessed.
-// A couple of fields in the source data were dropped rather than trusted:
-// an "Apple Music" field that actually held an x.com link for a few artists,
-// and UTM tracking parameters on a couple of SoundCloud links.
+// bio and follower count, not just first search hit). A couple of fields in
+// the source data were dropped rather than trusted: an "Apple Music" field
+// that actually held an x.com link for a few artists, and UTM tracking
+// parameters on a couple of SoundCloud links.
+//
+// Each B2B pair (Beltran b2b Ben Sterling, Ranger Trucco b2b Alisha, Erika
+// b2b SF Cowboy) is keyed here by individual member, same as everyone else —
+// ArtistPopup looks each artist in the pair up separately and labels the
+// links it finds with whichever name they belong to. The festival's source
+// data was no help distinguishing pair members (its one record per pair
+// held a single undifferentiated set of links); every entry below for a
+// paired artist was instead confirmed against that specific person — e.g.
+// Beltran's Apple Music/SoundCloud URLs literally contain "beltran", and
+// Erika's bio in the source data matches the b0nitababy handle exactly —
+// or found fresh via search where the source had nothing to go on (Ben
+// Sterling, Alisha, SF Cowboy).
 const artistLinks = {
   'Adéla': { spotify: 'https://open.spotify.com/artist/2qanRMyA5bNuTvz1dK45OP?si=6HLyTjilSbmyHBtcX9P4mA', appleMusic: 'https://music.apple.com/us/artist/ad%C3%A9la/1765924916' },
   'Airwolf Paradise': { spotify: 'https://open.spotify.com/artist/0c3I7EPZUCCG7khbUwQDjl', appleMusic: 'https://music.apple.com/us/artist/airwolf-paradise/272547821', soundcloud: 'https://soundcloud.com/airwolfparadise' },
+  'Alisha': { spotify: 'https://open.spotify.com/artist/1zUgvtlUR6jXtCUCF0j3fe', appleMusic: 'https://music.apple.com/us/artist/alisha/1453979950', soundcloud: 'https://soundcloud.com/djalishauk' },
   'Azzecca': { spotify: 'https://open.spotify.com/artist/2k5DY2QDU3kBi5DX7OQlWj?si=EquIL1k1SYq_u9AGqMQN9g', soundcloud: 'https://soundcloud.com/azzecca' },
   'Baby J': { appleMusic: 'https://music.apple.com/au/artist/baby-j/1804205102', soundcloud: 'https://soundcloud.com/babyj4lyfe' },
   'Bassvictim': { spotify: 'https://open.spotify.com/artist/7f8ydynRRnrJBqWxevKLcM?si=vfkF-oERRgyhicJt-mWl4A', appleMusic: 'https://music.apple.com/us/artist/bassvictim/1704163385' },
+  'Beltran': { spotify: 'https://open.spotify.com/artist/1jgSqmZTBltb5O2L7ErmEP', appleMusic: 'https://music.apple.com/es/artist/beltran/90369561', soundcloud: 'https://soundcloud.com/listenbeltran' },
+  'Ben Sterling': { spotify: 'https://open.spotify.com/artist/79uJoLQkQ621xZy7MyH4uL', appleMusic: 'https://music.apple.com/us/artist/ben-sterling/302969723', soundcloud: 'https://soundcloud.com/bensterling' },
   'Ben UFO': { appleMusic: 'https://music.apple.com/us/artist/ben-ufo/591790660', soundcloud: 'https://soundcloud.com/benufo' },
   'Brunello': { spotify: 'https://open.spotify.com/artist/7FZIk8RSha4GBa4ZEPuytU', appleMusic: 'https://music.apple.com/us/artist/brunello/1697000713', soundcloud: 'https://soundcloud.com/brunellobeats' },
   'Channel Tres': { spotify: 'https://open.spotify.com/artist/4cUkGQyhLFqKHBtL58HYVp', appleMusic: 'https://music.apple.com/us/artist/channel-tres/1293846868', soundcloud: 'https://soundcloud.com/channeltres' },
@@ -163,6 +175,7 @@ const artistLinks = {
   'DJ Shadow': { spotify: 'https://open.spotify.com/artist/5CE2IfdYZEQGIDsfiRm8SI', appleMusic: 'https://music.apple.com/us/artist/dj-shadow/133086', soundcloud: 'https://soundcloud.com/djshadow' },
   'Dog Blood': { spotify: 'https://open.spotify.com/artist/2amyu5pkgYMYdNQZmB3GgY', appleMusic: 'https://music.apple.com/us/artist/dog-blood/328183952' },
   'Ear': { spotify: 'https://open.spotify.com/artist/3bABCGLkFvjnNIKHvPVHDG', appleMusic: 'https://music.apple.com/us/album/ne-plus-ultra-single/1895982136', soundcloud: 'https://soundcloud.com/earband' },
+  'Erika': { soundcloud: 'https://soundcloud.com/b0nitababy' },
   'Fatboy Slim': { spotify: 'https://open.spotify.com/artist/4Y7tXHSEejGu1vQ9bwDdXW', appleMusic: 'https://music.apple.com/us/artist/fatboy-slim/1093405', soundcloud: 'https://soundcloud.com/fatboyslim' },
   'FCUKERS': { spotify: 'https://open.spotify.com/artist/3UtzOHYm3lQALkKzVD4wyO', appleMusic: 'https://music.apple.com/us/artist/fcukers/1679474991', soundcloud: 'https://soundcloud.com/fcukers' },
   'Felly Fell': { spotify: 'https://open.spotify.com/artist/479Mf0xPXImSJVue9xm6gg', soundcloud: 'https://soundcloud.com/fellyfell805' },
@@ -189,9 +202,11 @@ const artistLinks = {
   'Overmono': { spotify: 'https://open.spotify.com/artist/01PnN11ovfen6xUOHfNpn3', appleMusic: 'https://music.apple.com/us/artist/overmono/1129806758', soundcloud: 'https://soundcloud.com/overmono' },
   'Parcels': { spotify: 'https://open.spotify.com/artist/3oKRxpszQKUjjaHz388fVA?si=hiP9qZCmSb6VJjaa0tqI2A', appleMusic: 'https://music.apple.com/artist/1148094312', soundcloud: 'https://soundcloud.com/parcelsmusic' },
   'Prospa': { spotify: 'https://open.spotify.com/artist/6HabM2PUM519iIxervGWSb', appleMusic: 'https://music.apple.com/us/artist/prospa/962366708', soundcloud: 'https://soundcloud.com/prospauk' },
+  'Ranger Trucco': { spotify: 'https://open.spotify.com/artist/36N80lh8tNu7XedcW55NC3', appleMusic: 'https://music.apple.com/us/artist/ranger-trucco/1503491295', soundcloud: 'https://soundcloud.com/ranger-trucco' },
   'Riria': { soundcloud: 'https://soundcloud.com/floatingriri' },
   'Robyn': { spotify: 'https://open.spotify.com/artist/6UE7nl9mha6s8z0wFQFIZ2', appleMusic: 'https://music.apple.com/us/artist/robyn/535211' },
   'Sam Alfred': { spotify: 'https://open.spotify.com/artist/4PVzoVUDxey3mxGdkf4HgR?si=5aBwrgpERby7xsOFWfR99w', appleMusic: 'https://music.apple.com/us/artist/sam-alfred/1458925637' },
+  'SF Cowboy': { soundcloud: 'https://soundcloud.com/sfcowboy69' },
   'SG Lewis (Live)': { spotify: 'https://open.spotify.com/artist/0GG2cWaonE4JPrjcCCQ1EG', appleMusic: 'https://music.apple.com/us/artist/sg-lewis/966324292', soundcloud: 'https://soundcloud.com/sglewis' },
   'Silva Bumpa': { spotify: 'https://open.spotify.com/artist/2dPLkqesvPXpIlP65JoLrf', soundcloud: 'https://soundcloud.com/silvabumpa' },
   'Six Sex': { spotify: 'https://open.spotify.com/artist/29rvPhemBdOLYdLr2xI8dr?si=JoQGI7aST7iJn2tiOUrRdw', appleMusic: 'https://music.apple.com/us/artist/six-sex/1485483068', soundcloud: 'https://www.soundcloud.com/sixsex' },

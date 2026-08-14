@@ -23,23 +23,28 @@ const PLATFORMS = [
 ];
 
 // One artist's row of "listen on ___" links — omitted entirely for an artist
-// with no links on file yet (see artistLinks in shared/festivals/*.js).
-function ListenLinks({ name, links }) {
+// with no links on file yet (see artistLinks in shared/festivals/*.js). For a
+// B2B pair, showName labels each artist's own row so it's clear which half
+// of the pair the links belong to — the two often don't both have links.
+function ListenLinks({ name, links, showName }) {
   const entries = PLATFORMS.filter((p) => links?.[p.key]);
   if (!entries.length) return null;
   return (
-    <div className="listen-links">
-      {entries.map((p) => (
-        <a
-          key={p.key}
-          href={links[p.key]}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`listen-link ${p.className}`}
-        >
-          {p.label}
-        </a>
-      ))}
+    <div className="listen-links-group">
+      {showName && <div className="listen-links-name">{name}</div>}
+      <div className="listen-links">
+        {entries.map((p) => (
+          <a
+            key={p.key}
+            href={links[p.key]}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`listen-link ${p.className}`}
+          >
+            {p.label}
+          </a>
+        ))}
+      </div>
     </div>
   );
 }
@@ -61,7 +66,7 @@ export default function ArtistPopup({ artistId, artistName, artists, votes, memb
       <div className="picks-popup" onClick={(e) => e.stopPropagation()}>
         <div className="picks-artist">{artistName}</div>
         {names.map((name) => (
-          <ListenLinks key={name} name={name} links={festival.artistLinks?.[name]} />
+          <ListenLinks key={name} name={name} links={festival.artistLinks?.[name]} showName={names.length > 1} />
         ))}
         {musts.length > 0 && (
           <div className="picks-section">
