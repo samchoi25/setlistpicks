@@ -21,12 +21,12 @@ const ShowBlock = React.memo(function ShowBlock({
   const endSlot   = minToSlot(Math.min(s.endMin, GRID_END_MIN), GRID_START_MIN, SLOT_MINS);
   if (startSlot >= TOTAL_SLOTS || endSlot <= 0) return null;
 
-  const { washDataRef, handleClick, startLongPress, cancelLongPress, handlePointerUp, longPressFired } =
+  const { washDataRef, online, handleClick, startLongPress, cancelLongPress, handlePointerUp, longPressFired } =
     useVoteBlock({ id: s.id, artist: s.artist, artists: s.artists, myVote, groupId, memberKey, onVoteChange, onLongPress, onNotMember });
 
   return (
     <button
-      className={`show-block ${scoreClass(myVote)}${s.followsPrevious ? ' follows-prev' : ''}`}
+      className={`show-block ${scoreClass(myVote)}${s.followsPrevious ? ' follows-prev' : ''}${online ? '' : ' offline'}`}
       data-stage={s.stageId}
       data-id={s.id}
       style={{

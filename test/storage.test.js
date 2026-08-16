@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeActive, pickMostRecent } from '../client/src/storage.js';
+import { normalizeActive, pickMostRecent, mergeCacheEntry } from '../client/src/storage.js';
 
 /*
  * The stored shape and the "most recent group" choice, tested as pure
@@ -103,4 +103,47 @@ test('malformed entries are ignored, not returned as a broken redirect', () => {
 test('a v3 entry still holding a bare string is tolerated', () => {
   const map = normalizeActive({ v3: { 'outside-lands-2026': 'aaaaaaaaaa' } });
   assert.deepEqual(map, { 'outside-lands-2026': { groupId: 'aaaaaaaaaa', at: 0 } });
+});
+
+/*
+ * The offline group cache's merge/eviction logic, tested as a pure function
+ * (mergeCacheEntry takes and returns a plain object, no localStorage) — this
+ * is what setCachedGroup wraps to actually persist.
+ */
+
+test('a patch merges into a fresh entry and stamps cachedAt', () => {
+  const before = Date.now();
+  const result = mergeCacheEntry({}, 'g1', { myVotes: { a1: 3 } });
+  assert.deepEqual(result.g1.myVotes, { a1: 3 });
+  assert.ok(result.g1.cachedAt >= before);
+});
+
+test('a second patch to the same group merges rather than replaces', () => {
+  const first = mergeCacheEntry({}, 'g1', { groupMeta: { name: 'Crew' } });
+  const second = mergeCacheEntry(first, 'g1', { myVotes: { a1: 1 } });
+  assert.deepEqual(second.g1.groupMeta, { name: 'Crew' });
+  assert.deepEqual(second.g1.myVotes, { a1: 1 });
+});
+
+test('a later patch overwrites the same key from an earlier one', () => {
+  const first = mergeCacheEntry({}, 'g1', { myVotes: { a1: 1 } });
+  const second = mergeCacheEntry(first, 'g1', { myVotes: { a1: 3, a2: 1 } });
+  assert.deepEqual(second.g1.myVotes, { a1: 3, a2: 1 });
+});
+
+test('entries beyond the cap are evicted, oldest first', () => {
+  let cache = {};
+  cache = mergeCacheEntry(cache, 'g1', { myVotes: {} }, 2);
+  cache = mergeCacheEntry(cache, 'g2', { myVotes: {} }, 2);
+  cache = mergeCacheEntry(cache, 'g3', { myVotes: {} }, 2);
+  assert.deepEqual(Object.keys(cache).sort(), ['g2', 'g3'], 'g1 was evicted as the oldest');
+});
+
+test('re-patching an existing group refreshes its place, not just new groups', () => {
+  let cache = {};
+  cache = mergeCacheEntry(cache, 'g1', { myVotes: {} }, 2);
+  cache = mergeCacheEntry(cache, 'g2', { myVotes: {} }, 2);
+  cache = mergeCacheEntry(cache, 'g1', { myVotes: { a1: 1 } }, 2); // touch g1 again
+  cache = mergeCacheEntry(cache, 'g3', { myVotes: {} }, 2);
+  assert.deepEqual(Object.keys(cache).sort(), ['g1', 'g3'], 'g2 was evicted, not the recently-touched g1');
 });

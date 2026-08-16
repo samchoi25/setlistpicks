@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { api } from '../api.js';
 import { setIdentity, clearIdentity, setActiveGroup } from '../storage.js';
 import { toast } from '../toast.js';
+import { useOnline } from '../net-status.js';
 import FestivalSwitcher from './FestivalSwitcher.jsx';
 
 function initials(name) {
@@ -34,6 +35,11 @@ export default function Header({
   mutedMembers, setMutedMembers, memberVoteCounts = {}, onLeave, onEditingChange,
 }) {
   const [editing, setEditing] = useState(false);
+  // Editing means renaming/removing members or the group itself — all
+  // network writes, so the whole panel (including "Leave Group", which
+  // lives inside it) is unreachable while offline rather than partially
+  // disabled.
+  const online = useOnline();
 
   function applyEditing(val) {
     setEditing(val);
@@ -77,7 +83,7 @@ export default function Header({
         await api.removeMember(groupId, member.key, { keepVotes: false }).catch(() => {});
         location.reload();
       } catch (e) {
-        toast(`Couldn\u2019t recover account: ${e.message}`);
+        toast(e.offline ? "You're offline \u2014 can't recover that account right now." : `Couldn\u2019t recover account: ${e.message}`);
       }
       return;
     }
@@ -97,7 +103,7 @@ export default function Header({
       setGroupName(prevGroup);
       setMemberDisplayName(prevName);
       setIdentity(groupId, { ...member, displayName: prevName });
-      toast(`Couldn\u2019t save: ${e.message}`);
+      toast(e.offline ? "You're offline \u2014 can't save changes right now." : `Couldn\u2019t save: ${e.message}`);
     }
   }
 
@@ -106,7 +112,7 @@ export default function Header({
       await api.removeMember(groupId, memberKey, { keepVotes });
       setMutedMembers((prev) => prev.filter((m) => m.key !== memberKey));
     } catch (e) {
-      toast(`Couldn\u2019t remove: ${e.message}`);
+      toast(e.offline ? "You're offline \u2014 can't remove members right now." : `Couldn\u2019t remove: ${e.message}`);
     }
     setRemovingKey(null);
   }
@@ -123,7 +129,7 @@ export default function Header({
         setIdentity(groupId, { ...member, displayName: trimmed });
       }
     } catch (e) {
-      toast(`Couldn\u2019t rename: ${e.message}`);
+      toast(e.offline ? "You're offline \u2014 can't rename members right now." : `Couldn\u2019t rename: ${e.message}`);
     }
     setRenamingKey(null);
   }
@@ -248,7 +254,7 @@ export default function Header({
         <div className="brand-title">{displayGroupName}</div>
         <div className="brand-sub" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {memberCount} {memberCount === 1 ? 'member' : 'members'}
-          {!editing && (
+          {!editing && online && (
             <>
               <span style={{ color: 'var(--ink-dim)', userSelect: 'none' }}>&middot;</span>
               <button onClick={openEdit} style={{
@@ -260,12 +266,12 @@ export default function Header({
           )}
         </div>
       </div>{/* .brand-info */}
-      <button className="profile-badge" onClick={editing ? undefined : openEdit}
-        title={editing ? undefined : 'Edit your name & crew'}
-        style={editing ? { cursor: 'default' } : {}}>
+      <button className="profile-badge" onClick={editing || !online ? undefined : openEdit}
+        title={editing || !online ? undefined : 'Edit your name & crew'}
+        style={editing || !online ? { cursor: 'default' } : {}}>
         <span className="profile-avatar">{initials(displayMemberName)}</span>
         <span className="profile-name">{displayMemberName}</span>
-        {!editing && <ChevronIcon />}
+        {!editing && online && <ChevronIcon />}
       </button>
     </div>
   );

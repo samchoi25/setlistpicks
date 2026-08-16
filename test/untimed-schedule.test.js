@@ -89,7 +89,7 @@ test('a B2B entry becomes one block with both names', () => {
   const dandelion = f.SCHEDULE.filter((s) => s.stageId === 'dandelion');
   assert.equal(dandelion.length, 2);
   assert.deepEqual(dandelion[0].artists, ['Aardvark Sound', 'Marmoset']);
-  assert.equal(dandelion[0].artist, 'Aardvark Sound + Marmoset');
+  assert.equal(dandelion[0].artist, 'Aardvark Sound b2b Marmoset');
   assert.deepEqual(dandelion[1].artists, ['Zebra Parade']);
 });
 

@@ -3,7 +3,8 @@ import React, {
 } from 'react';
 import { useFestival } from '../festival-context.jsx';
 import { api } from '../api.js';
-import { clearIdentity } from '../storage.js';
+import { clearIdentity, setCachedGroup } from '../storage.js';
+import { isOnline, subscribe } from '../net-status.js';
 import Header from '../components/Header.jsx';
 import ShareCard from '../components/ShareCard.jsx';
 import Legend from '../components/Legend.jsx';
@@ -11,11 +12,14 @@ import ScheduleGrid from '../components/ScheduleGrid.jsx';
 import NamePrompt from '../components/NamePrompt.jsx';
 import ArtistPopup from '../components/ArtistPopup.jsx';
 import MemberLineupPopup from '../components/MemberLineupPopup.jsx';
+import OfflineBanner from '../components/OfflineBanner.jsx';
 
-export default function GroupView({ groupId, member, groupMeta, freshJoin, onLeave }) {
+export default function GroupView({
+  groupId, member, groupMeta, freshJoin, cachedMyVotes, cachedPerArtist, onLeave,
+}) {
   const festival = useFestival();
-  const [myVotes,          setMyVotes]          = useState({});
-  const [perArtistRaw,     setPerArtistRaw]     = useState({});
+  const [myVotes,          setMyVotes]          = useState(cachedMyVotes || {});
+  const [perArtistRaw,     setPerArtistRaw]     = useState(cachedPerArtist || {});
   const [mutedMembers,     setMutedMembers]     = useState(groupMeta?.members || []);
   const [groupName,        setGroupName]        = useState(groupMeta?.name || 'Golden Gate Crew');
   const [memberDisplayName, setMemberDisplayName] = useState(member.displayName);
@@ -32,18 +36,44 @@ export default function GroupView({ groupId, member, groupMeta, freshJoin, onLea
   const pendingVotesRef = useRef(new Map()); // artistId → expected server score
 
   // ── Fetch my votes ───────────────────────────────────────────────────────────
+  // Skipped while offline — cachedMyVotes (from the last online load) already
+  // seeded the initial state above, and there's nothing fresher to fetch.
   useEffect(() => {
+    if (!isOnline()) return;
     api.myVotes(groupId, member.key)
-      .then(({ votes }) => setMyVotes(votes || {}))
+      .then(({ votes }) => {
+        setMyVotes(votes || {});
+        setCachedGroup(groupId, { myVotes: votes || {} });
+      })
       .catch(console.error);
   }, [groupId, member.key]);
+
+  // ── Fetch everyone's votes ───────────────────────────────────────────────────
+  // Seeds perArtistRaw immediately instead of waiting for the WebSocket's
+  // first push, and gives the offline cache something fresh right away —
+  // otherwise a group loaded and gone offline within seconds of joining
+  // would have no perArtist data cached yet.
+  useEffect(() => {
+    if (!isOnline()) return;
+    api.allVotes(groupId)
+      .then(({ members, perArtist }) => {
+        if (members) setMutedMembers(members);
+        setPerArtistRaw(perArtist || {});
+        setCachedGroup(groupId, { perArtist: perArtist || {} });
+      })
+      .catch(console.error); // the WS will fill this in once it connects
+  }, [groupId]);
 
   // ── WebSocket: live group vote sync ─────────────────────────────────────────
   useEffect(() => {
     let ws;
     let reconnectTimer;
+    let stopped = false;
 
     function connect() {
+      // Offline: don't attempt a connection at all — the net-status
+      // subscription below re-invokes connect() the instant we're back.
+      if (!isOnline() || stopped) return;
       clearTimeout(reconnectTimer);
       const proto = location.protocol === 'https:' ? 'wss' : 'ws';
       ws = new WebSocket(`${proto}://${location.host}/ws?group=${groupId}`);
@@ -59,8 +89,18 @@ export default function GroupView({ groupId, member, groupMeta, freshJoin, onLea
               const me = msg.members.find((m) => m.key === member.key);
               if (me) setMemberDisplayName(me.displayName);
             }
+            if (msg.members || msg.groupName) {
+              setCachedGroup(groupId, {
+                groupMeta: {
+                  ...groupMeta,
+                  ...(msg.groupName ? { name: msg.groupName } : null),
+                  ...(msg.members ? { members: msg.members } : null),
+                },
+              });
+            }
             if (msg.perArtist) {
               setPerArtistRaw(msg.perArtist);
+              setCachedGroup(groupId, { perArtist: msg.perArtist });
 
               // Sync my own votes from the broadcast — this is what makes the
               // show-block highlight update when the same account votes from
@@ -84,6 +124,7 @@ export default function GroupView({ groupId, member, groupMeta, freshJoin, onLea
                     else delete next[artistId];
                   }
                 }
+                setCachedGroup(groupId, { myVotes: next });
                 return next;
               });
             }
@@ -91,12 +132,28 @@ export default function GroupView({ groupId, member, groupMeta, freshJoin, onLea
         } catch { /* ignore */ }
       };
 
-      ws.onclose = () => { reconnectTimer = setTimeout(connect, 3000); };
+      // A close while we're still online is a server hiccup — retry on a
+      // timer as before. A close caused by us going offline shouldn't spin
+      // that loop against a network that's provably down; the net-status
+      // subscription below re-connects the instant connectivity returns.
+      ws.onclose = () => { if (isOnline() && !stopped) reconnectTimer = setTimeout(connect, 3000); };
       ws.onerror = () => ws.close();
     }
 
+    const unsubscribe = subscribe((online) => {
+      if (online) {
+        connect();
+      } else {
+        clearTimeout(reconnectTimer);
+        ws?.close();
+        ws = null;
+      }
+    });
+
     connect();
     return () => {
+      stopped = true;
+      unsubscribe();
       clearTimeout(reconnectTimer);
       ws?.close();
     };
@@ -159,6 +216,7 @@ export default function GroupView({ groupId, member, groupMeta, freshJoin, onLea
 
   return (
     <div className="app">
+      <OfflineBanner />
       {/* Toolbar: sticky header + day tabs */}
       <div className="toolbar">
         <Header

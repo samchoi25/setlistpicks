@@ -2,6 +2,7 @@ import React, { useRef, useCallback, useState } from 'react';
 import { computeWashData } from '../svgDefs.js';
 import { api } from '../api.js';
 import { toast } from '../toast.js';
+import { useOnline } from '../net-status.js';
 
 export function scoreClass(score) {
   if (score >= 3) return 'vote-3';
@@ -69,9 +70,15 @@ export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, 
   if (!washDataRef.current) washDataRef.current = computeWashData(id);
 
   const [saving, setSaving] = useState(false);
+  const online = useOnline();
 
   const handleClick = useCallback(async () => {
-    if (saving) return;
+    // Offline: don't even attempt the optimistic update — there's nothing
+    // to revert from since the save can't possibly go through.
+    if (saving || !online) {
+      if (!online) toast("You're offline — votes can't be saved right now.");
+      return;
+    }
     // Clearing the ref here causes it to be recomputed on the very next render
     // (which is triggered by myVote changing). WS-only re-renders never clear
     // it, so peers' votes never disturb your brushstroke.
@@ -83,7 +90,9 @@ export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, 
       await api.setVote(groupId, memberKey, id, next);
     } catch (e) {
       onVoteChange(id, myVote); // revert
-      if (e.message === 'not_a_member') {
+      if (e.offline) {
+        toast("You're offline — votes can't be saved right now.");
+      } else if (e.message === 'not_a_member') {
         onNotMember?.();
       } else {
         toast(`Save failed: ${e.message}`);
@@ -91,7 +100,7 @@ export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, 
     } finally {
       setSaving(false);
     }
-  }, [myVote, saving, id, groupId, memberKey, onVoteChange, onNotMember]);
+  }, [myVote, saving, online, id, groupId, memberKey, onVoteChange, onNotMember]);
 
   // Long-press
   const longPressTimer = useRef(null);
@@ -114,7 +123,7 @@ export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, 
     cancelLongPress();
   }, [cancelLongPress]);
 
-  return { washDataRef, saving, handleClick, startLongPress, cancelLongPress, handlePointerUp, longPressFired };
+  return { washDataRef, saving, online, handleClick, startLongPress, cancelLongPress, handlePointerUp, longPressFired };
 }
 
 // Word-by-word markup so fitWords can shrink an individual overlong word

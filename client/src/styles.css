@@ -305,6 +305,18 @@ a.brand-logo-option:hover {
   gap: 10px;
 }
 
+/* ─── Offline banner ─────────────────────────────────────────────────── */
+.offline-banner {
+  margin-top: 8px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: rgba(180, 130, 40, 0.1);
+  border: 1px solid rgba(180, 130, 40, 0.25);
+  border-radius: 4px;
+}
+
 /* ─── Day heading ────────────────────────────────────────────────────── */
 .day-heading {
   display: flex;
@@ -559,6 +571,12 @@ a.brand-logo-option:hover {
 .show-block:focus-visible {
   outline: 2px solid rgba(255,255,255,0.7);
   outline-offset: -2px;
+}
+/* Offline: read-only, no vote can be saved — dimmed and non-interactive
+   rather than clickable-but-doomed-to-fail. */
+.show-block.offline {
+  cursor: default;
+  opacity: 0.6;
 }
 .show-block:active {
   filter: brightness(0.92);

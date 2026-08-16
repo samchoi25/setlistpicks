@@ -1,9 +1,27 @@
+import { isOnline, reportNetworkFailure, reportNetworkSuccess } from './net-status.js';
+
+function offlineError() {
+  const e = new Error('offline');
+  e.offline = true;
+  return e;
+}
+
 async function req(method, url, body) {
-  const res = await fetch(url, {
-    method,
-    headers: body ? { 'content-type': 'application/json' } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  if (!isOnline()) throw offlineError();
+
+  let res;
+  try {
+    res = await fetch(url, {
+      method,
+      headers: body ? { 'content-type': 'application/json' } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    reportNetworkFailure();
+    throw offlineError();
+  }
+  reportNetworkSuccess();
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     const e = new Error(err.error || `HTTP ${res.status}`);

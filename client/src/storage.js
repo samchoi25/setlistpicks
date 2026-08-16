@@ -129,3 +129,62 @@ export function clearActiveGroup(festivalSlug) {
 export function getMostRecentGroup() {
   return pickMostRecent(readActive());
 }
+
+/*
+ * Offline read cache — the last-known group meta/votes for groups this
+ * browser has loaded while online, keyed by groupId (mirrors `identities`
+ * above). Used only as a fallback when a live fetch isn't possible; the
+ * server is still the source of truth whenever reachable.
+ *
+ * Capped at CACHE_CAP entries, evicting the least-recently-written group —
+ * a browser realistically tracks one or two groups at a time, so this is a
+ * generous ceiling against unbounded growth rather than a tuned limit.
+ */
+const CACHE_KEY = 'brsp.groupCache.v1';
+const CACHE_CAP = 5;
+
+/*
+ * Merge `patch` into `existing[groupId]` (creating it if absent), stamp
+ * `cachedAt`, and evict down to `cap` entries by keeping the most recently
+ * written. Pure so the cap/merge behavior is testable without localStorage.
+ *
+ * cachedAt is bumped to one past the current max rather than a bare
+ * `Date.now()` — two writes landing in the same millisecond (routine in a
+ * tight loop, e.g. several WS messages in a row) would otherwise tie, and a
+ * tie-break on insertion order would evict the wrong entry.
+ */
+export function mergeCacheEntry(existing, groupId, patch, cap = CACHE_CAP) {
+  const all = { ...existing };
+  const prev = all[groupId] || {};
+  const maxCachedAt = Math.max(0, ...Object.values(all).map((e) => e.cachedAt || 0));
+  all[groupId] = { ...prev, ...patch, cachedAt: Math.max(Date.now(), maxCachedAt + 1) };
+
+  const entries = Object.entries(all).sort(([, a], [, b]) => b.cachedAt - a.cachedAt);
+  return Object.fromEntries(entries.slice(0, cap));
+}
+
+function readCache() {
+  try {
+    return JSON.parse(localStorage.getItem(CACHE_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function writeCache(obj) {
+  localStorage.setItem(CACHE_KEY, JSON.stringify(obj));
+}
+
+export function getCachedGroup(groupId) {
+  return readCache()[groupId] || null;
+}
+
+export function setCachedGroup(groupId, patch) {
+  writeCache(mergeCacheEntry(readCache(), groupId, patch));
+}
+
+export function clearCachedGroup(groupId) {
+  const all = readCache();
+  delete all[groupId];
+  writeCache(all);
+}

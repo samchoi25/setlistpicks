@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { api } from '../api.js';
 import { setIdentity } from '../storage.js';
 import { useFestival } from '../festival-context.jsx';
+import { toast } from '../toast.js';
 
 const normalize = (s) => String(s || '').trim().toLowerCase();
 
@@ -34,14 +35,20 @@ export default function NamePrompt({ groupId, member, memberDisplayName, groupNa
         // Remove the auto-generated placeholder before reloading
         await api.removeMember(groupId, member.key, { keepVotes: false }).catch(() => {});
         location.reload();
-      } catch { onDismiss(autoName); }
+      } catch (e) {
+        if (e.offline) toast("You're offline — can't recover that account right now.");
+        onDismiss(autoName);
+      }
     } else {
       // New name — just rename the auto-generated placeholder user
       try {
         await api.updateMember(groupId, member.key, t);
         setIdentity(groupId, { ...member, displayName: t });
         onDismiss(t);
-      } catch { onDismiss(autoName); }
+      } catch (e) {
+        if (e.offline) toast("You're offline — using your default name for now.");
+        onDismiss(autoName);
+      }
     }
   }
 
