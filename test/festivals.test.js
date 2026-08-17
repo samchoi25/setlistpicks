@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   listFestivals, getFestival, isFestivalSlug, isCanonicalSlug,
   FESTIVAL_ALIASES, RESERVED_SLUGS, DEFAULT_FESTIVAL_SLUG, GROUP_CODE_RE,
+  WEBSOCKETS_ENABLED_DEFAULT,
 } from '../shared/festivals/index.js';
 import { festivalEndsAt, hasFestivalEnded } from '../shared/festival.js';
 
@@ -57,6 +58,13 @@ test('every alias points at a real canonical festival', () => {
 
 test('the default festival exists', () => {
   assert.ok(isCanonicalSlug(DEFAULT_FESTIVAL_SLUG));
+});
+
+test('websockets default off sitewide, with no festival opted in yet', () => {
+  assert.equal(WEBSOCKETS_ENABLED_DEFAULT, false);
+  for (const f of listFestivals()) {
+    assert.equal(f.websocketsEnabled, false, `${f.slug}.websocketsEnabled`);
+  }
 });
 
 test('lookups reject unknown and malformed slugs', () => {

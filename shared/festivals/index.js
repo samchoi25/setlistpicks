@@ -30,6 +30,11 @@ export const RESERVED_SLUGS = new Set([
   'robots.txt', 'sitemap.xml', 'og-image.png', 'favicon.ico',
 ]);
 
+// Sitewide default for the WebSocket live-vote-sync feature. A festival
+// definition can override with `websocketsEnabled: true` once it's ready
+// to turn live sync on; until then every festival inherits this off switch.
+export const WEBSOCKETS_ENABLED_DEFAULT = false;
+
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function validate(def) {
@@ -53,6 +58,9 @@ function validate(def) {
   if (new Set(dayIds).size !== dayIds.length) {
     throw new Error(`${slug}: duplicate day id`);
   }
+  if (def.websocketsEnabled !== undefined && typeof def.websocketsEnabled !== 'boolean') {
+    throw new Error(`${slug}: websocketsEnabled must be a boolean`);
+  }
   return def;
 }
 
@@ -60,7 +68,8 @@ const bySlug = new Map();
 for (const def of DEFINITIONS) {
   validate(def);
   if (bySlug.has(def.slug)) throw new Error(`Duplicate festival slug '${def.slug}'`);
-  bySlug.set(def.slug, buildFestival(def));
+  const websocketsEnabled = def.websocketsEnabled ?? WEBSOCKETS_ENABLED_DEFAULT;
+  bySlug.set(def.slug, buildFestival({ ...def, websocketsEnabled }));
 }
 
 /*

@@ -73,7 +73,7 @@ export default function GroupView({
     function connect() {
       // Offline: don't attempt a connection at all — the net-status
       // subscription below re-invokes connect() the instant we're back.
-      if (!isOnline() || stopped) return;
+      if (!isOnline() || !festival.websocketsEnabled || stopped) return;
       clearTimeout(reconnectTimer);
       const proto = location.protocol === 'https:' ? 'wss' : 'ws';
       ws = new WebSocket(`${proto}://${location.host}/ws?group=${groupId}`);

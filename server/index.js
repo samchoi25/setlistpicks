@@ -75,6 +75,10 @@ wss.on('connection', (ws, req) => {
   const groupId = url.searchParams.get('group');
   if (!groupId) return ws.close(1008, 'missing group');
 
+  const festival = getFestival(getGroupFestivalSlug(groupId));
+  if (!festival) return ws.close(1008, 'unknown group');
+  if (!festival.websocketsEnabled) return ws.close(1008, 'live sync disabled');
+
   joinRoom(groupId, ws);
 
   // Send current votes immediately on connect so new joiners are in sync.
