@@ -231,3 +231,64 @@ test('group ids look like group codes', () => {
     assert.match(store.createGroup({}).id, /^[23456789abcdefghjkmnpqrstuvwxyz]{10}$/);
   }
 });
+
+/* ─── Group-creation rate limit ──────────────────────────────────────────── */
+
+test('an IP is capped at 25 new groups', () => {
+  const { store } = fresh();
+  for (let i = 0; i < 25; i++) {
+    assert.ok(store.createGroup({ groupName: 'Crew', creatorIp: '1.2.3.4' }).id, `group ${i}`);
+  }
+  assert.deepEqual(
+    store.createGroup({ groupName: 'Crew', creatorIp: '1.2.3.4' }),
+    { error: 'rate_limited' },
+  );
+});
+
+test('the cap is per IP, not global', () => {
+  const { store } = fresh();
+  for (let i = 0; i < 25; i++) store.createGroup({ groupName: 'Crew', creatorIp: '1.2.3.4' });
+  assert.ok(store.createGroup({ groupName: 'Crew', creatorIp: '5.6.7.8' }).id);
+});
+
+test('the cap is a rolling 24h window, not a lifetime quota', () => {
+  // The whole point of the window: an IP that filled its allowance yesterday
+  // is not locked out today. Groups only prune after 90 days of inactivity,
+  // so without this an active user's count would climb and never come down.
+  const { db, store } = fresh();
+  for (let i = 0; i < 25; i++) store.createGroup({ groupName: 'Crew', creatorIp: '1.2.3.4' });
+  assert.deepEqual(
+    store.createGroup({ groupName: 'Crew', creatorIp: '1.2.3.4' }),
+    { error: 'rate_limited' },
+    'capped while the window is full',
+  );
+
+  // Age every existing group past the window. last_active is left alone —
+  // these are still live groups, they just weren't created today.
+  const dayAgo = Date.now() - 25 * 60 * 60 * 1000;
+  db.prepare('UPDATE groups SET created_at = ?').run(dayAgo);
+
+  assert.ok(
+    store.createGroup({ groupName: 'Crew', creatorIp: '1.2.3.4' }).id,
+    'yesterday\'s groups no longer count against today',
+  );
+});
+
+test('groups created just inside the window still count', () => {
+  // Guards the boundary from being written as `>=` on the wrong side, which
+  // would quietly let an IP create 25 groups every instant.
+  const { db, store } = fresh();
+  for (let i = 0; i < 25; i++) store.createGroup({ groupName: 'Crew', creatorIp: '1.2.3.4' });
+  db.prepare('UPDATE groups SET created_at = ?').run(Date.now() - 23 * 60 * 60 * 1000);
+  assert.deepEqual(
+    store.createGroup({ groupName: 'Crew', creatorIp: '1.2.3.4' }),
+    { error: 'rate_limited' },
+  );
+});
+
+test('a request with no IP is not rate limited', () => {
+  // Local dev and tests hit createGroup without a client IP; the limit is
+  // skipped rather than treating "unknown" as one shared bucket.
+  const { store } = fresh();
+  for (let i = 0; i < 30; i++) assert.ok(store.createGroup({ groupName: 'Crew' }).id);
+});

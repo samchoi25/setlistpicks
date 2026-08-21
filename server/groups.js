@@ -8,7 +8,27 @@ const newMemberId  = customAlphabet('23456789abcdefghjkmnpqrstuvwxyz', 10);
 const MAX_DISPLAY_NAME_LEN = 50;   // per-member name
 const MAX_GROUP_NAME_LEN   = 100;  // long enough for a funny name, not a novel
 
-const MAX_GROUPS_PER_IP  = 10;
+/*
+ * Group creation is capped per IP over a rolling window, not for all time.
+ *
+ * It used to be a flat lifetime count, which turned out to be a permanent
+ * quota rather than a rate limit: groups are only pruned after 90 days of
+ * *inactivity* (see db.js), so anyone who keeps opening their groups keeps
+ * them alive and their count only ever climbs. That locks out the most
+ * engaged users first, and it got tighter with every festival added — one
+ * group per festival already spends a chunk of the allowance before anyone
+ * has made a second crew for the same lineup.
+ *
+ * A window matches what the limit is actually defending against: someone
+ * spraying groups in a burst. Twenty-five a day is far past normal use
+ * (a person planning every festival on the site with a couple of crews each
+ * stays well under it) while still capping abuse at a survivable rate.
+ */
+const MAX_GROUPS_PER_IP  = 25;
+const GROUP_WINDOW_MS    = 24 * 60 * 60 * 1000;
+
+// Members have no such window: this one counts rows a single IP has created
+// across every group, and 25 is generous for one person joining crews.
 const MAX_MEMBERS_PER_IP = 25;
 
 const VALID_SCORES = new Set([0, 1, 3]);
@@ -27,7 +47,7 @@ function cleanDisplayName(name, maxLen = MAX_DISPLAY_NAME_LEN) {
 export function createStore(db) {
   const stmts = {
     insertGroup:      db.prepare('INSERT INTO groups (id, name, created_at, last_active, creator_ip, festival_slug) VALUES (?, ?, ?, ?, ?, ?)'),
-    countGroupsByIp:  db.prepare('SELECT COUNT(*) AS cnt FROM groups WHERE creator_ip = ?'),
+    countGroupsByIp:  db.prepare('SELECT COUNT(*) AS cnt FROM groups WHERE creator_ip = ? AND created_at > ?'),
     getGroup:         db.prepare('SELECT * FROM groups WHERE id = ?'),
     touchGroup:       db.prepare('UPDATE groups SET last_active = ? WHERE id = ?'),
     updateGroupName:  db.prepare('UPDATE groups SET name = ?, last_active = ? WHERE id = ?'),
@@ -64,12 +84,12 @@ export function createStore(db) {
     const festival = getFestival(festivalSlug ?? DEFAULT_FESTIVAL_SLUG);
     if (!festival) return { error: 'unknown_festival' };
 
+    const now = Date.now();
     if (creatorIp) {
-      const { cnt } = stmts.countGroupsByIp.get(creatorIp);
+      const { cnt } = stmts.countGroupsByIp.get(creatorIp, now - GROUP_WINDOW_MS);
       if (cnt >= MAX_GROUPS_PER_IP) return { error: 'rate_limited' };
     }
     const id = newGroupId();
-    const now = Date.now();
     const name = cleanDisplayName(groupName, MAX_GROUP_NAME_LEN) || '';
     stmts.insertGroup.run(id, name, now, now, creatorIp ?? null, festival.slug);
     return { id, name, createdAt: now, festivalSlug: festival.slug };

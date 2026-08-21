@@ -48,6 +48,15 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_groups_festival ON groups(festival_slug);
 `;
 
+// Indexes over columns the MIGRATIONS below add — they cannot live in SCHEMA,
+// which runs first and would reference a column that isn't there yet on an
+// existing database. Serves the per-IP creation limit's window count
+// (see countGroupsByIp in groups.js): exact match on the IP, range on the
+// timestamp, in that column order.
+const POST_MIGRATION_INDEXES = `
+  CREATE INDEX IF NOT EXISTS idx_groups_creator_window ON groups(creator_ip, created_at);
+`;
+
 // Columns added after the original schema shipped. Re-running is harmless:
 // SQLite rejects a duplicate column and we swallow that specific case.
 const MIGRATIONS = [
@@ -85,6 +94,7 @@ export function openDb(dbPath = DEFAULT_DB_PATH) {
       if (!/duplicate column name/i.test(e.message)) throw e;
     }
   }
+  db.exec(POST_MIGRATION_INDEXES);
   return db;
 }
 
