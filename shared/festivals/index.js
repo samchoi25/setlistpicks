@@ -10,10 +10,12 @@ import daisyChainFields2026 from './daisy-chain-fields-2026.js';
 import portola2026 from './portola-2026.js';
 import austinCityLimits2026Week1 from './austin-city-limits-2026-week-1.js';
 import austinCityLimits2026Week2 from './austin-city-limits-2026-week-2.js';
+import hardlyStrictlyBluegrass2026 from './hardly-strictly-bluegrass-2026.js';
 
 const DEFINITIONS = [
   outsideLands2026, daisyChainFields2026, portola2026,
   austinCityLimits2026Week1, austinCityLimits2026Week2,
+  hardlyStrictlyBluegrass2026,
 ];
 
 // A slug must never be mistakable for a group code, which is exactly 10
@@ -81,6 +83,7 @@ export const FESTIVAL_ALIASES = Object.freeze({
   'outside-lands': 'outside-lands-2026',
   'daisy-chain-fields': 'daisy-chain-fields-2026',
   'portola': 'portola-2026',
+  'hardly-strictly-bluegrass': 'hardly-strictly-bluegrass-2026',
 });
 
 // Where `/` sends visitors until there is a festival picker — the edition

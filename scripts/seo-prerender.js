@@ -69,7 +69,9 @@ export function renderLineupHtml(festival) {
     const unstagedBlock = unstaged.length
       ? `<div class="seo-stage"><ul>${unstaged.map((s) => `<li>${escHtml(s.artist)}</li>`).join('')}</ul></div>`
       : '';
-    return `<section class="seo-day"><h2>${escHtml(day.name)}, ${escHtml(day.date)}</h2>${stageBlocks}${unstagedBlock}</section>`;
+    // `dateLabel` covers a pseudo-day standing in for a whole run whose day
+    // split isn't announced yet (see ScheduleGrid's day heading).
+    return `<section class="seo-day"><h2>${escHtml(day.name)}, ${escHtml(day.dateLabel ?? day.date)}</h2>${stageBlocks}${unstagedBlock}</section>`;
   }).join('');
 
   const actCount = festival.SCHEDULE.reduce((n, s) => n + s.artists.length, 0);

@@ -165,7 +165,11 @@ function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, gro
   const mode = festival.dayMode(day.id);
   const [dayMonth, dayNumStr] = day.date.split(' ');
   const dayNum = parseInt(dayNumStr, 10);
-  const dayDate = `${dayNum}${ordinalSuffix(dayNum)}`;
+  // `dateLabel` overrides the derived "Oct 4th" form for a day that isn't one
+  // calendar day — a lineup announced with no day split yet is one pseudo-day
+  // covering the whole run (see hardly-strictly-bluegrass-2026.js), and its
+  // own `date` is only the last day so the end-of-festival maths stays right.
+  const dayDate = day.dateLabel ?? `${dayMonth} ${dayNum}${ordinalSuffix(dayNum)}`;
 
   const voteProps = makeVoteProps({
     myVotes, perArtistRaw, memberKey, memberDisplayName, groupId, onVoteChange, onLongPress, onNotMember,
@@ -191,7 +195,7 @@ function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, gro
     <div data-day={day.id}>
       <div className="day-heading">
         <span className="day-name">{day.name}</span>
-        <span className="day-date">{dayMonth} {dayDate}</span>
+        <span className="day-date">{dayDate}</span>
       </div>
       {stages.length > 0 && (
         <HeaderBar
