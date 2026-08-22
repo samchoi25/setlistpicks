@@ -3,15 +3,14 @@
 // shared transcription both weekends are built from, and its header comment
 // for sourcing.
 //
-// No stages or set times are announced yet, so `stages` stays empty and
-// every day renders as one alphabetical list (see dayModeOf() in
-// shared/festival.js) rather than columns.
+// The partial schedule release places some acts on a stage but gives no set
+// times, so days render as stage columns of unpositioned acts (see
+// dayModeOf()/buildUntimedDay() in shared/festival.js), with the acts that
+// have no stage yet pooled alphabetically below them.
 
-import { weekLineup, artistLinks } from './austin-city-limits-2026-lineup.js';
+import { weekLineup, artistLinks, stages } from './austin-city-limits-2026-lineup.js';
 
 const slug = 'austin-city-limits-2026-week-1';
-
-const stages = [];
 
 const days = [
   { id: 'fri', name: 'Friday', date: 'Oct 2' },
@@ -36,7 +35,7 @@ export default {
   utcOffset: '-05:00',
   dateRange: 'October 2–4, 2026',
   officialUrl: 'https://www.aclfestival.com/lineup',
-  dataVerifiedOn: '2026-08-15',
+  dataVerifiedOn: '2026-08-21',
   // The festival's own top-billed tier for each day, per the poster's font
   // hierarchy — Skrillex is this weekend's pick from the Friday co-headline
   // slot (Kings of Leon plays week 2 instead; see austin-city-limits-2026-lineup.js).

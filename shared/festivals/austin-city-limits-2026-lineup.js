@@ -11,9 +11,11 @@
 // https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a6111875abcb63a45fbce47_ACL26-Admat-ByDay-7.22-Confirmed.webp
 // Transcribed at full resolution on 2026-08-15.
 //
-// No stages or set times are announced yet — every act is a bare string
-// (see dayModeOf() in shared/festival.js), so both week festivals render as
-// one alphabetical list per day until a per-stage flyer exists to place them.
+// A partial per-stage schedule landed on 2026-08-21 (see `placements`): it
+// names the stage for the higher-billed acts and for the whole BMI Stage
+// bill, but not for the rest of the lineup, and the full grid for the
+// smaller acts is still unpublished. So acts are a mix of staged and bare
+// entries, and no day is timed yet — see `placements` for why.
 //
 // An act billed [W1] or [W2] on the poster plays only that weekend; no tag
 // means both. Encoded below as a bare string (both weekends) or a
@@ -34,13 +36,15 @@ const lineupByDay = {
     'Jesse Welles',
     'BUNT.',
     ['Bella Kay', 'W2'],
+    // Moved off Saturday in the schedule update; plays Friday of W2.
+    ['Sienna Spiro', 'W2'],
     'Paris Paloma',
     'LP',
     'Rusowsky',
     ['Natasha Bedingfield', 'W2'],
-    ['Łaszewo', 'W2'],
     ['Marlon Funaki', 'W1'],
-    'CMAT',
+    // Dropped from week 2 after the poster went out; W1 only now.
+    ['CMAT', 'W1'],
     ['Rebecca Black', 'W1'],
     ['Bo Staloch', 'W1'],
     ['Molly Santana', 'W1'],
@@ -74,7 +78,8 @@ const lineupByDay = {
     'Lykke Li',
     'Levity',
     'Suki Waterhouse',
-    ['Sienna Spiro', 'W2'],
+    // Moved off Friday in the schedule update; plays Saturday of W2.
+    ['Łaszewo', 'W2'],
     'Snow Strippers',
     "It's Murph",
     'Fakemink',
@@ -155,16 +160,145 @@ const lineupByDay = {
   ],
 };
 
-// Filters lineupByDay down to one weekend's `sets` shape: a bare string per
-// act, both-weekend and single-weekend alike, since buildUntimedDay just
-// wants names once resolved for the requested week.
+
+// The seven stages ACL 2026 runs, in the order the schedule lists them.
+// Same stages both weekends, so they live here alongside the lineup rather
+// than being duplicated into each week file. Tito's and BeatBox have no
+// placed acts yet; buildFestival() drops stages with no sets from a day's
+// columns, so carrying them here costs nothing and documents the full set.
+// Colours are the festival's own brand cues where there is an obvious one
+// (Amex blue, T-Mobile magenta, Miller gold) and distinct picks elsewhere.
+export const stages = [
+  { id: 'amex',       name: 'American Express Stage', short: 'AMEX', color: '--ocean-deep' },
+  { id: 'tmobile',    name: 'T-Mobile Stage',         short: 'TMO',  color: '--pink-carnation' },
+  { id: 'millerlite', name: 'Miller Lite Stage',      short: 'MIL',  color: '--marigold-gold' },
+  { id: 'snapchat',   name: 'Snapchat Stage',         short: 'SNAP', color: '--dusk-purple' },
+  { id: 'titos',      name: "Tito's Stage",           short: 'TITO', color: '--deep-teal' },
+  { id: 'bmi',        name: 'BMI Stage',              short: 'BMI',  color: '--jungle-green' },
+  { id: 'beatbox',    name: 'BeatBox Stage',          short: 'BBX',  color: '--brick-clay' },
+];
+
+// Stage and start time per act, from the partial schedule release, as
+// `[stageId | null, 'HH:MM' | null]`. Both weekends play the same stage at
+// the same time, so one map covers them; the acts absent from it had neither
+// announced and stay bare strings in the day's stageless pool.
+//
+// The start times are recorded but deliberately NOT rendered as timed sets.
+// A day has to be entirely timed or entirely untimed — dayModeOf() in
+// shared/festival.js throws on a mix — and only 24 of the ~127 acts have a
+// time, so emitting these as `[stage, start, end, artist]` would break both
+// week festivals outright. They would also need end times, which the release
+// doesn't give. What they do here is order each stage's column so it reads
+// top-down in the order the acts actually play, which is real signal the
+// bare alphabetical pool can't carry; and they're the transcription to build
+// the timed days from once the rest of the grid and set lengths are out.
+const placements = {
+  // ── Friday ────────────────────────────────────────────────────────────
+  'Asleep at the Wheel':   ['tmobile',    '13:00'],
+  'Hunx and His Punx':     ['amex',       '13:15'],
+  'Amyl and the Sniffers': ['amex',       '16:30'],
+  'Turnstile':             ['tmobile',    '18:15'],
+  'Labrinth':              ['amex',       '18:30'],
+  'Leon Thomas':           ['millerlite', '19:15'],
+  'The Chainsmokers':      ['snapchat',   '19:30'],
+  // The Friday co-headline slot: Skrillex plays it W1, Kings of Leon W2.
+  'Skrillex':              ['tmobile',    '20:15'],
+  'Kings of Leon':         ['tmobile',    '20:15'],
+  'Charli XCX':            ['amex',       '20:40'],
+
+  // ── Saturday ──────────────────────────────────────────────────────────
+  'Young Miko':            [null,         '16:30'],
+  'Bleachers':             [null,         '18:15'],
+  'Lola Young':            [null,         '18:30'],
+  'Levity':                [null,         '19:15'],
+  'Lykke Li':              [null,         '19:30'],
+  'Lorde':                 ['tmobile',    '20:15'],
+  'RÜFÜS DU SOL':          ['amex',       '20:30'],
+
+  // ── Sunday ────────────────────────────────────────────────────────────
+  'Geese':                 [null,         '18:30'],
+  'Sofi Tukker':           [null,         '18:30'],
+  'Parcels':               [null,         '19:30'],
+  'Blood Orange':          [null,         '19:30'],
+  'The War on Drugs':      [null,         '19:30'],
+  'The xx':                ['tmobile',    '20:30'],
+  'Twenty One Pilots':     ['amex',       '20:30'],
+
+  // ── BMI Stage ─────────────────────────────────────────────────────────
+  // The release named the full BMI bill but no individual set times, so
+  // these sort alphabetically at the foot of the column rather than in a
+  // play order that isn't known.
+  'Elle Coves':      ['bmi', null],
+  'Girlfriend':      ['bmi', null],
+  'Grocery Bag':     ['bmi', null],
+  'Izzy Escobar':    ['bmi', null],
+  'Joe Jordan':      ['bmi', null],
+  'Leon Knight':     ['bmi', null],
+  'Chloe Qisha':     ['bmi', null],
+  'Coleman Jennings':['bmi', null],
+  'Common People':   ['bmi', null],
+  'Damaris Bojor':   ['bmi', null],
+  'Emma Ogier':      ['bmi', null],
+  'Fai Laci':        ['bmi', null],
+  'Fightmaster':     ['bmi', null],
+  'Aaron Rowe':      ['bmi', null],
+  'Chelsea Jordan':  ['bmi', null],
+  'Fancy Hagood':    ['bmi', null],
+  'Lauren Sanderson':['bmi', null],
+  'Marzz':           ['bmi', null],
+  'Rubio':           ['bmi', null],
+  'Sasha Keable':    ['bmi', null],
+  'VWILLZ':          ['bmi', null],
+};
+
+// A placement keyed by a name that isn't in the lineup — a typo, or an act
+// named in a schedule release but never transcribed off the poster — would
+// silently do nothing, so fail loudly at import instead.
+const lineupNames = new Set(
+  Object.values(lineupByDay).flatMap((day) =>
+    day.map((e) => (typeof e === 'string' ? e : e[0])),
+  ),
+);
+const stageIds = new Set(stages.map((s) => s.id));
+for (const [name, [stageId]] of Object.entries(placements)) {
+  if (!lineupNames.has(name)) {
+    throw new Error(`ACL 2026: placement for '${name}', who is not in the lineup`);
+  }
+  if (stageId !== null && !stageIds.has(stageId)) {
+    throw new Error(`ACL 2026: placement for '${name}' names unknown stage '${stageId}'`);
+  }
+}
+
+// Filters lineupByDay down to one weekend's `sets` shape: `[stageId, name]`
+// for an act `placements` puts on a stage, a bare name for one it doesn't
+// (see entryKind() in shared/festival.js). Both-weekend and single-weekend
+// acts resolve the same way once the week is known.
+//
+// Staged acts are emitted in stage order, then by start time, so each stage
+// column reads in play order — buildUntimedDay keeps the order it's given
+// within a stage, treating it as the flyer's own. Acts with no announced
+// time sort last, alphabetically. Unstaged acts trail behind in any order;
+// buildUntimedDay alphabetizes that pool itself.
+const NO_TIME = '99:99';
+
 export function weekLineup(week) {
   const tag = week === 1 ? 'W1' : 'W2';
+  const stageRank = new Map(stages.map((s, i) => [s.id, i]));
   const out = {};
   for (const [day, entries] of Object.entries(lineupByDay)) {
-    out[day] = entries
+    const names = entries
       .filter((e) => typeof e === 'string' || e[1] === tag)
       .map((e) => (typeof e === 'string' ? e : e[0]));
+    const staged = names.filter((n) => placements[n]?.[0]);
+    const unstaged = names.filter((n) => !placements[n]?.[0]);
+    staged.sort((a, b) => {
+      const [stageA, startA] = placements[a];
+      const [stageB, startB] = placements[b];
+      return stageRank.get(stageA) - stageRank.get(stageB)
+        || (startA ?? NO_TIME).localeCompare(startB ?? NO_TIME)
+        || a.localeCompare(b);
+    });
+    out[day] = [...staged.map((n) => [placements[n][0], n]), ...unstaged];
   }
   return out;
 }
