@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { api } from '../api.js';
-import { setIdentity, clearIdentity, setActiveGroup } from '../storage.js';
+import { setIdentity, clearIdentity, setActiveGroup, renameGroupInHistory, removeGroupFromHistory } from '../storage.js';
 import { toast } from '../toast.js';
 import { useOnline } from '../net-status.js';
+import { useFestival } from '../festival-context.jsx';
 import FestivalSwitcher from './FestivalSwitcher.jsx';
+import GroupSwitcher from './GroupSwitcher.jsx';
 
 function initials(name) {
   return name.split(/\s+/).filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
@@ -34,6 +36,7 @@ export default function Header({
   memberDisplayName, setMemberDisplayName,
   mutedMembers, setMutedMembers, memberVoteCounts = {}, onLeave, onEditingChange,
 }) {
+  const festival = useFestival();
   const [editing, setEditing] = useState(false);
   // Editing means renaming/removing members or the group itself — all
   // network writes, so the whole panel (including "Leave Group", which
@@ -99,6 +102,7 @@ export default function Header({
         newGroup !== prevGroup ? api.updateGroup(groupId, newGroup) : Promise.resolve(),
         newName  !== prevName  ? api.updateMember(groupId, member.key, newName) : Promise.resolve(),
       ]);
+      if (newGroup !== prevGroup) renameGroupInHistory(festival.slug, groupId, newGroup);
     } catch (e) {
       setGroupName(prevGroup);
       setMemberDisplayName(prevName);
@@ -137,6 +141,7 @@ export default function Header({
   async function doLeave(keepVotes) {
     try { await api.removeMember(groupId, member.key, { keepVotes }); } catch {}
     clearIdentity(groupId);
+    removeGroupFromHistory(festival.slug, groupId);
     onLeave();
   }
 
@@ -251,7 +256,7 @@ export default function Header({
     <div className="brand">
       <FestivalSwitcher />
       <div className="brand-info" style={{ flex: 1, minWidth: 0 }}>
-        <div className="brand-title">{displayGroupName}</div>
+        <GroupSwitcher groupId={groupId} groupName={displayGroupName} disabled={editing} />
         <div className="brand-sub" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {memberCount} {memberCount === 1 ? 'member' : 'members'}
           {!editing && online && (

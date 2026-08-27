@@ -3,7 +3,7 @@ import React, {
 } from 'react';
 import { useFestival } from '../festival-context.jsx';
 import { api } from '../api.js';
-import { clearIdentity, setCachedGroup } from '../storage.js';
+import { clearIdentity, setCachedGroup, renameGroupInHistory } from '../storage.js';
 import { isOnline, subscribe } from '../net-status.js';
 import Header from '../components/Header.jsx';
 import ShareCard from '../components/ShareCard.jsx';
@@ -83,7 +83,10 @@ export default function GroupView({
           const msg = JSON.parse(e.data);
           if (msg.type === 'votes') {
             if (msg.members)   setMutedMembers(msg.members);
-            if (msg.groupName) setGroupName(msg.groupName);
+            if (msg.groupName) {
+              setGroupName(msg.groupName);
+              renameGroupInHistory(festival.slug, groupId, msg.groupName);
+            }
             // Keep memberDisplayName in sync with server's record of our name
             if (msg.members) {
               const me = msg.members.find((m) => m.key === member.key);

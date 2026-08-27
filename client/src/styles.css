@@ -171,6 +171,72 @@ a.brand-logo-option:hover {
   letter-spacing: 0.06em;
   color: var(--ink);
 }
+/* Button reset — .brand-title becomes a <button> once it doubles as a group
+   switcher (see GroupSwitcher.jsx); everything above still applies. */
+.brand-title-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  max-width: 100%;
+  min-width: 0;
+}
+.brand-title-wrap {
+  position: relative;
+  min-width: 0;
+}
+.brand-title-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 10;
+  min-width: 200px;
+  max-width: min(320px, calc(100vw - 32px));
+  background: var(--paper);
+  border: 1px solid rgba(36, 103, 177, 0.18);
+  box-shadow: 0 8px 24px rgba(36, 103, 177, 0.15);
+  padding: 6px;
+  display: grid;
+  gap: 2px;
+}
+.brand-title-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+a.brand-title-option:hover,
+button.brand-title-option:hover {
+  background: rgba(36, 103, 177, 0.08);
+}
+.brand-title-option.current {
+  color: var(--ink-soft);
+  cursor: default;
+}
+.brand-title-divider {
+  height: 1px;
+  background: var(--rule);
+  margin: 4px 2px;
+}
+.brand-title-option.create {
+  color: var(--btn-primary);
+  font-weight: 700;
+}
 .brand-sub {
   color: var(--ink-soft);
   font-size: 1rem;

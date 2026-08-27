@@ -188,3 +188,66 @@ export function clearCachedGroup(groupId) {
   delete all[groupId];
   writeCache(all);
 }
+
+/*
+ * Per-festival group history — every group this browser has opened for a
+ * festival, so a group switcher can list them most-recently-viewed first.
+ * Unlike `activeGroup` above (one in-progress group per festival), this
+ * keeps every group seen, up to HISTORY_CAP, so a crew member can belong to
+ * several crews for the same festival and jump between them.
+ */
+const HISTORY_KEY = 'brsp.groupHistory.v1';
+const HISTORY_CAP = 20;
+
+function readHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function writeHistory(obj) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(obj));
+}
+
+// Record that `groupId` (named `name`) was just opened, bumping it to the
+// top of its festival's history. Capped per festival, evicting whichever
+// group was viewed longest ago.
+export function recordGroupVisit(festivalSlug, groupId, name, cap = HISTORY_CAP) {
+  const all = readHistory();
+  const forFestival = { ...(all[festivalSlug] || {}) };
+  forFestival[groupId] = { name, at: Date.now() };
+
+  const entries = Object.entries(forFestival).sort(([, a], [, b]) => b.at - a.at);
+  all[festivalSlug] = Object.fromEntries(entries.slice(0, cap));
+  writeHistory(all);
+}
+
+// Update a group's name in history without touching when it was last
+// viewed, so a rename doesn't reorder the switcher just because someone
+// edited the name.
+export function renameGroupInHistory(festivalSlug, groupId, name) {
+  const all = readHistory();
+  const entry = all[festivalSlug]?.[groupId];
+  if (!entry) return;
+  all[festivalSlug] = { ...all[festivalSlug], [groupId]: { ...entry, name } };
+  writeHistory(all);
+}
+
+export function removeGroupFromHistory(festivalSlug, groupId) {
+  const all = readHistory();
+  if (!all[festivalSlug]?.[groupId]) return;
+  const rest = { ...all[festivalSlug] };
+  delete rest[groupId];
+  all[festivalSlug] = rest;
+  writeHistory(all);
+}
+
+// This festival's groups, most-recently-viewed first.
+export function getGroupHistory(festivalSlug) {
+  const forFestival = readHistory()[festivalSlug] || {};
+  return Object.entries(forFestival)
+    .map(([groupId, { name, at }]) => ({ groupId, name, at }))
+    .sort((a, b) => b.at - a.at);
+}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from './api.js';
 import {
   getIdentity, setIdentity, getActiveGroup, setActiveGroup, clearActiveGroup, getMostRecentGroup,
-  getCachedGroup, setCachedGroup,
+  getCachedGroup, setCachedGroup, recordGroupVisit,
 } from './storage.js';
 import { isOnline } from './net-status.js';
 import { ensureSvgDefs } from './svgDefs.js';
@@ -76,6 +76,7 @@ function AppRoutes() {
     const identity = getIdentity(groupId);
     if (cached && identity) {
       setActiveGroup(cached.festivalSlug, groupId);
+      recordGroupVisit(cached.festivalSlug, groupId, cached.groupMeta?.name);
       setGroupState({ groupId, member: identity, groupMeta: cached.groupMeta, freshJoin: false, offline: true });
       return true;
     }
@@ -119,7 +120,9 @@ function AppRoutes() {
         freshJoin = true;
       }
 
-      setActiveGroup(groupMeta.festivalSlug ?? festival.slug, groupId);
+      const slug = groupMeta.festivalSlug ?? festival.slug;
+      setActiveGroup(slug, groupId);
+      recordGroupVisit(slug, groupId, groupMeta.name);
       setGroupState({ groupId, member: identity, groupMeta, freshJoin, offline: false });
     } catch (e) {
       if (e.offline) loadFromCache(groupId);
