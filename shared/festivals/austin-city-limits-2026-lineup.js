@@ -7,15 +7,30 @@
 // here rather than duplicating it into each week file keeps the ~127 acts
 // and their links defined exactly once.
 //
-// Source: the official lineup poster, linked from https://www.aclfestival.com/lineup —
-// https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a6111875abcb63a45fbce47_ACL26-Admat-ByDay-7.22-Confirmed.webp
-// Transcribed at full resolution on 2026-08-15.
+// Sourcing — two different dates, and one of them is known stale. Read this
+// before trusting any part of the file:
 //
-// A partial per-stage schedule landed on 2026-08-21 (see `placements`): it
-// names the stage for the higher-billed acts and for the whole BMI Stage
-// bill, but not for the rest of the lineup, and the full grid for the
-// smaller acts is still unpublished. So acts are a mix of staged and bare
-// entries, and no day is timed yet — see `placements` for why.
+//   lineupByDay   the 7.22 poster, transcribed at full resolution 2026-08-15:
+//                 https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a6111875abcb63a45fbce47_ACL26-Admat-ByDay-7.22-Confirmed.webp
+//                 ⚠ KNOWN STALE. aclfestival.com/lineup has since replaced
+//                 that admat with an 8.21 reissue (different filename and
+//                 asset id), checked 2026-08-22:
+//                 https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a88b39303c21e3978a71fdb_ACL26-Admat-ByDay-8.21.webp
+//                 Nobody has re-transcribed against it. The three moves
+//                 marked "8.21 schedule update" below were applied by hand
+//                 from a summary of that reissue, so those are in; any
+//                 *other* change the 8.21 poster carries is silently
+//                 missing. Re-read the artwork and diff it against this list
+//                 before relying on the lineup being complete.
+//
+//   placements    the partial per-stage schedule release, 2026-08-21. Names
+//                 the stage for the higher-billed acts and for the whole BMI
+//                 Stage bill, but not for the rest of the lineup, and gives
+//                 no end times. The full grid is published only as six
+//                 client-side day images at aclfestival.com/schedule, which
+//                 is why the smaller acts are still unplaced. So acts are a
+//                 mix of staged and bare entries, and no day is timed yet —
+//                 see `placements` for why that is forced, not a choice.
 //
 // An act billed [W1] or [W2] on the poster plays only that weekend; no tag
 // means both. Encoded below as a bare string (both weekends) or a
@@ -36,14 +51,14 @@ const lineupByDay = {
     'Jesse Welles',
     'BUNT.',
     ['Bella Kay', 'W2'],
-    // Moved off Saturday in the schedule update; plays Friday of W2.
+    // 8.21 schedule update: moved off Saturday; plays Friday of W2.
     ['Sienna Spiro', 'W2'],
     'Paris Paloma',
     'LP',
     'Rusowsky',
     ['Natasha Bedingfield', 'W2'],
     ['Marlon Funaki', 'W1'],
-    // Dropped from week 2 after the poster went out; W1 only now.
+    // 8.21 schedule update: dropped from week 2; W1 only now.
     ['CMAT', 'W1'],
     ['Rebecca Black', 'W1'],
     ['Bo Staloch', 'W1'],
@@ -78,7 +93,7 @@ const lineupByDay = {
     'Lykke Li',
     'Levity',
     'Suki Waterhouse',
-    // Moved off Friday in the schedule update; plays Saturday of W2.
+    // 8.21 schedule update: moved off Friday; plays Saturday of W2.
     ['Łaszewo', 'W2'],
     'Snow Strippers',
     "It's Murph",
