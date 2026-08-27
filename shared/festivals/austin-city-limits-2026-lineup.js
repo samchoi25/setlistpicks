@@ -3,184 +3,45 @@
 // ACL 2026 runs as two near-identical weekends (Oct 2–4 and Oct 9–11), each
 // with its own ticket and its own group of festival-goers — so it's modeled
 // as two separate festivals, austin-city-limits-2026-week-1.js and
-// -week-2.js, both built from this one transcription. Splitting the data out
-// here rather than duplicating it into each week file keeps the ~127 acts
-// and their links defined exactly once.
+// -week-2.js, each with its own complete, independently-timed `sets` table.
+// This module holds only what both weekends share: the stage list and the
+// artist links.
 //
-// Sourcing — two different dates, and one of them is known stale. Read this
-// before trusting any part of the file:
+// Sourcing — the full per-stage, per-time schedule, published as six images
+// (the schedule page itself has no text or API) at
+// https://www.aclfestival.com/schedule, read at full resolution 2026-08-26:
+//   W1 Fri (8.17): https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a8353b915c46429a38e9ea7_ACL26-Schedule-Wk1-1002-Fri-8.17.webp
+//   W1 Sat (8.17): https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a836c83915b2704cea92aee_ACL26-Schedule-Wk1-1003-Sat-8.17.png
+//   W1 Sun (8.21): https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a88b3d87a5ae67ffc9f20db_ACL26-Schedule-Wk1-1004-Sun-8.21.webp
+//   W2 Fri (8.17): https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a8353c65160f0771ba3f4eb_ACL26-Schedule-Wk2-1009-Fri-8.17.webp
+//   W2 Sat (8.17): https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a836c70cc2c2b925252a6e2_ACL26-Schedule-Wk2-1010-Sat-8.17.png
+//   W2 Sun (8.17): https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a8353efac62c6baed54c80c_ACL26-Schedule-Wk2-1011-Sun-8.17.webp
+// This replaces the old two-source situation (a lineup admat plus a partial
+// per-stage placement release with no end times) — the schedule above gives
+// a real start AND end time for every act except the last set on each stage
+// each day, which prints a start time only (see the closing-set comment in
+// each week file). Silent Disco is printed on the Tito's Handmade Vodka
+// column 8:00–10:00 every day, both weekends; it's a festival activity, not
+// a bookable artist, and is deliberately left out of `sets`.
 //
-//   lineupByDay   the 7.22 poster, transcribed at full resolution 2026-08-15:
-//                 https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a6111875abcb63a45fbce47_ACL26-Admat-ByDay-7.22-Confirmed.webp
-//                 ⚠ KNOWN STALE. aclfestival.com/lineup has since replaced
-//                 that admat with an 8.21 reissue (different filename and
-//                 asset id), checked 2026-08-22:
-//                 https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a88b39303c21e3978a71fdb_ACL26-Admat-ByDay-8.21.webp
-//                 Nobody has re-transcribed against it. The three moves
-//                 marked "8.21 schedule update" below were applied by hand
-//                 from a summary of that reissue, so those are in; any
-//                 *other* change the 8.21 poster carries is silently
-//                 missing. Re-read the artwork and diff it against this list
-//                 before relying on the lineup being complete.
+// Reconciling the new schedule against the old admat-derived lineup surfaced
+// three discrepancies worth flagging rather than silently resolving:
+//   - Bo Staloch was previously tagged W1-only (Friday, Tito's). The
+//     schedule shows him at the identical Friday Tito's slot (3:15–4:00)
+//     both weekends, so he's untagged (both weeks) below and in both week
+//     files now.
+//   - Presley Regier was previously listed W2-only (Saturday, BMI-tier).
+//     He does not appear anywhere on any of the six schedule images —
+//     possibly cut from the bill. Not included in either week's `sets`.
+//     Flag for review if he resurfaces on a future schedule update.
+//   - Josh Conway was previously listed W1-only (Sunday, Miller-Lite-tier).
+//     He does not appear on the W1 Sunday schedule; the analogous W2 Sunday
+//     Miller Lite early slot instead lists Joshua Jensen. These read as two
+//     different people rather than one act renamed — not merged. Josh
+//     Conway is not included in either week's `sets`; Joshua Jensen is
+//     included in week 2 only.
 //
-//   placements    the partial per-stage schedule release, 2026-08-21. Names
-//                 the stage for the higher-billed acts and for the whole BMI
-//                 Stage bill, but not for the rest of the lineup, and gives
-//                 no end times. The full grid is published only as six
-//                 client-side day images at aclfestival.com/schedule, which
-//                 is why the smaller acts are still unplaced. So acts are a
-//                 mix of staged and bare entries, and no day is timed yet —
-//                 see `placements` for why that is forced, not a choice.
-//
-// An act billed [W1] or [W2] on the poster plays only that weekend; no tag
-// means both. Encoded below as a bare string (both weekends) or a
-// `[name, 'W1' | 'W2']` tuple (one weekend only) — weekLineup() filters and
-// unwraps these into the plain string list each week's `sets` needs.
-const lineupByDay = {
-  fri: [
-    'Charli XCX',
-    ['Skrillex', 'W1'],
-    ['Kings of Leon', 'W2'],
-    'Turnstile',
-    'Labrinth',
-    'The Chainsmokers',
-    'Leon Thomas',
-    ['Brandon Flowers', 'W1'],
-    'Amyl and the Sniffers',
-    'Steve Aoki',
-    'Jesse Welles',
-    'BUNT.',
-    ['Bella Kay', 'W2'],
-    // 8.21 schedule update: moved off Saturday; plays Friday of W2.
-    ['Sienna Spiro', 'W2'],
-    'Paris Paloma',
-    'LP',
-    'Rusowsky',
-    ['Natasha Bedingfield', 'W2'],
-    ['Marlon Funaki', 'W1'],
-    // 8.21 schedule update: dropped from week 2; W1 only now.
-    ['CMAT', 'W1'],
-    ['Rebecca Black', 'W1'],
-    ['Bo Staloch', 'W1'],
-    ['Molly Santana', 'W1'],
-    ['World Famous Pets', 'W2'],
-    'Faouzia',
-    ['Hunx and His Punx', 'W1'],
-    ['New Constellations', 'W1'],
-    ['Asleep at the Wheel', 'W1'],
-    ['S.G. Goodman', 'W2'],
-    ['Cassandra Coleman', 'W2'],
-    ['Brigitte Calls Me Baby', 'W2'],
-    ['Dallas Wax', 'W2'],
-    ['Night Traveler', 'W1'],
-    ['Grocery Bag', 'W1'],
-    ['Joe Jordan', 'W2'],
-    ['Happy Landing', 'W2'],
-    ['Girlfriend', 'W2'],
-    ['Elle Coves', 'W1'],
-    ['Izzy Escobar', 'W1'],
-    ['Almost Heaven', 'W2'],
-    ['Solomon Hicks', 'W1'],
-    ['Leon Knight', 'W2'],
-    ['The 4411', 'W1'],
-  ],
-  sat: [
-    'RÜFÜS DU SOL',
-    'Lorde',
-    'Lola Young',
-    'Young Miko',
-    'Bleachers',
-    'Lykke Li',
-    'Levity',
-    'Suki Waterhouse',
-    // 8.21 schedule update: moved off Friday; plays Saturday of W2.
-    ['Łaszewo', 'W2'],
-    'Snow Strippers',
-    "It's Murph",
-    'Fakemink',
-    ['Palace', 'W1'],
-    '¥ØU$UK€ ¥UK1MAT$U',
-    'Skye Newman',
-    'Rodrigo y Gabriela',
-    'Balu Brigada',
-    ['Rochelle Jordan', 'W1'],
-    'Arcy Drive',
-    'Finn Wolfhard',
-    'Ryan Beatty',
-    'Don West',
-    'Temper City',
-    ['Gabriel Jacoby', 'W2'],
-    'Annie DiRusso',
-    'Night Tapes',
-    ['DJ Cassandra', 'W1'],
-    ['Cure for Paranoia', 'W1'],
-    ['Nat Myers', 'W2'],
-    ['Chloe Qisha', 'W2'],
-    ['Fai Laci', 'W1'],
-    ['Emma Ogier', 'W1'],
-    ['Common People', 'W2'],
-    ['Coleman Jennings', 'W1'],
-    ['Damaris Bojor', 'W2'],
-    ['Fightmaster', 'W1'],
-    ['LLUVII', 'W2'],
-    ['Montclair', 'W2'],
-    ['Left Lucid', 'W1'],
-    ['Presley Regier', 'W2'],
-  ],
-  sun: [
-    'Twenty One Pilots',
-    'The xx',
-    'Geese',
-    'Sofi Tukker',
-    'Parcels',
-    'The War on Drugs',
-    'Blood Orange',
-    'Max McNown',
-    ['Cannons', 'W1'],
-    'Audrey Hobert',
-    'Saint Motel',
-    ['Houndmouth', 'W2'],
-    'FCUKERS',
-    ['Stella Lefty', 'W1'],
-    ['Underscores', 'W1'],
-    'Claire Rosinkranz',
-    'Noga Erez',
-    ['Dexter and the Moonrocks', 'W1'],
-    ['Grace Ives', 'W2'],
-    'Rio Kosta',
-    ['Josh Conway', 'W1'],
-    ['Ethan Regan', 'W2'],
-    ['Bad Nerves', 'W2'],
-    ['Charlotte Lawrence', 'W2'],
-    'Paloma Morphy',
-    'Sunday (1994)',
-    ['Rum Jungle', 'W2'],
-    'Calder Allen',
-    ['Fancy Hagood', 'W1'],
-    ['Britton', 'W1'],
-    ['Solya', 'W1'],
-    ['Villanelle', 'W1'],
-    ['Jess Williamson', 'W1'],
-    ['Kevin Atwater', 'W2'],
-    ['Thomas Day', 'W2'],
-    ['Aaron Rowe', 'W1'],
-    ['Lauren Sanderson', 'W1'],
-    ['VWILLZ', 'W2'],
-    ['Sasha Keable', 'W2'],
-    ['Rubio', 'W1'],
-    ['Marzz', 'W2'],
-    ['Chelsea Jordan', 'W2'],
-    ['The Moriah Sisters', 'W1'],
-    ['The Huston-Tillotson University Jazz Collective', 'W2'],
-  ],
-};
-
-
 // The seven stages ACL 2026 runs, in the order the schedule lists them.
-// Same stages both weekends, so they live here alongside the lineup rather
-// than being duplicated into each week file. Tito's and BeatBox have no
-// placed acts yet; buildFestival() drops stages with no sets from a day's
-// columns, so carrying them here costs nothing and documents the full set.
 // Colours are the festival's own brand cues where there is an obvious one
 // (Amex blue, T-Mobile magenta, Miller gold) and distinct picks elsewhere.
 export const stages = [
@@ -193,143 +54,22 @@ export const stages = [
   { id: 'beatbox',    name: 'BeatBox Stage',          short: 'BBX',  color: '--brick-clay' },
 ];
 
-// Stage and start time per act, from the partial schedule release, as
-// `[stageId | null, 'HH:MM' | null]`. Both weekends play the same stage at
-// the same time, so one map covers them; the acts absent from it had neither
-// announced and stay bare strings in the day's stageless pool.
-//
-// The start times are recorded but deliberately NOT rendered as timed sets.
-// A day has to be entirely timed or entirely untimed — dayModeOf() in
-// shared/festival.js throws on a mix — and only 24 of the ~127 acts have a
-// time, so emitting these as `[stage, start, end, artist]` would break both
-// week festivals outright. They would also need end times, which the release
-// doesn't give. What they do here is order each stage's column so it reads
-// top-down in the order the acts actually play, which is real signal the
-// bare alphabetical pool can't carry; and they're the transcription to build
-// the timed days from once the rest of the grid and set lengths are out.
-const placements = {
-  // ── Friday ────────────────────────────────────────────────────────────
-  'Asleep at the Wheel':   ['tmobile',    '13:00'],
-  'Hunx and His Punx':     ['amex',       '13:15'],
-  'Amyl and the Sniffers': ['amex',       '16:30'],
-  'Turnstile':             ['tmobile',    '18:15'],
-  'Labrinth':              ['amex',       '18:30'],
-  'Leon Thomas':           ['millerlite', '19:15'],
-  'The Chainsmokers':      ['snapchat',   '19:30'],
-  // The Friday co-headline slot: Skrillex plays it W1, Kings of Leon W2.
-  'Skrillex':              ['tmobile',    '20:15'],
-  'Kings of Leon':         ['tmobile',    '20:15'],
-  'Charli XCX':            ['amex',       '20:40'],
-
-  // ── Saturday ──────────────────────────────────────────────────────────
-  'Young Miko':            [null,         '16:30'],
-  'Bleachers':             [null,         '18:15'],
-  'Lola Young':            [null,         '18:30'],
-  'Levity':                [null,         '19:15'],
-  'Lykke Li':              [null,         '19:30'],
-  'Lorde':                 ['tmobile',    '20:15'],
-  'RÜFÜS DU SOL':          ['amex',       '20:30'],
-
-  // ── Sunday ────────────────────────────────────────────────────────────
-  'Geese':                 [null,         '18:30'],
-  'Sofi Tukker':           [null,         '18:30'],
-  'Parcels':               [null,         '19:30'],
-  'Blood Orange':          [null,         '19:30'],
-  'The War on Drugs':      [null,         '19:30'],
-  'The xx':                ['tmobile',    '20:30'],
-  'Twenty One Pilots':     ['amex',       '20:30'],
-
-  // ── BMI Stage ─────────────────────────────────────────────────────────
-  // The release named the full BMI bill but no individual set times, so
-  // these sort alphabetically at the foot of the column rather than in a
-  // play order that isn't known.
-  'Elle Coves':      ['bmi', null],
-  'Girlfriend':      ['bmi', null],
-  'Grocery Bag':     ['bmi', null],
-  'Izzy Escobar':    ['bmi', null],
-  'Joe Jordan':      ['bmi', null],
-  'Leon Knight':     ['bmi', null],
-  'Chloe Qisha':     ['bmi', null],
-  'Coleman Jennings':['bmi', null],
-  'Common People':   ['bmi', null],
-  'Damaris Bojor':   ['bmi', null],
-  'Emma Ogier':      ['bmi', null],
-  'Fai Laci':        ['bmi', null],
-  'Fightmaster':     ['bmi', null],
-  'Aaron Rowe':      ['bmi', null],
-  'Chelsea Jordan':  ['bmi', null],
-  'Fancy Hagood':    ['bmi', null],
-  'Lauren Sanderson':['bmi', null],
-  'Marzz':           ['bmi', null],
-  'Rubio':           ['bmi', null],
-  'Sasha Keable':    ['bmi', null],
-  'VWILLZ':          ['bmi', null],
-};
-
-// A placement keyed by a name that isn't in the lineup — a typo, or an act
-// named in a schedule release but never transcribed off the poster — would
-// silently do nothing, so fail loudly at import instead.
-const lineupNames = new Set(
-  Object.values(lineupByDay).flatMap((day) =>
-    day.map((e) => (typeof e === 'string' ? e : e[0])),
-  ),
-);
-const stageIds = new Set(stages.map((s) => s.id));
-for (const [name, [stageId]] of Object.entries(placements)) {
-  if (!lineupNames.has(name)) {
-    throw new Error(`ACL 2026: placement for '${name}', who is not in the lineup`);
-  }
-  if (stageId !== null && !stageIds.has(stageId)) {
-    throw new Error(`ACL 2026: placement for '${name}' names unknown stage '${stageId}'`);
-  }
-}
-
-// Filters lineupByDay down to one weekend's `sets` shape: `[stageId, name]`
-// for an act `placements` puts on a stage, a bare name for one it doesn't
-// (see entryKind() in shared/festival.js). Both-weekend and single-weekend
-// acts resolve the same way once the week is known.
-//
-// Staged acts are emitted in stage order, then by start time, so each stage
-// column reads in play order — buildUntimedDay keeps the order it's given
-// within a stage, treating it as the flyer's own. Acts with no announced
-// time sort last, alphabetically. Unstaged acts trail behind in any order;
-// buildUntimedDay alphabetizes that pool itself.
-const NO_TIME = '99:99';
-
-export function weekLineup(week) {
-  const tag = week === 1 ? 'W1' : 'W2';
-  const stageRank = new Map(stages.map((s, i) => [s.id, i]));
-  const out = {};
-  for (const [day, entries] of Object.entries(lineupByDay)) {
-    const names = entries
-      .filter((e) => typeof e === 'string' || e[1] === tag)
-      .map((e) => (typeof e === 'string' ? e : e[0]));
-    const staged = names.filter((n) => placements[n]?.[0]);
-    const unstaged = names.filter((n) => !placements[n]?.[0]);
-    staged.sort((a, b) => {
-      const [stageA, startA] = placements[a];
-      const [stageB, startB] = placements[b];
-      return stageRank.get(stageA) - stageRank.get(stageB)
-        || (startA ?? NO_TIME).localeCompare(startB ?? NO_TIME)
-        || a.localeCompare(b);
-    });
-    out[day] = [...staged.map((n) => [placements[n][0], n]), ...unstaged];
-  }
-  return out;
-}
-
 // Spotify/Apple Music/SoundCloud links, shown on long-press (see
 // ArtistPopup.jsx). None of this is published by the festival itself (no
 // per-artist API the way Portola/AEG-produced festivals have) — every entry
 // was found and verified individually (name, bio, genre and/or a matching
 // "Zilker Park Parking, Austin" tour date, not just first search hit) on
-// 2026-08-15, using a mix of web search, MusicBrainz's editor-verified
+// 2026-08-15 (2026-08-26 for Elijah Delgado, added when the schedule was
+// transcribed), using a mix of web search, MusicBrainz's editor-verified
 // cross-platform artist relationships, and Apple's iTunes Search API.
 // Omitted entirely where nothing could be confidently verified: Aaron Rowe,
-// Chelsea Jordan, Coleman Jennings, Don West, Girlfriend, and The
-// Huston-Tillotson University Jazz Collective — all smaller acts with
-// enough same-named collisions elsewhere that guessing felt worse than
-// leaving them blank.
+// Chelsea Jordan, Coleman Jennings, Don West, Girlfriend, The
+// Huston-Tillotson University Jazz Collective, Radio Free Alice, LIVE, Macy
+// Todd, and Joshua Jensen — all smaller acts with enough same-named
+// collisions elsewhere (a Melbourne post-punk band on Atlantic Records for
+// "Radio Free Alice", the 90s rock band for "LIVE", a Georgia-based
+// songwriter for "Macy Todd", none clearly the Austin-scale acts booked
+// here) that guessing felt worse than leaving them blank.
 export const artistLinks = {
   '¥ØU$UK€ ¥UK1MAT$U': { spotify: 'https://open.spotify.com/artist/0BEmPeY22LTrZJFFP2xIyk', appleMusic: 'https://music.apple.com/us/artist/1830360631', soundcloud: 'https://soundcloud.com/yousukeyukimatsu' },
   'Almost Heaven': { spotify: 'https://open.spotify.com/artist/25M75SztfGLmmWJK09R1dN', appleMusic: 'https://music.apple.com/us/artist/almost-heaven/1625944016' },
@@ -362,6 +102,7 @@ export const artistLinks = {
   'Damaris Bojor': { appleMusic: 'https://music.apple.com/us/artist/damaris-bojor/1657753052' },
   'Dexter and the Moonrocks': { spotify: 'https://open.spotify.com/artist/72sOBVpZpUwHq7i0vb26lT', appleMusic: 'https://music.apple.com/us/artist/1581657500' },
   'DJ Cassandra': { appleMusic: 'https://music.apple.com/us/artist/dj-cassandra/6779930773' },
+  'Elijah Delgado': { spotify: 'https://open.spotify.com/artist/2Xx6jD7k7Tja7AIJolg98F' },
   'Elle Coves': { spotify: 'https://open.spotify.com/artist/3Hey7RF0bxnjPP8IEXmPRa', appleMusic: 'https://music.apple.com/us/artist/elle-coves/1687094318' },
   'Emma Ogier': { spotify: 'https://open.spotify.com/artist/7lVBH2nQlHcpcU4RiY7izm', appleMusic: 'https://music.apple.com/us/artist/emma-ogier/1571801234' },
   'Ethan Regan': { appleMusic: 'https://music.apple.com/us/artist/ethan-regan/1329542870' },
@@ -384,6 +125,9 @@ export const artistLinks = {
   'Jess Williamson': { spotify: 'https://open.spotify.com/artist/784kOgkd1H6jU4KgPMYHi9', appleMusic: 'https://music.apple.com/us/artist/jess-williamson/501248881' },
   'Jesse Welles': { spotify: 'https://open.spotify.com/artist/366xgdzfRGQoiDRGidGlDJ', appleMusic: 'https://music.apple.com/us/artist/jesse-welles/1737507146', soundcloud: 'https://soundcloud.com/jesse-welles' },
   'Joe Jordan': { appleMusic: 'https://music.apple.com/us/artist/joe-jordan/1681115748' },
+  // Not on any of the six schedule images (see the reconciliation note
+  // above) — kept here since the link was already verified, in case a
+  // future schedule update brings him back.
   'Josh Conway': { appleMusic: 'https://music.apple.com/us/artist/josh-conway/463848254' },
   'Kevin Atwater': { appleMusic: 'https://music.apple.com/us/artist/kevin-atwater/1523576425' },
   'Kings of Leon': { spotify: 'https://open.spotify.com/artist/2qk9voo8llSGYcZ6xrBzKx', appleMusic: 'https://music.apple.com/us/artist/kings-of-leon/1883403', soundcloud: 'https://soundcloud.com/kingsofleon' },
@@ -414,6 +158,9 @@ export const artistLinks = {
   'Paloma Morphy': { spotify: 'https://open.spotify.com/artist/30Ph7pfibYhG9VcdOj7xZw', appleMusic: 'https://music.apple.com/us/artist/paloma-morphy/1654342484', soundcloud: 'https://soundcloud.com/palomamorphy' },
   'Parcels': { spotify: 'https://open.spotify.com/artist/3oKRxpszQKUjjaHz388fVA', appleMusic: 'https://music.apple.com/us/artist/parcels/1148094312', soundcloud: 'https://soundcloud.com/parcels-music' },
   'Paris Paloma': { spotify: 'https://open.spotify.com/artist/2EXpthNgSeTDeX8nGwxppp', appleMusic: 'https://music.apple.com/us/artist/paris-paloma/1530898376' },
+  // Not on any of the six schedule images (see the reconciliation note
+  // above) — kept here since the link was already verified, in case a
+  // future schedule update brings her back.
   'Presley Regier': { spotify: 'https://open.spotify.com/artist/7AAHfakMQan4p04ozZhhwc', appleMusic: 'https://music.apple.com/us/artist/presley-regier/1398568172', soundcloud: 'https://soundcloud.com/presleyregier' },
   'Rebecca Black': { spotify: 'https://open.spotify.com/artist/3Vl9fyKMIdLMswk8ai3mm9', appleMusic: 'https://music.apple.com/us/artist/rebecca-black/426285675', soundcloud: 'https://soundcloud.com/rebeccareneeblack' },
   'Rio Kosta': { spotify: 'https://open.spotify.com/artist/4xU7M9wEvpnvkNOyPdVi5y', appleMusic: 'https://music.apple.com/us/artist/rio-kosta/1641407453', soundcloud: 'https://soundcloud.com/riokosta' },
