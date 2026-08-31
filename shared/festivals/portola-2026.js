@@ -3,45 +3,51 @@
 // Pure data: no schedule is built here. buildFestival() in shared/festival.js
 // turns this into placed blocks, lanes and grid bounds.
 //
-// Sources (all linked from https://portolamusicfestival.com/lineup/, which
-// otherwise only promotes the Portola app — none of this is on the page
-// itself as text or JSON, so it's transcribed from the poster art):
-//   - full lineup: .../portola/2026/portola-2026-lineup.jpg
-//   - Warehouse stage: .../portola/2026/warehouse-26.jpg
-//   - Crane Stage:     .../portola/2026/crane-stage-26.jpg
-// Transcribed at full resolution on 2026-08-13 — re-check against the posters
-// if any is reissued.
+// `sets` is transcribed from the official per-day set-times images at
+// https://portolamusicfestival.com/set-times/ (that page otherwise only
+// promotes the Portola app — none of this is on the page itself as text or
+// JSON):
+//   - Saturday: .../portola/2026/2026-Portola-SetTimes-Saturday.jpg
+//   - Sunday:   .../portola/2026/2026-Portola-SetTimes-Sunday.jpg
+// Cross-checked against the per-stage flyers (also linked from that page)
+// for stage rosters:
+//   - Pier Stage:  .../portola/2026/pier-stage-26.jpg
+//   - Crane Stage: .../portola/2026/crane-stage-26.jpg
+//   - Warehouse:   .../portola/2026/warehouse-26.jpg
+//   - Ship Tent:   .../portola/2026/ship-tent-26.jpg
+// Read at full resolution on 2026-08-31 — re-check against the images if any
+// is reissued.
 //
-// Two of the ~30 acts a day are now split across Warehouse and Crane Stage;
-// the rest of the lineup hasn't been assigned a stage yet, so those stay
-// plain strings (see dayModeOf() in shared/festival.js — a day can freely mix
-// `[stageId, artist]` and bare-string entries). Staged entries keep the
-// flyer's own order — a stage's own poster is the only ordering signal there
-// is before set times exist, so re-sorting it alphabetically would throw that
-// away; the unplaced acts have no such signal, so they're alphabetical.
+// Every act on the bill is now placed on one of the four stages with a set
+// time — this replaces the earlier partial/untimed transcription (two of the
+// ~30 acts a day placed by stage-only flyers, the rest as bare unstaged
+// strings).
 //
-// "DJ Shadow Celebrates 30 Years of Endtroducing….." on the full poster and
-// Crane flyer is one act billed with a descriptive subtitle — recorded here
-// as plain "DJ Shadow".
+// "DJ Shadow Celebrates 30 Years of Endtroducing….." on the Crane flyer is
+// one act billed with a descriptive subtitle — recorded here as plain
+// "DJ Shadow".
 //
-// A B2B slot (two acts sharing one time, once times exist) is one entry with
-// both names, e.g. Erika b2b SF Cowboy → ['Erika', 'SF Cowboy'].
+// A B2B slot (two acts sharing one time slot) is one entry with both names,
+// e.g. Erika b2b SF Cowboy → ['Erika', 'SF Cowboy'].
+//
+// Kaytree (Sunday, Ship Tent, 1:40–2:55pm) doesn't appear on the full lineup
+// poster this file was originally transcribed from (see artistLinks header) —
+// it's a late addition that only shows up on the set-times/Ship Tent images.
 //
 // Despacio — the ambient, continuous "ALL WEEKEND LONG" sound-system
 // installation from the poster — is left off entirely rather than listed
 // as an act: it isn't a musical act with its own sets or releases, so it
 // doesn't fit the data model (no day-less slot, no artist streaming links).
-//
-// Once official set times land, add start/end and swap the two-element
-// staged tuples for `[stageId, 'HH:MM start', 'HH:MM end', 'Artist']`.
 
 const slug = 'portola-2026';
 
-// The Warehouse flyer is yellow, Crane Stage's is orange — matched here
-// rather than guessing.
+// Matched to each stage's own flyer color rather than guessing: Pier Stage
+// is blue, Crane Stage orange, Warehouse yellow, Ship Tent green.
 const stages = [
-  { id: 'warehouse', name: 'Warehouse', short: 'WH', color: '--marigold-gold' },
+  { id: 'pier', name: 'Pier Stage', short: 'PIER', color: '--ocean-deep' },
   { id: 'crane', name: 'Crane Stage', short: 'CRANE', color: '--sunset-coral' },
+  { id: 'warehouse', name: 'Warehouse', short: 'WH', color: '--marigold-gold' },
+  { id: 'shiptent', name: 'Ship Tent', short: 'SHIP', color: '--jungle-green' },
 ];
 
 const days = [
@@ -49,81 +55,81 @@ const days = [
   { id: 'sun', name: 'Sunday', date: 'Sep 27' },
 ];
 
+// Each set: [stageId, start, end, artist]
 const sets = {
   sat: [
-    // ── Warehouse (flyer order) ─────────────────────────────────────────
-    ['warehouse', 'Prospa'],
-    ['warehouse', 'KETTAMA'],
-    ['warehouse', 'Max Styler'],
-    ['warehouse', ['Beltran', 'Ben Sterling']],
-    ['warehouse', 'Groove Armada'],
-    ['warehouse', 'Chloé Caillet'],
-    ['warehouse', ['Ranger Trucco', 'Alisha']],
-    ['warehouse', 'Sam Alfred'],
-
-    // ── Crane Stage (flyer order) ───────────────────────────────────────
-    ['crane', 'Soulwax'],
-    ['crane', 'Fatboy Slim'],
-    ['crane', 'Skepta'],
-    ['crane', 'DJ Shadow'],
-    ['crane', 'Nimino'],
-    ['crane', 'Tricky'],
-    ['crane', ['Erika', 'SF Cowboy']],
-
-    // ── Not yet placed on a stage ───────────────────────────────────────
-    'Airwolf Paradise',
-    'Bassvictim',
-    'Dog Blood',
-    'FCUKERS',
-    'Felly Fell',
-    'Gelli Haha',
-    'Jigitz',
-    'Jyoty',
-    'Melanie C (DJ Set)',
-    'Mgna Crrrta',
-    'Mike D 5D',
-    'Nate Sib',
-    'Oskar Med K',
-    'Robyn',
-    'Six Sex',
-    'Tove Lo',
+    // ── Pier Stage ────────────────────────────────────────────────────────
+    ['pier', '13:30', '14:30', 'Airwolf Paradise'],
+    ['pier', '14:40', '15:30', 'Gelli Haha'],
+    ['pier', '15:40', '16:30', 'Oskar Med K'],
+    ['pier', '16:40', '17:30', 'FCUKERS'],
+    ['pier', '17:40', '18:30', 'Tove Lo'],
+    ['pier', '19:10', '20:10', 'Robyn'],
+    ['pier', '21:00', '22:15', 'Dog Blood'],
+    // ── Crane Stage ───────────────────────────────────────────────────────
+    ['crane', '13:30', '15:00', ['Erika', 'SF Cowboy']],
+    ['crane', '15:20', '16:10', 'Tricky'],
+    ['crane', '16:25', '17:15', 'Nimino'],
+    ['crane', '17:30', '18:30', 'DJ Shadow'],
+    ['crane', '18:45', '19:35', 'Skepta'],
+    ['crane', '19:55', '21:25', 'Fatboy Slim'],
+    ['crane', '21:55', '22:55', 'Soulwax'],
+    // ── Warehouse ─────────────────────────────────────────────────────────
+    ['warehouse', '13:30', '14:45', 'Sam Alfred'],
+    ['warehouse', '14:45', '15:45', ['Ranger Trucco', 'Alisha']],
+    ['warehouse', '15:45', '16:45', 'Chloé Caillet'],
+    ['warehouse', '16:45', '18:00', 'Groove Armada'],
+    ['warehouse', '18:00', '19:15', 'Max Styler'],
+    ['warehouse', '19:15', '20:30', 'KETTAMA'],
+    ['warehouse', '20:30', '21:45', ['Beltran', 'Ben Sterling']],
+    ['warehouse', '21:45', '23:00', 'Prospa'],
+    // ── Ship Tent ─────────────────────────────────────────────────────────
+    ['shiptent', '13:40', '14:40', 'Felly Fell'],
+    ['shiptent', '14:50', '15:30', 'Mgna Crrrta'],
+    ['shiptent', '15:40', '16:20', 'Six Sex'],
+    ['shiptent', '16:40', '17:30', 'Mike D 5D'],
+    ['shiptent', '17:40', '18:40', 'Jyoty'],
+    ['shiptent', '18:50', '19:40', 'Bassvictim'],
+    ['shiptent', '19:50', '20:40', 'Jigitz'],
+    ['shiptent', '20:55', '21:35', 'Nate Sib'],
+    ['shiptent', '21:50', '22:30', 'Melanie C (DJ Set)'],
   ],
   sun: [
-    // ── Warehouse (flyer order) ─────────────────────────────────────────
-    ['warehouse', 'Tiësto'],
-    ['warehouse', 'Four Tet'],
-    ['warehouse', 'Marlon Hoffstadt'],
-    ['warehouse', 'Overmono'],
-    ['warehouse', 'VTSS'],
-    ['warehouse', 'Brunello'],
-    ['warehouse', 'Silva Bumpa'],
-    ['warehouse', 'Dean Turnley'],
-
-    // ── Crane Stage (flyer order) ───────────────────────────────────────
-    ['crane', 'Parcels'],
-    ['crane', 'Horsegiirl'],
-    ['crane', 'Zulan'],
-    ['crane', 'Ninajirachi'],
-    ['crane', 'Underscores'],
-    ['crane', 'Adéla'],
-    ['crane', 'Azzecca'],
-    ['crane', 'Torren Foot'],
-
-    // ── Not yet placed on a stage ───────────────────────────────────────
-    'Baby J',
-    'Ben UFO',
-    'Channel Tres',
-    'Clearcast',
-    'Daphni',
-    'Ear',
-    'JT',
-    'Kelela',
-    'Mind Enterprises',
-    'Mochakk',
-    'Riria',
-    'SG Lewis (Live)',
-    'Swedish House Mafia',
-    'Zara Larsson',
+    // ── Pier Stage ────────────────────────────────────────────────────────
+    ['pier', '13:30', '14:20', 'Clearcast'],
+    ['pier', '14:30', '15:20', 'Mind Enterprises'],
+    ['pier', '15:30', '16:20', 'Channel Tres'],
+    ['pier', '16:30', '17:25', 'SG Lewis (Live)'],
+    ['pier', '17:35', '18:35', 'Mochakk'],
+    ['pier', '19:05', '20:05', 'Zara Larsson'],
+    ['pier', '20:45', '22:00', 'Swedish House Mafia'],
+    // ── Crane Stage ───────────────────────────────────────────────────────
+    ['crane', '13:30', '14:30', 'Torren Foot'],
+    ['crane', '14:30', '15:30', 'Azzecca'],
+    ['crane', '15:50', '16:30', 'Adéla'],
+    ['crane', '16:45', '17:35', 'Zulan'],
+    ['crane', '17:50', '18:40', 'Underscores'],
+    ['crane', '19:00', '19:50', 'Ninajirachi'],
+    ['crane', '20:10', '21:00', 'Horsegiirl'],
+    ['crane', '21:30', '22:45', 'Parcels'],
+    // ── Warehouse ─────────────────────────────────────────────────────────
+    ['warehouse', '13:30', '14:30', 'Dean Turnley'],
+    ['warehouse', '14:30', '15:30', 'Silva Bumpa'],
+    ['warehouse', '15:30', '16:30', 'Brunello'],
+    ['warehouse', '16:30', '17:30', 'VTSS'],
+    ['warehouse', '17:30', '18:45', 'Marlon Hoffstadt'],
+    ['warehouse', '18:45', '20:15', 'Tiësto'],
+    ['warehouse', '20:20', '21:20', 'Overmono'],
+    ['warehouse', '21:30', '23:00', 'Four Tet'],
+    // ── Ship Tent ─────────────────────────────────────────────────────────
+    ['shiptent', '13:40', '14:55', 'Kaytree'],
+    ['shiptent', '14:55', '16:10', 'Riria'],
+    ['shiptent', '16:20', '17:00', 'Ear'],
+    ['shiptent', '17:10', '18:30', 'Ben UFO'],
+    ['shiptent', '18:30', '19:50', 'Daphni'],
+    ['shiptent', '20:05', '20:50', 'Kelela'],
+    ['shiptent', '21:00', '21:30', 'JT'],
+    ['shiptent', '21:40', '22:30', 'Baby J'],
   ],
 };
 
@@ -144,6 +150,11 @@ const sets = {
 // the source data were dropped rather than trusted: an "Apple Music" field
 // that actually held an x.com link for a few artists, and UTM tracking
 // parameters on a couple of SoundCloud links.
+//
+// Kaytree — added to the bill after the above sourcing pass (see the `sets`
+// header comment) — isn't in that API dump either; its SoundCloud URL below
+// was found fresh via search on 2026-08-31 and confirmed against the bio
+// ("San Francisco-based DJ & promoter").
 //
 // Each B2B pair (Beltran b2b Ben Sterling, Ranger Trucco b2b Alisha, Erika
 // b2b SF Cowboy) is keyed here by individual member, same as everyone else —
@@ -186,6 +197,7 @@ const artistLinks = {
   'Jigitz': { spotify: 'https://open.spotify.com/artist/7sfn5Z6ItzDkOF9cYzxWPZ', appleMusic: 'https://music.apple.com/us/artist/jigitz/1212140410', soundcloud: 'https://soundcloud.com/jigitz' },
   'JT': { spotify: 'https://open.spotify.com/artist/39af15p0feaAOdL9DTRj3m', appleMusic: 'https://music.apple.com/us/artist/jt/1590403119' },
   'Jyoty': { spotify: 'https://open.spotify.com/artist/65pTwZnORxHUx58vDrVGNm', appleMusic: 'https://music.apple.com/us/artist/jyoty/1531956333', soundcloud: 'https://soundcloud.com/jyotysingh' },
+  'Kaytree': { soundcloud: 'https://soundcloud.com/kaytree' },
   'Kelela': { spotify: 'https://open.spotify.com/artist/1U0sIzpRtDkvu1hXXzxh60?si=HvO6ctQ8RLGUSfDgE5F9oA', appleMusic: 'https://music.apple.com/us/artist/kelela/549186342', soundcloud: 'https://soundcloud.com/KELELAM' },
   'KETTAMA': { spotify: 'https://open.spotify.com/artist/2IkkP6VpsELlCC07Vp4Omr', appleMusic: 'https://music.apple.com/us/artist/kettama/1425703970', soundcloud: 'https://soundcloud.com/kettamabro' },
   'Marlon Hoffstadt': { spotify: 'https://open.spotify.com/artist/0HHa7ZJZxUQlg5l2mB0N0f', appleMusic: 'https://music.apple.com/us/artist/marlon-hoffstadt/457222498', soundcloud: 'https://soundcloud.com/marlonhoffstadt' },
@@ -238,7 +250,7 @@ export default {
   utcOffset: '-07:00',
   dateRange: 'September 26–27, 2026',
   officialUrl: 'https://portolamusicfestival.com/lineup/',
-  dataVerifiedOn: '2026-08-13',
+  dataVerifiedOn: '2026-08-31',
   headliners: ['Robyn', 'Dog Blood', 'Swedish House Mafia'],
   notableActs: ['Fatboy Slim', 'Skepta', 'Tove Lo', 'Tiësto', 'Zara Larsson', 'Four Tet', 'DJ Shadow'],
   stages,
