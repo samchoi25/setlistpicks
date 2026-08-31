@@ -77,6 +77,19 @@ for (const f of listFestivals()) {
     }
   });
 
+  // Regression guard: a timed B2B tuple (['Erika', 'SF Cowboy']) was once
+  // wrapped an extra level (`artists: [['Erika', 'SF Cowboy']]`) instead of
+  // flattened, because mergeSimultaneous's first-of-a-slot branch wrapped
+  // whatever `artist` already was, array or not. Every ShowBlock/LineupBlock
+  // consumer calls .split()/.join() on each entry expecting a plain string.
+  test(`${label}: every set's artists are flat strings, never nested arrays`, () => {
+    for (const s of f.SCHEDULE) {
+      for (const name of s.artists) {
+        assert.equal(typeof name, 'string', `${s.id}: artists ${JSON.stringify(s.artists)}`);
+      }
+    }
+  });
+
   test(`${label}: per-day stage columns are contiguous from 2`, () => {
     for (const day of f.DAYS) {
       const cols = f.stagesForDay(day.id).map((s) => s.col);

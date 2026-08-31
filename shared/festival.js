@@ -99,9 +99,9 @@ function mergeSimultaneous(list) {
   for (const s of list) {
     const prev = out[out.length - 1];
     if (prev && prev.startMin === s.startMin && prev.endMin === s.endMin) {
-      prev.artists.push(s.artist);
+      prev.artists.push(...s.artists);
     } else {
-      out.push({ ...s, artists: [s.artist] });
+      out.push({ ...s, artists: [...s.artists] });
     }
   }
   return out;
@@ -148,11 +148,19 @@ function buildTimedDay(slug, day, stages, entries) {
   // The optional fifth element carries per-set metadata (currently just
   // `asl` for interpreted performances). Kept out of the tuple's required
   // shape so the vast majority of sets stay four short fields.
+  //
+  // `artist` is normalized to an array up front — it's a single name for
+  // almost every set, but a B2B slot's tuple carries an array of names
+  // (e.g. ['Erika', 'SF Cowboy']), same as the untimed shape. Doing this
+  // here, rather than in mergeSimultaneous below, keeps a B2B pair's names
+  // flat (['Erika', 'SF Cowboy']) instead of nested (e.g. [['Erika', 'SF
+  // Cowboy']]), which is what every consumer of `artists` expects.
   for (const [stageId, start, end, artist, meta] of entries) {
     if (!byStage[stageId]) {
       throw new Error(`${slug}: unknown stage '${stageId}' on ${day.id}`);
     }
-    byStage[stageId].push({ stageId, start, end, artist, ...meta });
+    const artists = Array.isArray(artist) ? artist : [artist];
+    byStage[stageId].push({ stageId, start, end, artists, ...meta });
   }
   for (const stage of stages) {
     const raw = byStage[stage.id];
