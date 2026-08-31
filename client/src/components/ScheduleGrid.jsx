@@ -194,6 +194,7 @@ function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, gro
   return (
     <div data-day={day.id}>
       <div className="day-heading">
+        <span className="day-festival">{festival.shortName}</span>
         <span className="day-name">{day.name}</span>
         <span className="day-date">{dayDate}</span>
       </div>
