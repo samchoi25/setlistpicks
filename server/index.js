@@ -194,7 +194,22 @@ if (fs.existsSync(distDir)) {
   // redirect:false because dist now holds a directory per festival, and
   // serve-static would otherwise bounce /outside-lands-2026 to a trailing
   // slash before our router ever sees it.
-  app.use(express.static(distDir, { index: false, redirect: false }));
+  app.use(express.static(distDir, {
+    index: false,
+    redirect: false,
+    setHeaders(res, filePath) {
+      // sw.js must always be revalidated — a stale cached copy of the
+      // Service Worker script itself would silently block every future
+      // update (see scripts/build-sw.js).
+      if (filePath.endsWith(`${path.sep}sw.js`)) {
+        res.setHeader('Cache-Control', 'no-cache');
+      } else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+        // Content-hashed filenames: a cache hit is always byte-identical to
+        // what a re-fetch would return.
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    },
+  }));
 
   /*
    * Two cached variants per festival, read once at boot from the pages

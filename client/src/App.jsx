@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from './api.js';
 import {
   getIdentity, setIdentity, getActiveGroup, setActiveGroup, clearActiveGroup, getMostRecentGroup,
-  getCachedGroup, setCachedGroup, recordGroupVisit,
+  recordGroupVisit,
 } from './storage.js';
 import { isOnline } from './net-status.js';
 import { ensureSvgDefs } from './svgDefs.js';
@@ -32,7 +32,7 @@ export default function App() {
 
 function AppRoutes() {
   const [path, setPath] = useState(getPath);
-  const [groupState, setGroupState] = useState(null); // { groupId, member, groupMeta, freshJoin, offline }
+  const [groupState, setGroupState] = useState(null); // { groupId, member, groupMeta, freshJoin }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigating = useRef(false);
@@ -67,26 +67,11 @@ function AppRoutes() {
     return () => document.removeEventListener('click', handler);
   }, [navigate]);
 
-  // Reused by both the offline branch and the network-failure catch below —
-  // there's nothing to distinguish between "known offline" and "a request
-  // just failed at the network level," so both fall back to the cache the
-  // same way.
-  function loadFromCache(groupId) {
-    const cached = getCachedGroup(groupId);
-    const identity = getIdentity(groupId);
-    if (cached && identity) {
-      setActiveGroup(cached.festivalSlug, groupId);
-      recordGroupVisit(cached.festivalSlug, groupId, cached.groupMeta?.name);
-      setGroupState({ groupId, member: identity, groupMeta: cached.groupMeta, freshJoin: false, offline: true });
-      return true;
-    }
-    setError({
-      msg: "You're offline, and this group hasn't been loaded on this device before. Connect once to load it, then it'll work offline.",
-      canRetry: false,
-    });
-    return false;
-  }
-
+  // `api.getGroup`/`api.myVotes`/`api.allVotes` transparently resolve from
+  // the offline cache (client/src/offline-cache.js) when there's no
+  // connection and this group was loaded before — so the online and offline
+  // paths below are the same code, and only truly-never-cached data throws
+  // `e.offline`, caught the same way as a genuine network failure.
   async function loadGroup(groupId) {
     if (navigating.current) return;
     navigating.current = true;
@@ -94,16 +79,8 @@ function AppRoutes() {
     setError(null);
     setGroupState(null);
 
-    if (!isOnline()) {
-      loadFromCache(groupId);
-      setLoading(false);
-      navigating.current = false;
-      return;
-    }
-
     try {
       let groupMeta = await api.getGroup(groupId);
-      setCachedGroup(groupId, { groupMeta, festivalSlug: groupMeta.festivalSlug });
       let identity = getIdentity(groupId);
       if (identity) {
         const stillMember = groupMeta.members?.some((m) => m.key === identity.key);
@@ -112,21 +89,33 @@ function AppRoutes() {
 
       let freshJoin = false;
       if (!identity) {
+        // Joining is a write — it can't resolve from cache, so it must still
+        // hard-fail offline even though the group itself just loaded fine.
+        if (!isOnline()) {
+          setError({
+            msg: "You're offline, and you haven't joined this group on this device before. Connect once to join it, then it'll work offline.",
+            canRetry: false,
+          });
+          return;
+        }
         const { member } = await api.join(groupId, randomMemberName());
         setIdentity(groupId, member);
         identity = member;
         groupMeta = await api.getGroup(groupId);
-        setCachedGroup(groupId, { groupMeta, festivalSlug: groupMeta.festivalSlug });
         freshJoin = true;
       }
 
       const slug = groupMeta.festivalSlug ?? festival.slug;
       setActiveGroup(slug, groupId);
       recordGroupVisit(slug, groupId, groupMeta.name);
-      setGroupState({ groupId, member: identity, groupMeta, freshJoin, offline: false });
+      setGroupState({ groupId, member: identity, groupMeta, freshJoin });
     } catch (e) {
-      if (e.offline) loadFromCache(groupId);
-      else if (e.status === 404) { clearActiveGroup(festival.slug); setError({ msg: 'That group link looks expired or invalid.', canRetry: true }); }
+      if (e.offline) {
+        setError({
+          msg: "You're offline, and this group hasn't been loaded on this device before. Connect once to load it, then it'll work offline.",
+          canRetry: false,
+        });
+      } else if (e.status === 404) { clearActiveGroup(festival.slug); setError({ msg: 'That group link looks expired or invalid.', canRetry: true }); }
       else if (e.status === 429) setError({ msg: 'Too many groups or users created from this network. Try again later.', canRetry: false });
       else setError({ msg: e.message, canRetry: true });
     } finally {
@@ -255,7 +244,6 @@ function AppRoutes() {
     }
 
     if (groupState?.groupId === route.code) {
-      const cached = groupState.offline ? getCachedGroup(groupState.groupId) : null;
       return (
         <GroupView
           key={groupState.groupId}
@@ -263,8 +251,6 @@ function AppRoutes() {
           member={groupState.member}
           groupMeta={groupState.groupMeta}
           freshJoin={groupState.freshJoin}
-          cachedMyVotes={cached?.myVotes}
-          cachedPerArtist={cached?.perArtist}
           onLeave={() => {
             clearActiveGroup(festival.slug);
             navigate(festivalPath(festival.slug));

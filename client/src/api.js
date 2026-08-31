@@ -1,4 +1,5 @@
 import { isOnline, reportNetworkFailure, reportNetworkSuccess } from './net-status.js';
+import { isCacheableUrl, getCachedJson, putResponse } from './offline-cache.js';
 
 function offlineError() {
   const e = new Error('offline');
@@ -7,7 +8,18 @@ function offlineError() {
 }
 
 async function req(method, url, body) {
-  if (!isOnline()) throw offlineError();
+  // Only the read-only group/votes endpoints are cacheable — a write always
+  // fails fast offline, exactly as before, since there's nothing to fall
+  // back to and voting/joining while offline is out of scope.
+  const cacheable = method === 'GET' && isCacheableUrl(url);
+
+  if (!isOnline()) {
+    if (cacheable) {
+      const cached = await getCachedJson(url);
+      if (cached) return cached;
+    }
+    throw offlineError();
+  }
 
   let res;
   try {
@@ -18,6 +30,10 @@ async function req(method, url, body) {
     });
   } catch {
     reportNetworkFailure();
+    if (cacheable) {
+      const cached = await getCachedJson(url);
+      if (cached) return cached;
+    }
     throw offlineError();
   }
   reportNetworkSuccess();
@@ -29,6 +45,10 @@ async function req(method, url, body) {
     e.data = err;
     throw e;
   }
+  // Write-through: every successful read refreshes the offline cache, which
+  // is what makes "invalidate and update to the latest version on load"
+  // free — the next online GET simply overwrites the previous entry.
+  if (cacheable) await putResponse(url, res.clone());
   return res.json();
 }
 

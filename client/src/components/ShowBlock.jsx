@@ -22,7 +22,7 @@ const ShowBlock = React.memo(function ShowBlock({
   if (startSlot >= TOTAL_SLOTS || endSlot <= 0) return null;
 
   const { washDataRef, online, handleClick, startLongPress, cancelLongPress, handlePointerUp, longPressFired } =
-    useVoteBlock({ id: s.id, artist: s.artist, artists: s.artists, myVote, groupId, memberKey, onVoteChange, onLongPress, onNotMember });
+    useVoteBlock({ id: s.id, artist: s.artist, artists: s.artists, myVote, groupId, memberKey, memberDisplayName, onVoteChange, onLongPress, onNotMember });
 
   return (
     <button

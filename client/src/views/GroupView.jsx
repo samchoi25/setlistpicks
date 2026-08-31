@@ -3,7 +3,8 @@ import React, {
 } from 'react';
 import { useFestival } from '../festival-context.jsx';
 import { api } from '../api.js';
-import { clearIdentity, setCachedGroup, renameGroupInHistory } from '../storage.js';
+import { clearIdentity, renameGroupInHistory } from '../storage.js';
+import { mergeIntoCache, putJson } from '../offline-cache.js';
 import { isOnline, subscribe } from '../net-status.js';
 import Header from '../components/Header.jsx';
 import ShareCard from '../components/ShareCard.jsx';
@@ -15,11 +16,11 @@ import MemberLineupPopup from '../components/MemberLineupPopup.jsx';
 import OfflineBanner from '../components/OfflineBanner.jsx';
 
 export default function GroupView({
-  groupId, member, groupMeta, freshJoin, cachedMyVotes, cachedPerArtist, onLeave,
+  groupId, member, groupMeta, freshJoin, onLeave,
 }) {
   const festival = useFestival();
-  const [myVotes,          setMyVotes]          = useState(cachedMyVotes || {});
-  const [perArtistRaw,     setPerArtistRaw]     = useState(cachedPerArtist || {});
+  const [myVotes,          setMyVotes]          = useState({});
+  const [perArtistRaw,     setPerArtistRaw]     = useState({});
   const [mutedMembers,     setMutedMembers]     = useState(groupMeta?.members || []);
   const [groupName,        setGroupName]        = useState(groupMeta?.name || 'Golden Gate Crew');
   const [memberDisplayName, setMemberDisplayName] = useState(member.displayName);
@@ -36,30 +37,23 @@ export default function GroupView({
   const pendingVotesRef = useRef(new Map()); // artistId → expected server score
 
   // ── Fetch my votes ───────────────────────────────────────────────────────────
-  // Skipped while offline — cachedMyVotes (from the last online load) already
-  // seeded the initial state above, and there's nothing fresher to fetch.
+  // Runs unconditionally, online or off — api.js's request layer transparently
+  // resolves this from the offline cache when there's no connection, and
+  // write-through on success keeps that cache fresh for next time.
   useEffect(() => {
-    if (!isOnline()) return;
     api.myVotes(groupId, member.key)
-      .then(({ votes }) => {
-        setMyVotes(votes || {});
-        setCachedGroup(groupId, { myVotes: votes || {} });
-      })
+      .then(({ votes }) => setMyVotes(votes || {}))
       .catch(console.error);
   }, [groupId, member.key]);
 
   // ── Fetch everyone's votes ───────────────────────────────────────────────────
   // Seeds perArtistRaw immediately instead of waiting for the WebSocket's
-  // first push, and gives the offline cache something fresh right away —
-  // otherwise a group loaded and gone offline within seconds of joining
-  // would have no perArtist data cached yet.
+  // first push. Same offline-cache fallback as above.
   useEffect(() => {
-    if (!isOnline()) return;
     api.allVotes(groupId)
       .then(({ members, perArtist }) => {
         if (members) setMutedMembers(members);
         setPerArtistRaw(perArtist || {});
-        setCachedGroup(groupId, { perArtist: perArtist || {} });
       })
       .catch(console.error); // the WS will fill this in once it connects
   }, [groupId]);
@@ -93,17 +87,14 @@ export default function GroupView({
               if (me) setMemberDisplayName(me.displayName);
             }
             if (msg.members || msg.groupName) {
-              setCachedGroup(groupId, {
-                groupMeta: {
-                  ...groupMeta,
-                  ...(msg.groupName ? { name: msg.groupName } : null),
-                  ...(msg.members ? { members: msg.members } : null),
-                },
+              mergeIntoCache(`/api/groups/${groupId}`, {
+                ...(msg.groupName ? { name: msg.groupName } : null),
+                ...(msg.members ? { members: msg.members } : null),
               });
             }
             if (msg.perArtist) {
               setPerArtistRaw(msg.perArtist);
-              setCachedGroup(groupId, { perArtist: msg.perArtist });
+              mergeIntoCache(`/api/groups/${groupId}/votes`, { perArtist: msg.perArtist, ...(msg.members ? { members: msg.members } : null) });
 
               // Sync my own votes from the broadcast — this is what makes the
               // show-block highlight update when the same account votes from
@@ -127,7 +118,7 @@ export default function GroupView({
                     else delete next[artistId];
                   }
                 }
-                setCachedGroup(groupId, { myVotes: next });
+                putJson(`/api/groups/${groupId}/votes/${encodeURIComponent(member.key)}`, { votes: next });
                 return next;
               });
             }

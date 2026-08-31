@@ -3,6 +3,7 @@ import { computeWashData } from '../svgDefs.js';
 import { api } from '../api.js';
 import { toast } from '../toast.js';
 import { useOnline } from '../net-status.js';
+import { getCachedJson, putJson, applyVotePatch, applyPerArtistPatch } from '../offline-cache.js';
 
 export function scoreClass(score) {
   if (score >= 3) return 'vote-3';
@@ -64,7 +65,7 @@ export function GroupVotesEl({ votes, myVote, memberKey, memberDisplayName }) {
 // (ShowBlock's time-positioned version and LineupBlock's untimed one). Both
 // only differ in how they're laid out on the grid, not in how a tap or a
 // long-press behaves, so that logic lives here once.
-export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, onVoteChange, onLongPress, onNotMember }) {
+export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, memberDisplayName, onVoteChange, onLongPress, onNotMember }) {
   // Stable wash data — created once per block instance (useRef)
   const washDataRef = useRef(null);
   if (!washDataRef.current) washDataRef.current = computeWashData(id);
@@ -88,6 +89,18 @@ export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, 
     setSaving(true);
     try {
       await api.setVote(groupId, memberKey, id, next);
+      // Patch the offline cache in place rather than refetching — the new
+      // score is already known, so there's nothing a round trip would add.
+      // Without this, a vote cast while online would look reverted after
+      // going offline and reloading, since nothing else refreshes these two
+      // cache entries between page loads.
+      const myVotesUrl = `/api/groups/${groupId}/votes/${encodeURIComponent(memberKey)}`;
+      const allVotesUrl = `/api/groups/${groupId}/votes`;
+      const [myVotesBody, allVotesBody] = await Promise.all([
+        getCachedJson(myVotesUrl), getCachedJson(allVotesUrl),
+      ]);
+      if (myVotesBody) await putJson(myVotesUrl, applyVotePatch(myVotesBody, id, next));
+      if (allVotesBody) await putJson(allVotesUrl, applyPerArtistPatch(allVotesBody, id, memberKey, memberDisplayName, next));
     } catch (e) {
       onVoteChange(id, myVote); // revert
       if (e.offline) {
@@ -100,7 +113,7 @@ export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, 
     } finally {
       setSaving(false);
     }
-  }, [myVote, saving, online, id, groupId, memberKey, onVoteChange, onNotMember]);
+  }, [myVote, saving, online, id, groupId, memberKey, memberDisplayName, onVoteChange, onNotMember]);
 
   // Long-press
   const longPressTimer = useRef(null);

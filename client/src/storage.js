@@ -131,17 +131,18 @@ export function getMostRecentGroup() {
 }
 
 /*
- * Offline read cache — the last-known group meta/votes for groups this
- * browser has loaded while online, keyed by groupId (mirrors `identities`
- * above). Used only as a fallback when a live fetch isn't possible; the
- * server is still the source of truth whenever reachable.
+ * Recency index for the offline data cache (client/src/offline-cache.js),
+ * which stores the actual group-meta/votes payloads in Cache Storage, not
+ * here. Cache Storage has no built-in eviction, so this tracks which groups
+ * are "recent" the same way the old localStorage-only groupCache did, and
+ * offline-cache.js deletes whatever falls out of the window.
  *
- * Capped at CACHE_CAP entries, evicting the least-recently-written group —
- * a browser realistically tracks one or two groups at a time, so this is a
- * generous ceiling against unbounded growth rather than a tuned limit.
+ * Capped at CACHE_INDEX_CAP entries — a browser realistically tracks one or
+ * two groups at a time, so this is a generous ceiling against unbounded
+ * growth rather than a tuned limit.
  */
-const CACHE_KEY = 'brsp.groupCache.v1';
-const CACHE_CAP = 5;
+const CACHE_INDEX_KEY = 'brsp.offlineCacheIndex.v1';
+const CACHE_INDEX_CAP = 5;
 
 /*
  * Merge `patch` into `existing[groupId]` (creating it if absent), stamp
@@ -153,7 +154,7 @@ const CACHE_CAP = 5;
  * tight loop, e.g. several WS messages in a row) would otherwise tie, and a
  * tie-break on insertion order would evict the wrong entry.
  */
-export function mergeCacheEntry(existing, groupId, patch, cap = CACHE_CAP) {
+export function mergeCacheEntry(existing, groupId, patch, cap = CACHE_INDEX_CAP) {
   const all = { ...existing };
   const prev = all[groupId] || {};
   const maxCachedAt = Math.max(0, ...Object.values(all).map((e) => e.cachedAt || 0));
@@ -163,30 +164,26 @@ export function mergeCacheEntry(existing, groupId, patch, cap = CACHE_CAP) {
   return Object.fromEntries(entries.slice(0, cap));
 }
 
-function readCache() {
+function readCacheIndex() {
   try {
-    return JSON.parse(localStorage.getItem(CACHE_KEY)) || {};
+    return JSON.parse(localStorage.getItem(CACHE_INDEX_KEY)) || {};
   } catch {
     return {};
   }
 }
 
-function writeCache(obj) {
-  localStorage.setItem(CACHE_KEY, JSON.stringify(obj));
+function writeCacheIndex(obj) {
+  localStorage.setItem(CACHE_INDEX_KEY, JSON.stringify(obj));
 }
 
-export function getCachedGroup(groupId) {
-  return readCache()[groupId] || null;
-}
-
-export function setCachedGroup(groupId, patch) {
-  writeCache(mergeCacheEntry(readCache(), groupId, patch));
-}
-
-export function clearCachedGroup(groupId) {
-  const all = readCache();
-  delete all[groupId];
-  writeCache(all);
+// Bumps `groupId` to most-recently-cached and evicts down to the cap.
+// Returns the ids that fell out, so offline-cache.js can delete their Cache
+// Storage entries too.
+export function touchOfflineCacheIndex(groupId, cap = CACHE_INDEX_CAP) {
+  const before = readCacheIndex();
+  const after = mergeCacheEntry(before, groupId, {}, cap);
+  writeCacheIndex(after);
+  return Object.keys(before).filter((id) => !(id in after));
 }
 
 /*
