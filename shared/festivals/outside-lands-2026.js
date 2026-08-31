@@ -295,4 +295,12 @@ export default {
   stages,
   days,
   sets,
+  // Auto-assigned to a new group when nobody's picked a name yet — see
+  // randomGroupName() in App.jsx. One per festival so the default doesn't
+  // feel copy-pasted from a city three states away.
+  groupNames: [
+    'Golden Gate Crew', 'The Fog Chasers', 'Polo Field Posse', 'Stage Hoppers',
+    'Karl the Fog Fan Club', 'Sunset Squad', 'Bay Area Vibes', 'Festival Fam',
+    'The Lineup Committee', 'Wristband Warriors', 'Speedway Meadow Mob', 'Panhandle Party',
+  ],
 };

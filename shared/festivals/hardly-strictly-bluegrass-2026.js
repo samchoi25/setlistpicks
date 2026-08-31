@@ -208,4 +208,9 @@ export default {
   days,
   sets,
   artistLinks,
+  groupNames: [
+    'Banjo Brigade', 'Hellman Hollow Hangout', 'Free Festival Fam', "Pickin' Party",
+    'Fiddle Faddle Crew', 'Bluegrass Buddies', 'Towers Meadow Troupe', 'Porch Stomp Posse',
+    'Rosin Up Crew', 'Foggy Mountain Fam', 'String Band Squad', 'Golden Gate Grass Crew',
+  ],
 };

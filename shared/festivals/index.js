@@ -63,6 +63,9 @@ function validate(def) {
   if (def.websocketsEnabled !== undefined && typeof def.websocketsEnabled !== 'boolean') {
     throw new Error(`${slug}: websocketsEnabled must be a boolean`);
   }
+  if (!Array.isArray(def.groupNames) || def.groupNames.length === 0) {
+    throw new Error(`${slug}: groupNames must be a non-empty array`);
+  }
   return def;
 }
 

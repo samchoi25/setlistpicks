@@ -188,4 +188,9 @@ export default {
   days,
   sets,
   artistLinks,
+  groupNames: [
+    'Zilker Park Crew', 'Keep Austin Weird Squad', 'Barton Springs Bunch', 'Lone Star Lineup',
+    'BBQ & Beats Crew', 'Live Music Capital Crew', 'Longhorn Lounge', 'Congress Ave Crew',
+    'Texas Two-Steppers', 'Weekend One Wolfpack', 'Armadillo Alliance', 'Hill Country Hangout',
+  ],
 };

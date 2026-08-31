@@ -189,4 +189,9 @@ export default {
   days,
   sets,
   artistLinks,
+  groupNames: [
+    'Weekend Two Wanderers', 'South by Zilker Squad', 'Tex-Mex Troupe', 'Guadalupe Gang',
+    'Barton Creek Crew', 'Austin Skyline Squad', 'Round Rock Rollers', "Willie's Wagon",
+    'Shiner Sippers', "Franklin's Line Crew", 'Rattlesnake Roundup', 'Second Weekend Stampede',
+  ],
 };

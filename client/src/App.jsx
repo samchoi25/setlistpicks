@@ -12,17 +12,12 @@ import { FestivalProvider } from './festival-context.jsx';
 import { getFestival, DEFAULT_FESTIVAL_SLUG } from '../../shared/festivals/index.js';
 import { parsePath, groupPath, festivalPath } from '../../shared/routes.js';
 
-const GROUP_NAMES = [
-  'Golden Gate Crew', 'The Fog Chasers', 'Polo Field Posse', 'Stage Hoppers',
-  'Karl the Fog Fan Club', 'Sunset Squad', 'Bay Area Vibes', 'Festival Fam',
-  'The Lineup Committee', 'Wristband Warriors',
-];
 const MEMBER_ADJS = ['Wild', 'Lucky', 'Golden', 'Breezy', 'Mellow', 'Groovy', 'Funky', 'Jazzy', 'Sunny', 'Foggy'];
 const MEMBER_NOUNS = ['Dune', 'Cypress', 'Stage', 'Trail', 'Wave', 'Riff', 'Chord', 'Beat', 'Note', 'Sound'];
 
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function randomMemberName() { return `${pick(MEMBER_ADJS)} ${pick(MEMBER_NOUNS)} ${Math.floor(10 + Math.random() * 90)}`; }
-function randomGroupName() { return pick(GROUP_NAMES); }
+function randomGroupName(festival) { return pick(festival.groupNames); }
 
 function getPath() { return location.pathname; }
 
@@ -181,7 +176,7 @@ function AppRoutes() {
 
     (async () => {
       try {
-        const group = await api.createGroup(randomGroupName(), slug);
+        const group = await api.createGroup(randomGroupName(getFestival(slug)), slug);
         navigating.current = false;
         navigate(groupPath(slug, group.id), { replace: true });
       } catch (e) {

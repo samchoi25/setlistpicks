@@ -75,4 +75,9 @@ export default {
   stages,
   days,
   sets,
+  groupNames: [
+    'Daisy Chain Gang', 'Flower Crown Crew', 'Great Park Getaway', 'Petal Pushers',
+    'Field Day Fam', 'Orange County Outlaws', 'Wildflower Wanderers', 'Meadow Mob',
+    'Sunkissed Squad', 'Balloon Ranch Bunch', 'Chain Reaction Crew', 'SoCal Sunshine Crew',
+  ],
 };

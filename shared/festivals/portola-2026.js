@@ -257,4 +257,9 @@ export default {
   days,
   sets,
   artistLinks,
+  groupNames: [
+    'Pier 80 Pack', 'Bass Drop Brigade', 'Waterfront Warriors', 'Dockside Dancers',
+    'Warehouse Wanderers', 'Container Crew', 'Fog Horn Fam', 'Bay Bridge Beat Squad',
+    'Night Shift Crew', 'Rave New World', 'Portola Posse', 'South Beach Sound Crew',
+  ],
 };
