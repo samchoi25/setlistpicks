@@ -652,6 +652,12 @@ button.brand-title-option:hover {
   cursor: default;
   opacity: 0.6;
 }
+/* Ended: voting is closed for good, not just unreachable right now — the
+   schedule itself isn't stale like it is when merely offline, so it stays
+   at full opacity. Only long-press (artist info) still works. */
+.show-block.ended {
+  cursor: default;
+}
 .show-block:active {
   filter: brightness(0.92);
 }

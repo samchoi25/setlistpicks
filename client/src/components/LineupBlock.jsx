@@ -23,11 +23,11 @@ const LineupBlock = React.memo(function LineupBlock({
 
   return (
     <button
-      className={`show-block lineup-block ${scoreClass(myVote)}${(online && !ended) ? '' : ' offline'}`}
+      className={`show-block lineup-block ${scoreClass(myVote)}${online ? '' : ' offline'}${ended ? ' ended' : ''}`}
       data-stage={s.stageId ?? undefined}
       data-id={s.id}
       style={style}
-      onClick={longPressFired.current ? undefined : handleClick}
+      onClick={(longPressFired.current || ended) ? undefined : handleClick}
       onPointerDown={startLongPress}
       onPointerMove={cancelLongPress}
       onPointerUp={handlePointerUp}

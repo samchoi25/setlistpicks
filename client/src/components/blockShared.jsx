@@ -79,10 +79,11 @@ export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, 
 
   const handleClick = useCallback(async () => {
     // Offline: don't even attempt the optimistic update — there's nothing
-    // to revert from since the save can't possibly go through.
-    if (saving || !online || ended) {
-      if (!online) toast("You're offline — votes can't be saved right now.");
-      else if (ended) toast('Voting is closed — this festival has ended.');
+    // to revert from since the save can't possibly go through. (A festival
+    // that's ended never reaches here at all — ShowBlock/LineupBlock drop
+    // the onClick handler entirely once `ended`, leaving only long-press.)
+    if (saving || !online) {
+      toast("You're offline — votes can't be saved right now.");
       return;
     }
     // Clearing the ref here causes it to be recomputed on the very next render
@@ -120,7 +121,7 @@ export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, 
     } finally {
       setSaving(false);
     }
-  }, [myVote, saving, online, ended, id, groupId, memberKey, memberDisplayName, onVoteChange, onNotMember]);
+  }, [myVote, saving, online, id, groupId, memberKey, memberDisplayName, onVoteChange, onNotMember]);
 
   // Long-press
   const longPressTimer = useRef(null);

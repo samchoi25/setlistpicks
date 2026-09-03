@@ -4,6 +4,7 @@ import { setIdentity, clearIdentity, setActiveGroup, renameGroupInHistory, remov
 import { toast } from '../toast.js';
 import { useOnline } from '../net-status.js';
 import { useFestival } from '../festival-context.jsx';
+import { hasFestivalEnded } from '../../../shared/festival.js';
 import FestivalSwitcher from './FestivalSwitcher.jsx';
 import GroupSwitcher from './GroupSwitcher.jsx';
 
@@ -41,8 +42,10 @@ export default function Header({
   // Editing means renaming/removing members or the group itself — all
   // network writes, so the whole panel (including "Leave Group", which
   // lives inside it) is unreachable while offline rather than partially
-  // disabled.
+  // disabled. Once the festival has ended it's unreachable outright — there's
+  // no group left to manage, only its final picks to look back on.
   const online = useOnline();
+  const ended = hasFestivalEnded(festival);
 
   function applyEditing(val) {
     setEditing(val);
@@ -258,7 +261,7 @@ export default function Header({
         <GroupSwitcher groupId={groupId} groupName={displayGroupName} disabled={editing} />
         <div className="brand-sub" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {memberCount} {memberCount === 1 ? 'member' : 'members'}
-          {!editing && online && (
+          {!editing && online && !ended && (
             <>
               <span style={{ color: 'var(--ink-dim)', userSelect: 'none' }}>&middot;</span>
               <button onClick={openEdit} style={{
@@ -270,12 +273,12 @@ export default function Header({
           )}
         </div>
       </div>{/* .brand-info */}
-      <button className="profile-badge" onClick={editing || !online ? undefined : openEdit}
-        title={editing || !online ? undefined : 'Edit your name & crew'}
-        style={editing || !online ? { cursor: 'default' } : {}}>
+      <button className="profile-badge" onClick={editing || !online || ended ? undefined : openEdit}
+        title={editing || !online || ended ? undefined : 'Edit your name & crew'}
+        style={editing || !online || ended ? { cursor: 'default' } : {}}>
         <span className="profile-avatar">{initials(displayMemberName)}</span>
         <span className="profile-name">{displayMemberName}</span>
-        {!editing && online && <ChevronIcon />}
+        {!editing && online && !ended && <ChevronIcon />}
       </button>
     </div>
   );

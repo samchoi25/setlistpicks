@@ -7,6 +7,7 @@ import {
 import { isOnline } from './net-status.js';
 import { ensureSvgDefs } from './svgDefs.js';
 import GroupView from './views/GroupView.jsx';
+import ReadOnlyView from './views/ReadOnlyView.jsx';
 import FestivalSwitcher from './components/FestivalSwitcher.jsx';
 import { FestivalProvider } from './festival-context.jsx';
 import { getFestival, DEFAULT_FESTIVAL_SLUG } from '../../shared/festivals/index.js';
@@ -86,10 +87,7 @@ function AppRoutes() {
       let freshJoin = false;
       if (!identity) {
         if (hasFestivalEnded(getFestival(groupMeta.festivalSlug) ?? festival)) {
-          setError({
-            msg: 'This festival has ended, so new members can’t join this group anymore.',
-            canRetry: false,
-          });
+          setError({ readOnly: true });
           return;
         }
         // Joining is a write — it can't resolve from cache, so it must still
@@ -120,7 +118,7 @@ function AppRoutes() {
         });
       } else if (e.status === 404) { clearActiveGroup(festival.slug); setError({ msg: 'That group link looks expired or invalid.', canRetry: true }); }
       else if (e.status === 429) setError({ msg: 'Too many groups or users created from this network. Try again later.', canRetry: false });
-      else if (e.data?.error === 'festival_ended') setError({ msg: 'This festival has ended, so new members can’t join this group anymore.', canRetry: false });
+      else if (e.data?.error === 'festival_ended') setError({ readOnly: true });
       else setError({ msg: e.message, canRetry: true });
     } finally {
       setLoading(false);
@@ -179,7 +177,7 @@ function AppRoutes() {
 
     if (hasFestivalEnded(getFestival(slug) ?? festival)) {
       navigating.current = false;
-      setError({ msg: 'This festival has ended, so new groups can’t be created anymore.', canRetry: false });
+      setError({ readOnly: true });
       return;
     }
 
@@ -198,7 +196,7 @@ function AppRoutes() {
         navigating.current = false;
         if (e.offline) setError({ msg: "You're offline — starting a new group needs a connection.", canRetry: false });
         else if (e.status === 429) setError({ msg: 'Too many groups created from this network. Try again later.', canRetry: false });
-        else if (e.data?.error === 'festival_ended') setError({ msg: 'This festival has ended, so new groups can’t be created anymore.', canRetry: false });
+        else if (e.data?.error === 'festival_ended') setError({ readOnly: true });
         else setError({ msg: e.message, canRetry: true });
       }
     })();
@@ -232,6 +230,7 @@ function AppRoutes() {
 
   const content = (() => {
     if (error) {
+      if (error.readOnly) return <ReadOnlyView />;
       return shell(
         <div className="card stack">
           <p style={{ margin: 0 }}>{error.msg}</p>

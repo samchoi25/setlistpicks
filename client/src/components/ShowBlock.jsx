@@ -26,7 +26,7 @@ const ShowBlock = React.memo(function ShowBlock({
 
   return (
     <button
-      className={`show-block ${scoreClass(myVote)}${s.followsPrevious ? ' follows-prev' : ''}${(online && !ended) ? '' : ' offline'}`}
+      className={`show-block ${scoreClass(myVote)}${s.followsPrevious ? ' follows-prev' : ''}${online ? '' : ' offline'}${ended ? ' ended' : ''}`}
       data-stage={s.stageId}
       data-id={s.id}
       style={{
@@ -40,7 +40,7 @@ const ShowBlock = React.memo(function ShowBlock({
           marginLeft: `calc(100% * ${s.lane} / ${s.laneCount})`,
         }),
       }}
-      onClick={longPressFired.current ? undefined : handleClick}
+      onClick={(longPressFired.current || ended) ? undefined : handleClick}
       onPointerDown={startLongPress}
       onPointerMove={cancelLongPress}
       onPointerUp={handlePointerUp}
