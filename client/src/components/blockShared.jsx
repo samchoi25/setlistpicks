@@ -3,6 +3,8 @@ import { computeWashData } from '../svgDefs.js';
 import { api } from '../api.js';
 import { toast } from '../toast.js';
 import { useOnline } from '../net-status.js';
+import { useFestival } from '../festival-context.jsx';
+import { hasFestivalEnded } from '../../../shared/festival.js';
 import { getCachedJson, putJson, applyVotePatch, applyPerArtistPatch } from '../offline-cache.js';
 
 export function scoreClass(score) {
@@ -72,12 +74,15 @@ export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, 
 
   const [saving, setSaving] = useState(false);
   const online = useOnline();
+  const festival = useFestival();
+  const ended = hasFestivalEnded(festival);
 
   const handleClick = useCallback(async () => {
     // Offline: don't even attempt the optimistic update — there's nothing
     // to revert from since the save can't possibly go through.
-    if (saving || !online) {
+    if (saving || !online || ended) {
       if (!online) toast("You're offline — votes can't be saved right now.");
+      else if (ended) toast('Voting is closed — this festival has ended.');
       return;
     }
     // Clearing the ref here causes it to be recomputed on the very next render
@@ -107,13 +112,15 @@ export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, 
         toast("You're offline — votes can't be saved right now.");
       } else if (e.message === 'not_a_member') {
         onNotMember?.();
+      } else if (e.data?.error === 'festival_ended') {
+        toast('Voting is closed — this festival has ended.');
       } else {
         toast(`Save failed: ${e.message}`);
       }
     } finally {
       setSaving(false);
     }
-  }, [myVote, saving, online, id, groupId, memberKey, memberDisplayName, onVoteChange, onNotMember]);
+  }, [myVote, saving, online, ended, id, groupId, memberKey, memberDisplayName, onVoteChange, onNotMember]);
 
   // Long-press
   const longPressTimer = useRef(null);
@@ -136,7 +143,7 @@ export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, 
     cancelLongPress();
   }, [cancelLongPress]);
 
-  return { washDataRef, saving, online, handleClick, startLongPress, cancelLongPress, handlePointerUp, longPressFired };
+  return { washDataRef, saving, online, ended, handleClick, startLongPress, cancelLongPress, handlePointerUp, longPressFired };
 }
 
 // Word-by-word markup so fitWords can shrink an individual overlong word

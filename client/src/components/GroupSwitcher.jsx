@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useFestival } from '../festival-context.jsx';
+import { hasFestivalEnded } from '../../../shared/festival.js';
 import { getGroupHistory } from '../storage.js';
 import { groupPath } from '../../../shared/routes.js';
 import CreateGroupModal from './CreateGroupModal.jsx';
@@ -69,14 +70,18 @@ export default function GroupSwitcher({ groupId, groupName, disabled }) {
               {g.name || 'Unnamed crew'}
             </a>
           ))}
-          <div className="brand-title-divider" />
-          <button
-            type="button"
-            className="brand-title-option create"
-            onClick={() => { setOpen(false); setCreating(true); }}
-          >
-            + Create group
-          </button>
+          {!hasFestivalEnded(festival) && (
+            <>
+              <div className="brand-title-divider" />
+              <button
+                type="button"
+                className="brand-title-option create"
+                onClick={() => { setOpen(false); setCreating(true); }}
+              >
+                + Create group
+              </button>
+            </>
+          )}
         </div>
       )}
       {creating && (

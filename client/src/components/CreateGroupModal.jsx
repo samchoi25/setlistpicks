@@ -31,6 +31,7 @@ export default function CreateGroupModal({ festivalSlug, onClose }) {
       toast(
         e.offline ? "You're offline — creating a group needs a connection."
         : e.status === 429 ? 'Too many groups created from this network. Try again later.'
+        : e.data?.error === 'festival_ended' ? 'This festival has ended, so new groups can’t be created anymore.'
         : `Couldn’t create group: ${e.message}`
       );
     }

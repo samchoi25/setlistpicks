@@ -14,7 +14,7 @@ const LineupBlock = React.memo(function LineupBlock({
   s, stage, flowColumn, flowRow, myVote, groupVotes, memberKey, memberDisplayName,
   groupId, onVoteChange, onLongPress, onNotMember,
 }) {
-  const { washDataRef, online, handleClick, startLongPress, cancelLongPress, handlePointerUp, longPressFired } =
+  const { washDataRef, online, ended, handleClick, startLongPress, cancelLongPress, handlePointerUp, longPressFired } =
     useVoteBlock({ id: s.id, artist: s.artist, artists: s.artists, myVote, groupId, memberKey, memberDisplayName, onVoteChange, onLongPress, onNotMember });
 
   const style = stage
@@ -23,7 +23,7 @@ const LineupBlock = React.memo(function LineupBlock({
 
   return (
     <button
-      className={`show-block lineup-block ${scoreClass(myVote)}${online ? '' : ' offline'}`}
+      className={`show-block lineup-block ${scoreClass(myVote)}${(online && !ended) ? '' : ' offline'}`}
       data-stage={s.stageId ?? undefined}
       data-id={s.id}
       style={style}

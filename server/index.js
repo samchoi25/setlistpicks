@@ -115,7 +115,7 @@ app.post('/api/groups', (req, res) => {
       creatorIp: clientIp(req),
     });
     if (meta.error === 'rate_limited') return res.status(429).json(meta);
-    if (meta.error === 'unknown_festival') return res.status(400).json(meta);
+    if (meta.error) return res.status(400).json(meta);
     res.json(meta);
   } catch (e) {
     res.status(500).json({ error: e.message });

@@ -1,6 +1,7 @@
 import { customAlphabet } from 'nanoid';
 import { db as defaultDb } from './db.js';
 import { getSetById, getFestival, DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
+import { hasFestivalEnded } from '../shared/festival.js';
 
 const newGroupId   = customAlphabet('23456789abcdefghjkmnpqrstuvwxyz', 10);
 const newMemberId  = customAlphabet('23456789abcdefghjkmnpqrstuvwxyz', 10);
@@ -83,6 +84,7 @@ export function createStore(db) {
     // slug — the festival a group belongs to must never be ambiguous.
     const festival = getFestival(festivalSlug ?? DEFAULT_FESTIVAL_SLUG);
     if (!festival) return { error: 'unknown_festival' };
+    if (hasFestivalEnded(festival)) return { error: 'festival_ended' };
 
     const now = Date.now();
     if (creatorIp) {
@@ -117,6 +119,10 @@ export function createStore(db) {
   function joinGroup(groupId, displayName, creatorIp) {
     const group = stmts.getGroup.get(groupId);
     if (!group) return { error: 'group_not_found' };
+    // A group's festival_slug can only fail to resolve if its festival was
+    // since dropped from the registry entirely — not this check's concern.
+    const festival = getFestival(group.festival_slug);
+    if (festival && hasFestivalEnded(festival)) return { error: 'festival_ended' };
 
     const display = cleanDisplayName(displayName);
     if (!display) return { error: 'invalid_name' };
@@ -152,6 +158,10 @@ export function createStore(db) {
   function setVote(groupId, memberKey, artistId, score) {
     const group = stmts.getGroup.get(groupId);
     if (!group) return { error: 'group_not_found' };
+    // See the same guard in joinGroup — an unresolvable festival_slug falls
+    // through to the wrong_festival check below instead.
+    const groupFestival = getFestival(group.festival_slug);
+    if (groupFestival && hasFestivalEnded(groupFestival)) return { error: 'festival_ended' };
 
     const set = getSetById(artistId);
     if (!set) return { error: 'invalid_artist' };

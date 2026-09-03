@@ -92,7 +92,7 @@ export const FESTIVAL_ALIASES = Object.freeze({
 // Where `/` sends visitors until there is a festival picker — the edition
 // people are most likely arriving for, which is the upcoming one rather than
 // whichever was added first.
-export const DEFAULT_FESTIVAL_SLUG = 'daisy-chain-fields-2026';
+export const DEFAULT_FESTIVAL_SLUG = 'portola-2026';
 
 export function listFestivals() {
   return [...bySlug.values()];

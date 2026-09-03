@@ -14,6 +14,7 @@ import NamePrompt from '../components/NamePrompt.jsx';
 import ArtistPopup from '../components/ArtistPopup.jsx';
 import MemberLineupPopup from '../components/MemberLineupPopup.jsx';
 import OfflineBanner from '../components/OfflineBanner.jsx';
+import FestivalEndedBanner from '../components/FestivalEndedBanner.jsx';
 
 export default function GroupView({
   groupId, member, groupMeta, freshJoin, onLeave,
@@ -211,6 +212,7 @@ export default function GroupView({
   return (
     <div className="app">
       <OfflineBanner />
+      <FestivalEndedBanner />
       {/* Toolbar: sticky header + day tabs */}
       <div className="toolbar">
         <Header

@@ -31,8 +31,8 @@ test('an alias is stored as its canonical slug', () => {
   // Otherwise the same festival could be recorded under two names and a
   // vote's festival check would depend on which URL created the group.
   const { store } = fresh();
-  const group = store.createGroup({ groupName: 'Crew', festivalSlug: 'outside-lands' });
-  assert.equal(group.festivalSlug, 'outside-lands-2026');
+  const group = store.createGroup({ groupName: 'Crew', festivalSlug: 'portola' });
+  assert.equal(group.festivalSlug, 'portola-2026');
 });
 
 test('an unknown festival is rejected rather than defaulted', () => {
@@ -41,6 +41,34 @@ test('an unknown festival is rejected rather than defaulted', () => {
     store.createGroup({ groupName: 'Crew', festivalSlug: 'nope-2099' }),
     { error: 'unknown_festival' },
   );
+});
+
+// outside-lands-2026 ran August 7-9, 2026, so by the time any of us are
+// running this it's permanently in the past — a stable "already ended"
+// fixture with no date injection needed.
+test('writes are rejected once a festival has ended', () => {
+  const { db, store } = fresh();
+  assert.deepEqual(
+    store.createGroup({ groupName: 'Crew', festivalSlug: 'outside-lands-2026' }),
+    { error: 'festival_ended' },
+  );
+
+  // A group made while the festival was still live still exists after it
+  // ends — insert one directly, bypassing createGroup's own (correct) block,
+  // to check that joining and voting are rejected on an existing group too.
+  const groupId = 'testgroup1';
+  const now = Date.now();
+  db.prepare(
+    'INSERT INTO groups (id, name, created_at, last_active, creator_ip, festival_slug) VALUES (?, ?, ?, ?, ?, ?)',
+  ).run(groupId, 'Old Crew', now, now, null, 'outside-lands-2026');
+
+  assert.deepEqual(store.joinGroup(groupId, 'Alex'), { error: 'festival_ended' });
+
+  db.prepare(
+    'INSERT INTO members (group_id, member_key, display_name, joined_at, last_seen, creator_ip) VALUES (?, ?, ?, ?, ?, ?)',
+  ).run(groupId, 'alex', 'Alex', now, now, null);
+  const setId = getFestival('outside-lands-2026').SCHEDULE[0].id;
+  assert.deepEqual(store.setVote(groupId, 'alex', setId, 3), { error: 'festival_ended' });
 });
 
 test('votes round-trip', () => {
