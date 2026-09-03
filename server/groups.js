@@ -1,5 +1,5 @@
 import { customAlphabet } from 'nanoid';
-import { db as defaultDb } from './db.js';
+import { db as defaultDb, deleteGroupCascade } from './db.js';
 import { getSetById, getFestival, DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
 import { hasFestivalEnded } from '../shared/festival.js';
 
@@ -59,11 +59,8 @@ export function createStore(db) {
     insertMember:     db.prepare('INSERT INTO members (group_id, member_key, display_name, joined_at, last_seen, creator_ip) VALUES (?, ?, ?, ?, ?, ?)'),
     touchMember:      db.prepare('UPDATE members SET last_seen = ? WHERE group_id = ? AND member_key = ?'),
     updateMemberName: db.prepare('UPDATE members SET display_name = ?, last_seen = ? WHERE group_id = ? AND member_key = ?'),
-    listMembers:      db.prepare('SELECT member_key, display_name FROM members WHERE group_id = ? AND left_at IS NULL'),
-    // Includes departed members, whose names are still needed to attribute the
-    // picks they chose to leave behind.
-    listAllMembers:   db.prepare('SELECT member_key, display_name FROM members WHERE group_id = ?'),
-    markMemberLeft:   db.prepare('UPDATE members SET left_at = ? WHERE group_id = ? AND member_key = ?'),
+    listMembers:      db.prepare('SELECT member_key, display_name FROM members WHERE group_id = ?'),
+    countMembers:     db.prepare('SELECT COUNT(*) AS cnt FROM members WHERE group_id = ?'),
 
     clearVotes:   db.prepare('DELETE FROM votes WHERE group_id = ? AND member_key = ?'),
     deleteMember: db.prepare('DELETE FROM members WHERE group_id = ? AND member_key = ?'),
@@ -197,13 +194,7 @@ export function createStore(db) {
 
   function getAllVotes(groupId) {
     const members = listMembers(groupId);
-    // Attribution uses every member ever, so picks left behind by someone who
-    // has since left still show a name rather than disappearing.
-    const memberMap = Object.fromEntries(
-      stmts.listAllMembers.all(groupId).map((r) => [
-        r.member_key, { key: r.member_key, displayName: r.display_name },
-      ]),
-    );
+    const memberMap = Object.fromEntries(members.map((m) => [m.key, m]));
     const rows = stmts.getAllVotes.all(groupId);
     const perArtist = {};
     for (const row of rows) {
@@ -223,22 +214,16 @@ export function createStore(db) {
     return { name };
   }
 
-  /*
-   * keepVotes marks the member as departed instead of deleting the row.
-   * Deleting it outright violated the votes -> members foreign key, so
-   * "Leave but keep my picks" threw and the member was never removed; and even
-   * without the constraint, getAllVotes drops votes whose member is missing, so
-   * the picks would have vanished anyway. Retaining a flagged row keeps them
-   * attributable while hiding the person from the roster.
-   */
-  function removeMember(groupId, memberKey, { keepVotes = false } = {}) {
+  // Leaving always takes the member's votes with them. If that empties the
+  // group, the group itself goes too — there's no one left to see it.
+  function removeMember(groupId, memberKey) {
     const mem = stmts.getMember.get(groupId, memberKey);
     if (!mem) return { error: 'not_a_member' };
-    if (keepVotes) {
-      stmts.markMemberLeft.run(Date.now(), groupId, memberKey);
-    } else {
-      stmts.clearVotes.run(groupId, memberKey);
-      stmts.deleteMember.run(groupId, memberKey);
+    stmts.clearVotes.run(groupId, memberKey);
+    stmts.deleteMember.run(groupId, memberKey);
+    if (stmts.countMembers.get(groupId).cnt === 0) {
+      deleteGroupCascade(db, groupId);
+      return { ok: true, groupDeleted: true };
     }
     touch(groupId);
     return { ok: true };

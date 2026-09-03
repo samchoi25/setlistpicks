@@ -26,10 +26,6 @@ const SCHEMA = `
     joined_at    INTEGER NOT NULL,
     last_seen    INTEGER NOT NULL,
     creator_ip   TEXT,
-    -- Set when someone leaves but asks to keep their picks. The row has to
-    -- survive: votes reference it, and their name is needed to attribute the
-    -- picks they left behind. Departed members are hidden from the roster.
-    left_at      INTEGER,
     PRIMARY KEY (group_id, member_key)
   );
 
@@ -63,7 +59,11 @@ const MIGRATIONS = [
   'ALTER TABLE groups  ADD COLUMN creator_ip TEXT',
   'ALTER TABLE members ADD COLUMN creator_ip TEXT',
   `ALTER TABLE groups  ADD COLUMN festival_slug TEXT NOT NULL DEFAULT '${DEFAULT_FESTIVAL_SLUG}'`,
-  'ALTER TABLE members ADD COLUMN left_at INTEGER',
+  // left_at (soft-delete for "leave but keep my picks") is gone — leaving
+  // always deletes the member's votes now, so an empty group is deleted
+  // outright rather than tracked. Drops the column on any database that
+  // still has it from before.
+  'ALTER TABLE members DROP COLUMN left_at',
 ];
 
 /*
@@ -91,11 +91,35 @@ export function openDb(dbPath = DEFAULT_DB_PATH) {
     try {
       db.exec(sql);
     } catch (e) {
-      if (!/duplicate column name/i.test(e.message)) throw e;
+      if (!/duplicate column name|no such column/i.test(e.message)) throw e;
     }
   }
   db.exec(POST_MIGRATION_INDEXES);
   return db;
+}
+
+// Deletes a group and everything under it, in FK-safe order, in one
+// transaction. Shared by the stale-group prune below, the empty-group sweep,
+// groups.js's removeMember (a group with no members left has nothing to
+// keep), and the admin "delete group" action.
+export function deleteGroupCascade(db, groupId) {
+  db.transaction(() => {
+    db.prepare('DELETE FROM votes   WHERE group_id = ?').run(groupId);
+    db.prepare('DELETE FROM members WHERE group_id = ?').run(groupId);
+    db.prepare('DELETE FROM groups  WHERE id = ?').run(groupId);
+  })();
+}
+
+// A group with nobody in it (everyone left, or it was created and never
+// joined) is useless to keep around. removeMember already deletes a group
+// the instant its last member leaves, so this only exists to sweep up
+// leftovers from before that existed — run once at boot, not on a timer.
+export function deleteEmptyGroups(db) {
+  const empty = db.prepare(
+    'SELECT id FROM groups WHERE id NOT IN (SELECT DISTINCT group_id FROM members)'
+  ).all();
+  for (const { id } of empty) deleteGroupCascade(db, id);
+  return empty.length;
 }
 
 // Remove groups that have had no activity for 90 days.
@@ -104,20 +128,7 @@ const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
 export function pruneStaleGroups(db, now = Date.now()) {
   const cutoff = now - NINETY_DAYS_MS;
   const stale = db.prepare('SELECT id FROM groups WHERE last_active < ?').all(cutoff);
-  if (!stale.length) return 0;
-
-  const delVotes = db.prepare('DELETE FROM votes   WHERE group_id = ?');
-  const delMembers = db.prepare('DELETE FROM members WHERE group_id = ?');
-  const delGroup = db.prepare('DELETE FROM groups  WHERE id = ?');
-
-  db.transaction((rows) => {
-    for (const { id } of rows) {
-      delVotes.run(id);
-      delMembers.run(id);
-      delGroup.run(id);
-    }
-  })(stale);
-
+  for (const { id } of stale) deleteGroupCascade(db, id);
   return stale.length;
 }
 
@@ -131,5 +142,11 @@ setInterval(() => {
   const n = pruneStaleGroups(db);
   if (n) console.log(`[db] pruned ${n} stale group(s)`);
 }, 6 * 60 * 60 * 1000).unref(); // every 6 hours, non-blocking
+
+// One-time sweep, not a recurring job — going forward, removeMember deletes
+// a group the moment it empties, so this only mops up anything already
+// empty (e.g. from before that existed).
+const emptied = deleteEmptyGroups(db);
+if (emptied) console.log(`[db] deleted ${emptied} empty group(s)`);
 
 console.log(`[db] SQLite open at ${DEFAULT_DB_PATH}`);

@@ -69,6 +69,6 @@ export const api = {
   updateGroup: (id, name) => req('PATCH', `/api/groups/${id}`, { name }),
   updateMember: (id, memberKey, displayName) =>
     req('PATCH', `/api/groups/${id}/members/${encKey(memberKey)}`, { displayName }),
-  removeMember: (id, memberKey, { keepVotes = false } = {}) =>
-    req('DELETE', `/api/groups/${id}/members/${encKey(memberKey)}?keepVotes=${keepVotes}`),
+  removeMember: (id, memberKey) =>
+    req('DELETE', `/api/groups/${id}/members/${encKey(memberKey)}`),
 };

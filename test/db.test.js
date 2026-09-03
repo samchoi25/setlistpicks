@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import Database from 'better-sqlite3';
-import { openDb, pruneStaleGroups } from '../server/db.js';
+import { openDb, pruneStaleGroups, deleteEmptyGroups } from '../server/db.js';
 import { createStore } from '../server/groups.js';
 import { getFestival, DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
 
@@ -169,34 +169,45 @@ test('getAllVotes groups voters by set', () => {
   );
 });
 
-test('leaving without keeping picks removes the member and their votes', () => {
+test('leaving removes the member, their votes, and (as the last member) the group', () => {
   const { store } = fresh();
   const { group, member } = groupWithMember(store);
   store.setVote(group.id, member.key, setId(0), 3);
-  store.removeMember(group.id, member.key);
-  assert.deepEqual(store.getAllVotes(group.id).perArtist, {});
-  assert.equal(store.listMembers(group.id).length, 0);
+  assert.deepEqual(store.removeMember(group.id, member.key), { ok: true, groupDeleted: true });
+  assert.equal(store.getGroupMeta(group.id), null);
 });
 
-test('leaving but keeping picks hides the member yet keeps their votes visible', () => {
-  // Regression: this path used to delete the member row, which the votes ->
-  // members foreign key rejected, so the "Leave but keep my picks" button
-  // threw and did nothing.
-  const { store } = fresh();
+test('a group survives until its last active member leaves', () => {
+  const { db, store } = fresh();
   const group = store.createGroup({ groupName: 'Crew' });
-  const leaver = store.joinGroup(group.id, 'Alex').member;
-  const stayer = store.joinGroup(group.id, 'Bo').member;
-  store.setVote(group.id, leaver.key, setId(0), 3);
-  store.setVote(group.id, stayer.key, setId(0), 1);
+  const first = store.joinGroup(group.id, 'Alex').member;
+  const second = store.joinGroup(group.id, 'Bo').member;
+  store.setVote(group.id, first.key, setId(0), 3);
+  store.setVote(group.id, second.key, setId(0), 1);
 
-  assert.deepEqual(store.removeMember(group.id, leaver.key, { keepVotes: true }), { ok: true });
-
-  // Gone from the roster...
+  assert.deepEqual(store.removeMember(group.id, first.key), { ok: true });
+  assert.ok(store.getGroupMeta(group.id));
   assert.deepEqual(store.listMembers(group.id).map((m) => m.displayName), ['Bo']);
-  // ...but their pick survives, still attributed by name.
-  const voters = store.getAllVotes(group.id).perArtist[setId(0)];
-  assert.equal(voters.length, 2);
-  assert.ok(voters.some((v) => v.displayName === 'Alex' && v.score === 3));
+
+  assert.deepEqual(store.removeMember(group.id, second.key), { ok: true, groupDeleted: true });
+  assert.equal(store.getGroupMeta(group.id), null);
+  assert.equal(db.prepare('SELECT COUNT(*) AS cnt FROM members WHERE group_id = ?').get(group.id).cnt, 0);
+  assert.equal(db.prepare('SELECT COUNT(*) AS cnt FROM votes   WHERE group_id = ?').get(group.id).cnt, 0);
+});
+
+test('deleteEmptyGroups sweeps groups with no members and spares the rest', () => {
+  const { db, store } = fresh();
+
+  const now = Date.now();
+  db.prepare(
+    'INSERT INTO groups (id, name, created_at, last_active, creator_ip, festival_slug) VALUES (?, ?, ?, ?, ?, ?)',
+  ).run('emptygrp1', 'Ghost Crew', now, now, null, DEFAULT_FESTIVAL_SLUG);
+
+  const { group } = groupWithMember(store);
+
+  assert.equal(deleteEmptyGroups(db), 1);
+  assert.equal(store.getGroupMeta('emptygrp1'), null);
+  assert.ok(store.getGroupMeta(group.id));
 });
 
 test('a database predating the festival column is migrated and backfilled', () => {

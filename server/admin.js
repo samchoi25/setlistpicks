@@ -1,5 +1,5 @@
 import express from 'express';
-import { db } from './db.js';
+import { db, deleteGroupCascade } from './db.js';
 import { listFestivals, getFestival } from '../shared/festivals/index.js';
 
 const router = express.Router();
@@ -31,7 +31,7 @@ const stmts = {
               JOIN groups vg ON vg.id = v.group_id
              WHERE vg.festival_slug = g.festival_slug)             AS votes
     FROM groups g
-    LEFT JOIN members m ON m.group_id = g.id AND m.left_at IS NULL
+    LEFT JOIN members m ON m.group_id = g.id
     GROUP BY g.festival_slug
     ORDER BY groups DESC
   `),
@@ -64,7 +64,7 @@ const stmts = {
     SELECT g.id, g.name, g.creator_ip, g.created_at, g.last_active, g.festival_slug,
            COUNT(m.member_key) AS member_count
     FROM groups g
-    LEFT JOIN members m ON m.group_id = g.id AND m.left_at IS NULL
+    LEFT JOIN members m ON m.group_id = g.id
     WHERE (:festival IS NULL OR g.festival_slug = :festival)
     GROUP BY g.id
     ORDER BY g.created_at DESC
@@ -74,7 +74,7 @@ const stmts = {
     SELECT g.id, g.name, g.creator_ip, g.created_at, g.last_active, g.festival_slug,
            COUNT(m.member_key) AS member_count
     FROM groups g
-    LEFT JOIN members m ON m.group_id = g.id AND m.left_at IS NULL
+    LEFT JOIN members m ON m.group_id = g.id
     WHERE g.creator_ip = ?
     GROUP BY g.id
     ORDER BY g.created_at DESC
@@ -93,14 +93,14 @@ const stmts = {
     SELECT g.id, g.name, g.creator_ip, g.created_at, g.last_active, g.festival_slug,
            COUNT(m.member_key) AS member_count
     FROM groups g
-    LEFT JOIN members m ON m.group_id = g.id AND m.left_at IS NULL
+    LEFT JOIN members m ON m.group_id = g.id
     WHERE g.id = ?
     GROUP BY g.id
   `),
 
   membersByGroup: db.prepare(`
     SELECT
-      m.member_key, m.display_name, m.joined_at, m.last_seen, m.creator_ip, m.left_at,
+      m.member_key, m.display_name, m.joined_at, m.last_seen, m.creator_ip,
       (SELECT COUNT(*) FROM groups  WHERE creator_ip = m.creator_ip) AS ip_groups,
       (SELECT COUNT(*) FROM members WHERE creator_ip = m.creator_ip) AS ip_members,
       (SELECT COUNT(*) FROM votes WHERE group_id = m.group_id AND member_key = m.member_key) AS vote_count
@@ -109,18 +109,9 @@ const stmts = {
     ORDER BY m.joined_at
   `),
 
-  deleteVotesByGroup:   db.prepare('DELETE FROM votes   WHERE group_id = ?'),
-  deleteMembersByGroup: db.prepare('DELETE FROM members WHERE group_id = ?'),
-  deleteGroup:          db.prepare('DELETE FROM groups  WHERE id = ?'),
   deleteVotesByMember:  db.prepare('DELETE FROM votes   WHERE group_id = ? AND member_key = ?'),
   deleteMember:         db.prepare('DELETE FROM members WHERE group_id = ? AND member_key = ?'),
 };
-
-const deleteGroupTx = db.transaction((groupId) => {
-  stmts.deleteVotesByGroup.run(groupId);
-  stmts.deleteMembersByGroup.run(groupId);
-  stmts.deleteGroup.run(groupId);
-});
 
 const deleteMemberTx = db.transaction((groupId, memberKey) => {
   stmts.deleteVotesByMember.run(groupId, memberKey);
@@ -496,7 +487,7 @@ router.get('/:secret/group/:groupId', requireSecret, (req, res) => {
             ${members.length
               ? members.map(m => `
                 <tr>
-                  <td style="font-weight:500">${esc(m.display_name)}${m.left_at ? '<span class="badge badge-blue">left</span>' : ''}</td>
+                  <td style="font-weight:500">${esc(m.display_name)}</td>
                   <td>${m.vote_count > 0 ? m.vote_count : '<span class="muted">—</span>'}</td>
                   <td class="mono muted">${fmt(m.joined_at)}</td>
                   <td class="mono muted">${fmt(m.last_seen)}</td>
@@ -522,7 +513,7 @@ router.post('/:secret/delete-group', requireSecret, parseForm, (req, res) => {
   const { secret } = req.params;
   const { groupId, redirect } = req.body ?? {};
   if (groupId) {
-    try { deleteGroupTx(groupId); } catch (e) { console.error('[admin] delete-group error', e); }
+    try { deleteGroupCascade(db, groupId); } catch (e) { console.error('[admin] delete-group error', e); }
   }
   res.redirect(redirect || `/admin/${secret}`);
 });

@@ -33,7 +33,7 @@ export default function NamePrompt({ groupId, member, memberDisplayName, groupNa
         const { member: recovered } = await api.join(groupId, t);
         setIdentity(groupId, recovered);
         // Remove the auto-generated placeholder before reloading
-        await api.removeMember(groupId, member.key, { keepVotes: false }).catch(() => {});
+        await api.removeMember(groupId, member.key).catch(() => {});
         location.reload();
       } catch (e) {
         if (e.offline) toast("You're offline — can't recover that account right now.");

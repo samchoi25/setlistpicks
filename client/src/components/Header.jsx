@@ -83,7 +83,7 @@ export default function Header({
         const { member: recovered } = await api.join(groupId, newName);
         setIdentity(groupId, recovered);
         setActiveGroup(groupId);
-        await api.removeMember(groupId, member.key, { keepVotes: false }).catch(() => {});
+        await api.removeMember(groupId, member.key).catch(() => {});
         location.reload();
       } catch (e) {
         toast(e.offline ? "You're offline \u2014 can't recover that account right now." : `Couldn\u2019t recover account: ${e.message}`);
@@ -111,9 +111,9 @@ export default function Header({
     }
   }
 
-  async function doRemoveMember(memberKey, { keepVotes = false } = {}) {
+  async function doRemoveMember(memberKey) {
     try {
-      await api.removeMember(groupId, memberKey, { keepVotes });
+      await api.removeMember(groupId, memberKey);
       setMutedMembers((prev) => prev.filter((m) => m.key !== memberKey));
     } catch (e) {
       toast(e.offline ? "You're offline \u2014 can't remove members right now." : `Couldn\u2019t remove: ${e.message}`);
@@ -138,8 +138,8 @@ export default function Header({
     setRenamingKey(null);
   }
 
-  async function doLeave(keepVotes) {
-    try { await api.removeMember(groupId, member.key, { keepVotes }); } catch {}
+  async function doLeave() {
+    try { await api.removeMember(groupId, member.key); } catch {}
     clearIdentity(groupId);
     removeGroupFromHistory(festival.slug, groupId);
     onLeave();
@@ -216,11 +216,10 @@ export default function Header({
               ⚠️ Caution&mdash;you&rsquo;re removing yourself!
             </div>
             <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--ink-soft)', lineHeight: 1.55 }}>
-              You&rsquo;ll leave the group on this device. Everyone else&rsquo;s choices and the group itself will remain.
+              You&rsquo;ll leave the group and your picks will be removed. If you&rsquo;re the last one here, the group itself goes with them.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
-              <button className="btn danger small" onClick={() => doLeave(false)}>Leave &amp; delete my picks</button>
-              <button style={linkStyle} onClick={() => doLeave(true)}>Leave but keep my picks</button>
+              <button className="btn danger small" onClick={() => doLeave()}>Leave group</button>
               <button style={dimLinkStyle} onClick={() => setRemovingKey(null)}>Never mind</button>
             </div>
           </div>
@@ -229,7 +228,7 @@ export default function Header({
       return (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {avatar}{nameEl}
-          <button className="btn danger small" onClick={() => doRemoveMember(m.key, { keepVotes: false })}>Remove</button>
+          <button className="btn danger small" onClick={() => doRemoveMember(m.key)}>Remove</button>
           <button style={dimLinkStyle} onClick={() => setRemovingKey(null)}>cancel</button>
         </div>
       );

@@ -153,8 +153,7 @@ app.patch('/api/groups/:groupId/members/:memberKey', (req, res) => {
 });
 
 app.delete('/api/groups/:groupId/members/:memberKey', (req, res) => {
-  const keepVotes = req.query.keepVotes === 'true';
-  const result = removeMember(req.params.groupId, req.params.memberKey, { keepVotes });
+  const result = removeMember(req.params.groupId, req.params.memberKey);
   if (result.error) return res.status(400).json(result);
   broadcastVotes(req.params.groupId);
   res.json(result);
