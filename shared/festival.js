@@ -55,6 +55,16 @@ export function festivalEndsAt(festival) {
   return new Date(`${festival.year}-${month}-${dayPad}T23:59:59${festival.utcOffset}`);
 }
 
+// Gates open on the first day. Paired with festivalEndsAt so callers can rank
+// festivals by which one is coming up next rather than which finishes first —
+// two festivals can share an end date while one started days earlier.
+export function festivalStartsAt(festival) {
+  const [mon, day] = festival.days[0].date.split(' ');
+  const month = String(MONTHS[mon]).padStart(2, '0');
+  const dayPad = String(day).padStart(2, '0');
+  return new Date(`${festival.year}-${month}-${dayPad}T00:00:00${festival.utcOffset}`);
+}
+
 export function hasFestivalEnded(festival, now = new Date()) {
   return now.getTime() > festivalEndsAt(festival).getTime();
 }

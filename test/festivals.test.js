@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   listFestivals, getFestival, isFestivalSlug, isCanonicalSlug,
-  FESTIVAL_ALIASES, RESERVED_SLUGS, DEFAULT_FESTIVAL_SLUG, GROUP_CODE_RE,
+  FESTIVAL_ALIASES, RESERVED_SLUGS, DEFAULT_FESTIVAL_SLUG, LEGACY_FESTIVAL_SLUG, GROUP_CODE_RE,
   WEBSOCKETS_ENABLED_DEFAULT,
 } from '../shared/festivals/index.js';
-import { festivalEndsAt, hasFestivalEnded } from '../shared/festival.js';
+import { festivalEndsAt, festivalStartsAt, hasFestivalEnded } from '../shared/festival.js';
 
 test('registry is non-empty and slugs are unique', () => {
   const slugs = listFestivals().map((f) => f.slug);
@@ -58,6 +58,37 @@ test('every alias points at a real canonical festival', () => {
 
 test('the default festival exists', () => {
   assert.ok(isCanonicalSlug(DEFAULT_FESTIVAL_SLUG));
+});
+
+test('the default festival is the next one to open that has not ended', () => {
+  const now = Date.now();
+  const def = getFestival(DEFAULT_FESTIVAL_SLUG);
+  const live = listFestivals().filter((f) => +festivalEndsAt(f) >= now);
+
+  if (live.length === 0) {
+    // Whole calendar in the past: fall back to the one that ended last rather
+    // than leaving `/` with no festival to show.
+    const last = listFestivals()
+      .sort((a, b) => +festivalEndsAt(a) - +festivalEndsAt(b))
+      .pop();
+    assert.equal(DEFAULT_FESTIVAL_SLUG, last.slug);
+    return;
+  }
+
+  assert.ok(live.some((f) => f.slug === def.slug), 'default has not already ended');
+  for (const f of live) {
+    assert.ok(
+      +festivalStartsAt(def) <= +festivalStartsAt(f),
+      `${f.slug} opens before the default ${def.slug}`,
+    );
+  }
+});
+
+test('the legacy slug is frozen to the edition that predates multi-festival', () => {
+  // Repointing it silently reattributes every group in a database that has
+  // not run the festival_slug migration yet.
+  assert.equal(LEGACY_FESTIVAL_SLUG, 'outside-lands-2026');
+  assert.ok(isCanonicalSlug(LEGACY_FESTIVAL_SLUG));
 });
 
 test('websockets default off sitewide, with no festival opted in yet', () => {

@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'node:path';
 import fs from 'node:fs';
-import { DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
+import { LEGACY_FESTIVAL_SLUG } from '../shared/festivals/index.js';
 
 const DEFAULT_DB_PATH = process.env.DB_PATH
   ? path.resolve(process.env.DB_PATH)
@@ -15,8 +15,9 @@ const SCHEMA = `
     last_active   INTEGER NOT NULL,
     creator_ip    TEXT,
     -- Which festival's lineup this group is voting on. Defaulted so a database
-    -- created before multi-festival support backfills to the original one.
-    festival_slug TEXT    NOT NULL DEFAULT '${DEFAULT_FESTIVAL_SLUG}'
+    -- created before multi-festival support backfills to the original one —
+    -- that edition specifically, not whichever festival is current.
+    festival_slug TEXT    NOT NULL DEFAULT '${LEGACY_FESTIVAL_SLUG}'
   );
 
   CREATE TABLE IF NOT EXISTS members (
@@ -55,10 +56,10 @@ const POST_MIGRATION_INDEXES = `
 
 // Columns added after the original schema shipped. Re-running is harmless:
 // SQLite rejects a duplicate column and we swallow that specific case.
-const MIGRATIONS = [
+export const MIGRATIONS = [
   'ALTER TABLE groups  ADD COLUMN creator_ip TEXT',
   'ALTER TABLE members ADD COLUMN creator_ip TEXT',
-  `ALTER TABLE groups  ADD COLUMN festival_slug TEXT NOT NULL DEFAULT '${DEFAULT_FESTIVAL_SLUG}'`,
+  `ALTER TABLE groups  ADD COLUMN festival_slug TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_SLUG}'`,
   // left_at (soft-delete for "leave but keep my picks") is gone — leaving
   // always deletes the member's votes now, so an empty group is deleted
   // outright rather than tracked. Drops the column on any database that

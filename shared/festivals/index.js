@@ -4,18 +4,23 @@
  * Adding a festival means adding a definition module and one line here.
  * Everything else (routing, SEO pages, sitemap, the grid) reads from this.
  */
-import { buildFestival } from '../festival.js';
+import { buildFestival, festivalEndsAt, festivalStartsAt } from '../festival.js';
 import outsideLands2026 from './outside-lands-2026.js';
 import daisyChainFields2026 from './daisy-chain-fields-2026.js';
 import portola2026 from './portola-2026.js';
 import austinCityLimits2026Week1 from './austin-city-limits-2026-week-1.js';
 import austinCityLimits2026Week2 from './austin-city-limits-2026-week-2.js';
 import hardlyStrictlyBluegrass2026 from './hardly-strictly-bluegrass-2026.js';
+import seaHearNow2026 from './sea-hear-now-2026.js';
+import louderThanLife2026 from './louder-than-life-2026.js';
+import bourbonAndBeyond2026 from './bourbon-and-beyond-2026.js';
+import aftershock2026 from './aftershock-2026.js';
 
 const DEFINITIONS = [
   outsideLands2026, daisyChainFields2026, portola2026,
   austinCityLimits2026Week1, austinCityLimits2026Week2,
   hardlyStrictlyBluegrass2026,
+  seaHearNow2026, louderThanLife2026, bourbonAndBeyond2026, aftershock2026,
 ];
 
 // A slug must never be mistakable for a group code, which is exactly 10
@@ -87,12 +92,45 @@ export const FESTIVAL_ALIASES = Object.freeze({
   'daisy-chain-fields': 'daisy-chain-fields-2026',
   'portola': 'portola-2026',
   'hardly-strictly-bluegrass': 'hardly-strictly-bluegrass-2026',
+  'sea-hear-now': 'sea-hear-now-2026',
+  'louder-than-life': 'louder-than-life-2026',
+  'bourbon-and-beyond': 'bourbon-and-beyond-2026',
+  'aftershock': 'aftershock-2026',
 });
 
-// Where `/` sends visitors until there is a festival picker — the edition
-// people are most likely arriving for, which is the upcoming one rather than
-// whichever was added first.
-export const DEFAULT_FESTIVAL_SLUG = 'portola-2026';
+/*
+ * The festival a group belongs to when nothing says otherwise: the only
+ * edition that existed before festivals were a concept. It is what a database
+ * predating multi-festival support must backfill its rows to, so it is frozen
+ * to that edition forever and must not be repointed at whatever is current —
+ * doing so silently reattributes every legacy group's votes.
+ */
+export const LEGACY_FESTIVAL_SLUG = 'outside-lands-2026';
+
+/*
+ * Which festival `/` shows a first-time visitor, until there is a picker.
+ *
+ * Derived rather than hardcoded: people arrive in the days before gates open,
+ * so the useful answer is the next festival that hasn't finished, and a
+ * hardcoded slug goes stale every few weeks. Evaluated once at import — the
+ * server picks up the new answer when it restarts, the client when it is
+ * rebuilt, and both happen on every deploy.
+ *
+ * Once the whole calendar is in the past there is no upcoming edition, so
+ * fall back to the one that ended most recently rather than nothing.
+ */
+function pickDefaultFestival(now = Date.now()) {
+  const ranked = [...bySlug.values()]
+    .map((f) => ({ slug: f.slug, startsAt: +festivalStartsAt(f), endsAt: +festivalEndsAt(f) }))
+    // By when gates open, not when the festival finishes: two festivals can
+    // share an end date while one opened days earlier, and that earlier one is
+    // the one people are looking up first.
+    .sort((a, b) => a.startsAt - b.startsAt || a.endsAt - b.endsAt);
+  const upcoming = ranked.filter((f) => f.endsAt >= now);
+  return (upcoming[0] ?? ranked[ranked.length - 1]).slug;
+}
+
+export const DEFAULT_FESTIVAL_SLUG = pickDefaultFestival();
 
 export function listFestivals() {
   return [...bySlug.values()];

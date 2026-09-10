@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import Database from 'better-sqlite3';
-import { openDb, pruneStaleGroups, deleteEmptyGroups } from '../server/db.js';
+import { openDb, pruneStaleGroups, deleteEmptyGroups, MIGRATIONS } from '../server/db.js';
 import { createStore } from '../server/groups.js';
-import { getFestival, DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
+import { getFestival, DEFAULT_FESTIVAL_SLUG, LEGACY_FESTIVAL_SLUG } from '../shared/festivals/index.js';
 
 const festival = getFestival(DEFAULT_FESTIVAL_SLUG);
 const setId = (n = 0) => festival.SCHEDULE[n].id;
@@ -226,11 +226,13 @@ test('a database predating the festival column is migrated and backfilled', () =
   const cols = () => db.prepare('PRAGMA table_info(groups)').all().map((c) => c.name);
   assert.ok(!cols().includes('festival_slug'), 'precondition: column absent');
 
-  // Same statements openDb applies, run against this handle.
-  for (const sql of [
-    'ALTER TABLE groups ADD COLUMN creator_ip TEXT',
-    `ALTER TABLE groups ADD COLUMN festival_slug TEXT NOT NULL DEFAULT '${DEFAULT_FESTIVAL_SLUG}'`,
-  ]) {
+  // The real statements openDb applies, imported rather than restated — a
+  // copy here would keep passing while the migration itself drifted. Only the
+  // `groups` ones: this fixture is a groups table on its own, so the members
+  // migrations have nothing to run against.
+  const groupMigrations = MIGRATIONS.filter((sql) => /ALTER TABLE groups\b/.test(sql));
+  assert.ok(groupMigrations.length >= 2, 'found the groups migrations to run');
+  for (const sql of groupMigrations) {
     try { db.exec(sql); } catch (e) {
       if (!/duplicate column name/i.test(e.message)) throw e;
     }
@@ -238,7 +240,10 @@ test('a database predating the festival column is migrated and backfilled', () =
 
   assert.ok(cols().includes('festival_slug'));
   const row = db.prepare('SELECT festival_slug FROM groups WHERE id = ?').get('legacy1234');
-  assert.equal(row.festival_slug, DEFAULT_FESTIVAL_SLUG, 'existing rows backfill');
+  // Specifically the edition that predates multi-festival support, not
+  // whichever festival happens to be current — see LEGACY_FESTIVAL_SLUG.
+  assert.equal(row.festival_slug, LEGACY_FESTIVAL_SLUG, 'existing rows backfill');
+  assert.equal(LEGACY_FESTIVAL_SLUG, 'outside-lands-2026', 'and it is frozen to it');
 });
 
 test('migrations are idempotent', () => {
