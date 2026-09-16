@@ -2,6 +2,71 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { listFestivals, getFestival } from '../shared/festivals/index.js';
+import {
+  parseRootTokens, contrastRatio, resolveTheme, knownStageTokens,
+} from '../shared/theme.js';
+
+const BASE = parseRootTokens(
+  readFileSync(new URL('../client/src/styles.css', import.meta.url), 'utf8'),
+);
+
+// What a token is worth for a given festival: its own theme first, then the
+// base palette. Mirrors what the cascade does — themeCss() emits :root:root,
+// which outranks the :root the stylesheet defines.
+function tokenValue(festival, name) {
+  const themed = resolveTheme(festival)[name];
+  return themed ?? BASE.get(name);
+}
+
+// True when the festival's theme touches either side of a contrast pair, i.e.
+// this combination is a choice someone made rather than one inherited from the
+// base palette.
+function isThemed(festival, ...names) {
+  const theme = resolveTheme(festival);
+  return names.some((n) => theme[n] !== undefined);
+}
+
+/*
+ * Contrast debt that predates this check, recorded per TOKEN rather than per
+ * stage — these are properties of the base palette, so every festival using an
+ * unthemed token inherits the same number, and a festival added later needs no
+ * new entry. Five of the nine stage colours are here; --ocean-deep,
+ * --dusk-purple and --brick-clay clear 4.5 on both counts already.
+ *
+ * An entry may only improve. Darkening one of these is a fix, and the failure
+ * message tells you the number to record. Nothing may be ADDED here: a pair
+ * either side of which a festival has themed must clear 4.5 outright, which is
+ * what stops new artwork from quietly making the grid less readable than it
+ * already is.
+ */
+const BASE_DEBT = {
+  '--pink-carnation': { header: 1.86, block: 2.25 },
+  '--muted-olive': { header: 1.98, block: 2.39 },
+  '--marigold-gold': { header: 2.43, block: 2.94 },
+  '--sunset-coral': { header: 3.08, block: 3.72 },
+  '--jungle-green': { header: 3.37, block: 4.07 },
+  '--deep-teal': { header: 4.24 },
+};
+
+const AA_SMALL_TEXT = 4.5;
+
+function assertLegible({ what, ratio, themed, debt }) {
+  const r = +ratio.toFixed(2);
+  if (ratio >= AA_SMALL_TEXT) return;
+
+  assert.ok(!themed,
+    `${what}: ${r}:1 is below ${AA_SMALL_TEXT}:1, and this festival themes one `
+    + 'side of it. Themed colours get no exemption — darken it.');
+
+  assert.ok(debt !== undefined,
+    `${what}: ${r}:1 is below ${AA_SMALL_TEXT}:1 and is not recorded debt. `
+    + 'Either fix the colour or, if this really is pre-existing, record it in '
+    + 'BASE_DEBT with a note about why.');
+
+  // Recorded pairs may improve but never slip back.
+  assert.ok(ratio >= debt - 0.01,
+    `${what}: ${r}:1 has regressed from the recorded ${debt}:1.`);
+}
 
 /*
  * Structural invariants, checked against every registered festival rather than
@@ -122,9 +187,48 @@ for (const f of listFestivals()) {
     }
   });
 
-  test(`${label}: every stage colour is a CSS custom property`, () => {
+  /*
+   * Colours. The old version of this only matched /^--[a-z-]+$/, which checks
+   * the shape of the name and nothing else — so '--ocean-dep' passed and
+   * rendered an unstyled block. These resolve the name against the palette the
+   * page will actually have.
+   */
+  test(`${label}: every stage colour resolves to a real token`, () => {
+    const known = knownStageTokens(f);
     for (const stage of f.STAGES) {
-      assert.match(stage.color, /^--[a-z-]+$/, `stage '${stage.id}' colour`);
+      for (const field of ['color', 'headerColor']) {
+        const name = stage[field];
+        if (name === undefined) continue;
+        assert.ok(known.has(name),
+          `stage '${stage.id}' ${field} '${name}' is not defined by styles.css `
+          + `or by ${label}'s own theme block`);
+      }
+    }
+  });
+
+  test(`${label}: stage colours stay legible`, () => {
+    for (const stage of f.STAGES) {
+      const header = tokenValue(f, stage.headerColor ?? stage.color);
+      const block = tokenValue(f, stage.color);
+      const bg = tokenValue(f, '--bg');
+      const blockInk = tokenValue(f, '--block-ink');
+
+      // The stage header is text on --bg (.day-header-bar paints it), at
+      // 0.65rem/800 — small text, so the AA threshold is 4.5 and not 3.
+      assertLegible({
+        what: `${label}: stage '${stage.id}' header`,
+        ratio: contrastRatio(header, bg),
+        themed: isThemed(f, stage.headerColor ?? stage.color, '--bg'),
+        debt: BASE_DEBT[stage.headerColor ?? stage.color]?.header,
+      });
+
+      // And --block-ink is the text sitting on the block's own fill.
+      assertLegible({
+        what: `${label}: stage '${stage.id}' block text`,
+        ratio: contrastRatio(blockInk, block),
+        themed: isThemed(f, stage.color, '--block-ink'),
+        debt: BASE_DEBT[stage.color]?.block,
+      });
     }
   });
 }

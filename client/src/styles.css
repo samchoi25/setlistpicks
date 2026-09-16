@@ -1,4 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
+/*
+ * One request for every family a festival theme may choose (see FONT_STACKS in
+ * shared/theme.js). Only the families actually rendered get their woff2 fetched,
+ * so the ones no visible festival uses cost nothing beyond a few hundred bytes of
+ * this CSS. The css2 API requires families in alphabetical order.
+ *
+ * Cross-origin, so the service worker does not precache it and never has:
+ * offline, every one of these falls back to its local stack, exactly as
+ * Montserrat already did.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Montserrat:wght@400;600;700;800&family=Oswald:wght@500;700&family=Playfair+Display:wght@700&family=Rye&family=Space+Grotesk:wght@400;600;700&display=swap');
 
 /*
  * The design system. A festival definition can override the colour and font
