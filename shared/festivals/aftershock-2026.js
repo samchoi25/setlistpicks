@@ -30,11 +30,11 @@
 const slug = 'aftershock-2026';
 
 const stages = [
-  { id: 'aftershock', name: 'Aftershock Stage', short: 'AFTR', color: '--brick-clay' },
-  { id: 'shockwave',  name: 'Shockwave Stage', short: 'SHOCK', color: '--sunset-coral' },
-  { id: 'point',      name: 'The Point Stage', short: 'POINT', color: '--dusk-purple' },
-  { id: 'faultline',  name: 'Faultline Stage', short: 'FAULT', color: '--ocean-deep' },
-  { id: 'epicenter',  name: 'Epicenter', short: 'EPI', color: '--jungle-green' },
+  { id: 'aftershock', name: 'Aftershock Stage', short: 'AFTR', color: '--brick-clay', headerColor: '--aftershock-2026-aftershock-header' },
+  { id: 'shockwave',  name: 'Shockwave Stage', short: 'SHOCK', color: '--sunset-coral', headerColor: '--aftershock-2026-shockwave-header' },
+  { id: 'point',      name: 'The Point Stage', short: 'POINT', color: '--dusk-purple', headerColor: '--aftershock-2026-point-header' },
+  { id: 'faultline',  name: 'Faultline Stage', short: 'FAULT', color: '--ocean-deep', headerColor: '--aftershock-2026-faultline-header' },
+  { id: 'epicenter',  name: 'Epicenter', short: 'EPI', color: '--jungle-green', headerColor: '--aftershock-2026-epicenter-header' },
 ];
 
 const days = [
@@ -239,6 +239,35 @@ const sets = {
 
 };
 
+// Theme. aftershockfestival.com is black with its signature yellow (#F4D218).
+// As with Louder Than Life, the black cannot come across without dark mode, so
+// this is the daylight reading: ash grey, near-black ink, seismic rust.
+//
+// The yellow is the heaviest compromise of the six. As a block fill it has to
+// drop to a dark gold before white text reaches 4.5:1 on it, so it reads as
+// brass rather than as the poster's high-vis yellow.
+const theme = {
+  tokens: {
+    '--bg': '#EDEAE4',
+    '--paper': '#F7F5F1',
+    '--ink': '#1F1D1B',
+    '--btn-secondary': '#89760D',
+    '--block-ink': '#FFFFFF',
+    '--brick-clay': '#C64D40',
+    '--sunset-coral': '#89760D',
+    '--dusk-purple': '#7A4A8E',
+    '--ocean-deep': '#2E6A9E',
+    '--jungle-green': '#3C7A5A',
+    '--aftershock-2026-aftershock-header': '#BE382B',
+    '--aftershock-2026-shockwave-header': '#78670C',
+    '--aftershock-2026-point-header': '#835796',
+    '--aftershock-2026-faultline-header': '#306B9F',
+    '--aftershock-2026-epicenter-header': '#387355',
+    '--font-display': 'archivo-black',
+    '--font-body': 'montserrat',
+  },
+};
+
 export default {
   slug,
   name: 'Aftershock 2026',
@@ -267,6 +296,7 @@ export default {
     'Black Label Society',
     'Mayday Parade',
   ],
+  theme,
   stages,
   days,
   sets,

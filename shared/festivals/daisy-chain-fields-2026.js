@@ -19,8 +19,8 @@ const slug = 'daisy-chain-fields-2026';
 // The poster colours Dandelion pink and Marigold yellow — matched here rather
 // than guessing from the flower names.
 const stages = [
-  { id: 'dandelion', name: 'Dandelion Stage', short: 'DAN', color: '--pink-carnation' },
-  { id: 'marigold',  name: 'Marigold Stage',  short: 'MAR', color: '--marigold-gold' },
+  { id: 'dandelion', name: 'Dandelion Stage', short: 'DAN', color: '--pink-carnation', headerColor: '--daisy-chain-fields-2026-dandelion-header' },
+  { id: 'marigold',  name: 'Marigold Stage',  short: 'MAR', color: '--marigold-gold', headerColor: '--daisy-chain-fields-2026-marigold-header' },
 ];
 
 const days = [
@@ -54,6 +54,30 @@ const sets = {
   ],
 };
 
+// Theme. Sampled from daisychainfields.com: grass green (#88C55D) ground,
+// poster pink (#E06287), poster yellow (#F8E165), near-black ink.
+//
+// The one festival here that keeps a poster colour exactly — the marigold
+// yellow is untouched — because this is the only palette pale enough to carry
+// dark block text. The dandelion pink is softened well past the poster's: at
+// its real value neither white nor dark text reaches 4.5:1 once the
+// highlighter wash lands on it.
+const theme = {
+  tokens: {
+    '--bg': '#88C55D',
+    '--paper': '#F2F7EC',
+    '--ink': '#231F20',
+    '--btn-secondary': '#8A3A52',
+    '--block-ink': '#231F20',
+    '--pink-carnation': '#F7D5DF',
+    '--marigold-gold': '#F8E165',
+    '--daisy-chain-fields-2026-dandelion-header': '#703144',
+    '--daisy-chain-fields-2026-marigold-header': '#4D461F',
+    '--font-display': 'playfair-display',
+    '--font-body': 'montserrat',
+  },
+};
+
 export default {
   slug,
   name: 'Daisy Chain Fields 2026',
@@ -72,6 +96,7 @@ export default {
   dataVerifiedOn: '2026-08-12',
   headliners: ['Olivia Rodrigo & Special Guests', 'Chappell Roan', 'Doechii', 'Mitski'],
   notableActs: ['Bikini Kill', 'The Breeders', 'Garbage', 'Santigold', 'KATSEYE'],
+  theme,
   stages,
   days,
   sets,

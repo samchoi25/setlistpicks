@@ -44,10 +44,10 @@ const slug = 'portola-2026';
 // Matched to each stage's own flyer color rather than guessing: Pier Stage
 // is blue, Crane Stage orange, Warehouse yellow, Ship Tent green.
 const stages = [
-  { id: 'pier', name: 'Pier Stage', short: 'PIER', color: '--ocean-deep' },
-  { id: 'crane', name: 'Crane Stage', short: 'CRANE', color: '--sunset-coral' },
-  { id: 'warehouse', name: 'Warehouse', short: 'WH', color: '--marigold-gold' },
-  { id: 'shiptent', name: 'Ship Tent', short: 'SHIP', color: '--jungle-green' },
+  { id: 'pier', name: 'Pier Stage', short: 'PIER', color: '--ocean-deep', headerColor: '--portola-2026-pier-header' },
+  { id: 'crane', name: 'Crane Stage', short: 'CRANE', color: '--sunset-coral', headerColor: '--portola-2026-crane-header' },
+  { id: 'warehouse', name: 'Warehouse', short: 'WH', color: '--marigold-gold', headerColor: '--portola-2026-warehouse-header' },
+  { id: 'shiptent', name: 'Ship Tent', short: 'SHIP', color: '--jungle-green', headerColor: '--portola-2026-shiptent-header' },
 ];
 
 const days = [
@@ -235,6 +235,32 @@ const artistLinks = {
   'Zulan': { spotify: 'https://open.spotify.com/artist/2Yz9F5lQVc0p6SDxkw2BvF', appleMusic: 'https://music.apple.com/us/artist/zulan/1807249833', soundcloud: 'https://soundcloud.com/zulann' },
 };
 
+// Theme. Sampled from portolamusicfestival.com: warehouse grey (#DFDCDF) and
+// the festival's electric blue (#253992), which is strong enough to be both
+// the body ink and the Pier Stage fill unchanged.
+//
+// The closest match of the six: Pier and Ship Tent keep their sampled values
+// exactly, and Crane is within a hair of its.
+const theme = {
+  tokens: {
+    '--bg': '#DFDCDF',
+    '--paper': '#F2F1F2',
+    '--ink': '#253992',
+    '--btn-secondary': '#1B6B52',
+    '--block-ink': '#FFFFF5',
+    '--ocean-deep': '#253992',
+    '--sunset-coral': '#B85226',
+    '--marigold-gold': '#8E7217',
+    '--jungle-green': '#1B6B52',
+    '--portola-2026-pier-header': '#4A5BA5',
+    '--portola-2026-crane-header': '#A24218',
+    '--portola-2026-warehouse-header': '#745D13',
+    '--portola-2026-shiptent-header': '#1D6C54',
+    '--font-display': 'space-grotesk',
+    '--font-body': 'space-grotesk',
+  },
+};
+
 export default {
   slug,
   name: 'Portola Music Festival 2026',
@@ -253,6 +279,7 @@ export default {
   dataVerifiedOn: '2026-08-31',
   headliners: ['Robyn', 'Dog Blood', 'Swedish House Mafia'],
   notableActs: ['Fatboy Slim', 'Skepta', 'Tove Lo', 'Tiësto', 'Zara Larsson', 'Four Tet', 'DJ Shadow'],
+  theme,
   stages,
   days,
   sets,

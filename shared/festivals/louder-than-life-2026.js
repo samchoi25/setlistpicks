@@ -25,13 +25,13 @@
 const slug = 'louder-than-life-2026';
 
 const stages = [
-  { id: 'louder',     name: 'Louder Stage', short: 'LOUD', color: '--brick-clay' },
-  { id: 'life',       name: 'Life Stage', short: 'LIFE', color: '--sunset-coral' },
-  { id: 'decibel',    name: 'Decibel Stage', short: 'DEC', color: '--dusk-purple' },
-  { id: 'reverb',     name: 'Reverb Stage', short: 'REV', color: '--ocean-deep' },
-  { id: 'loudmouth',  name: 'Loudmouth Stage', short: 'LM', color: '--deep-teal' },
-  { id: 'impact',     name: 'Impact Stage', short: 'IMP', color: '--jungle-green' },
-  { id: 'bourbonbar', name: 'Big Bourbon Bar', short: 'BBB', color: '--marigold-gold' },
+  { id: 'louder',     name: 'Louder Stage', short: 'LOUD', color: '--brick-clay', headerColor: '--louder-than-life-2026-louder-header' },
+  { id: 'life',       name: 'Life Stage', short: 'LIFE', color: '--sunset-coral', headerColor: '--louder-than-life-2026-life-header' },
+  { id: 'decibel',    name: 'Decibel Stage', short: 'DEC', color: '--dusk-purple', headerColor: '--louder-than-life-2026-decibel-header' },
+  { id: 'reverb',     name: 'Reverb Stage', short: 'REV', color: '--ocean-deep', headerColor: '--louder-than-life-2026-reverb-header' },
+  { id: 'loudmouth',  name: 'Loudmouth Stage', short: 'LM', color: '--deep-teal', headerColor: '--louder-than-life-2026-loudmouth-header' },
+  { id: 'impact',     name: 'Impact Stage', short: 'IMP', color: '--jungle-green', headerColor: '--louder-than-life-2026-impact-header' },
+  { id: 'bourbonbar', name: 'Big Bourbon Bar', short: 'BBB', color: '--marigold-gold', headerColor: '--louder-than-life-2026-bourbonbar-header' },
 ];
 
 const days = [
@@ -306,6 +306,42 @@ const sets = {
 
 };
 
+// Theme. louderthanlifefestival.com is black with acid green (#A9D941) and
+// red (#D93240). The black cannot come across: the app has no dark mode, and
+// inverting one festival's surfaces would leave every card, chip and border
+// rule painting light-on-light. So this is the palette's daylight reading —
+// concrete grey, near-black ink, and the acid green carried into the Louder
+// Stage fill.
+//
+// The red deliberately does not become a stage colour. MUST-SEE is a red
+// multiply wash, so a red block is nearly unchanged when voted for — the one
+// hue on the wheel that cannot host a stage here.
+const theme = {
+  tokens: {
+    '--bg': '#E4E3DF',
+    '--paper': '#F4F3F0',
+    '--ink': '#1A1A1A',
+    '--btn-secondary': '#648026',
+    '--block-ink': '#FFFFFF',
+    '--brick-clay': '#648026',
+    '--sunset-coral': '#BC5B26',
+    '--dusk-purple': '#6E4B9E',
+    '--ocean-deep': '#2C6BA8',
+    '--deep-teal': '#177E8E',
+    '--jungle-green': '#3C7A4A',
+    '--marigold-gold': '#9D6D19',
+    '--louder-than-life-2026-louder-header': '#536A20',
+    '--louder-than-life-2026-life-header': '#A54816',
+    '--louder-than-life-2026-decibel-header': '#7554A3',
+    '--louder-than-life-2026-reverb-header': '#2A67A1',
+    '--louder-than-life-2026-loudmouth-header': '#146E7C',
+    '--louder-than-life-2026-impact-header': '#376F43',
+    '--louder-than-life-2026-bourbonbar-header': '#845C15',
+    '--font-display': 'anton',
+    '--font-body': 'oswald',
+  },
+};
+
 export default {
   slug,
   name: 'Louder Than Life 2026',
@@ -341,6 +377,7 @@ export default {
     'Killswitch Engage',
     'Jimmy Eat World',
   ],
+  theme,
   stages,
   days,
   sets,

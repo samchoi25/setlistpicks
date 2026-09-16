@@ -58,8 +58,12 @@ function HeaderBar({ variant, stages, flowColumns, colGap, headerRowRef }) {
         style={{ '--stage-count': stages.length, '--flow-count': flowColumns, '--col-gap': colGap }}
       >
         {stages.map((stage) => (
+          // headerColor, when a festival's theme sets one: the same token has to
+          // be a block fill with text on top of it AND this label as text on
+          // --bg, and a pale poster colour cannot do both. Falls back to the
+          // stage's own colour, which is what every unthemed festival uses.
           <div key={stage.id} className="stage-header" data-stage={stage.id}
-            style={{ gridColumn: stage.col, color: `var(${stage.color})` }}>
+            style={{ gridColumn: stage.col, color: `var(${stage.headerColor ?? stage.color})` }}>
             {stage.name}
           </div>
         ))}

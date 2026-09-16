@@ -29,9 +29,9 @@ const slug = 'sea-hear-now-2026';
 // than giving each stage its own colour, so these are chosen to suit the
 // beach setting: Surf ocean blue, Park green, Sand sun-gold.
 const stages = [
-  { id: 'surf', name: 'Surf Stage', short: 'SURF', color: '--ocean-deep' },
-  { id: 'park', name: 'Park Stage', short: 'PARK', color: '--jungle-green' },
-  { id: 'sand', name: 'Sand Stage', short: 'SAND', color: '--marigold-gold' },
+  { id: 'surf', name: 'Surf Stage', short: 'SURF', color: '--ocean-deep', headerColor: '--sea-hear-now-2026-surf-header' },
+  { id: 'park', name: 'Park Stage', short: 'PARK', color: '--jungle-green', headerColor: '--sea-hear-now-2026-park-header' },
+  { id: 'sand', name: 'Sand Stage', short: 'SAND', color: '--marigold-gold', headerColor: '--sea-hear-now-2026-sand-header' },
 ];
 
 const days = [
@@ -90,6 +90,34 @@ const sets = {
   ],
 };
 
+// Theme. Sampled from seahearnowfestival.com itself rather than guessed: the
+// site is built on sand (#E8E4D1) and deep navy (#16293D), with mint and sky
+// blue as its accents.
+//
+// The stage fills are mid-toned siblings of those accents, not the accents
+// themselves. The pale mint and sky cannot be block fills at any ink colour:
+// white text does not reach 4.5:1 on them, and dark text does but stops
+// reaching it once the multiply highlighter wash darkens the block. They
+// survive instead in the page around the grid, which is where most of the
+// beach feel sits anyway.
+const theme = {
+  tokens: {
+    '--bg': '#E8E4D1',
+    '--paper': '#F4F1E4',
+    '--ink': '#16293D',
+    '--btn-secondary': '#1F7A8C',
+    '--block-ink': '#FFFFFF',
+    '--ocean-deep': '#467E92',
+    '--jungle-green': '#428262',
+    '--marigold-gold': '#90702F',
+    '--sea-hear-now-2026-surf-header': '#3B6B7B',
+    '--sea-hear-now-2026-park-header': '#386F54',
+    '--sea-hear-now-2026-sand-header': '#7B6028',
+    '--font-display': 'space-grotesk',
+    '--font-body': 'montserrat',
+  },
+};
+
 export default {
   slug,
   name: 'Sea.Hear.Now 2026',
@@ -108,6 +136,7 @@ export default {
   dataVerifiedOn: '2026-09-09',
   headliners: ['Mumford & Sons', 'The Strokes', 'The Offspring', 'Goo Goo Dolls'],
   notableActs: ['Chaka Khan', 'Fontaines D.C.', 'Pixies', 'The War on Drugs', 'Moby', 'Ziggy Marley'],
+  theme,
   stages,
   days,
   sets,

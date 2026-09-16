@@ -26,12 +26,12 @@
 const slug = 'bourbon-and-beyond-2026';
 
 const stages = [
-  { id: 'oak',          name: 'Oak Stage', short: 'OAK', color: '--brick-clay' },
-  { id: 'barrel',       name: 'Barrel Stage', short: 'BRL', color: '--sunset-coral' },
-  { id: 'hundredproof', name: '100 Proof Stage', short: '100P', color: '--marigold-gold' },
-  { id: 'revival',      name: 'Revival Stage', short: 'REV', color: '--dusk-purple' },
-  { id: 'bluegrass',    name: 'Bluegrass Situation', short: 'BLUE', color: '--jungle-green' },
-  { id: 'forkflask',    name: 'Fork & Flask Stage', short: 'F&F', color: '--deep-teal' },
+  { id: 'oak',          name: 'Oak Stage', short: 'OAK', color: '--brick-clay', headerColor: '--bourbon-and-beyond-2026-oak-header' },
+  { id: 'barrel',       name: 'Barrel Stage', short: 'BRL', color: '--sunset-coral', headerColor: '--bourbon-and-beyond-2026-barrel-header' },
+  { id: 'hundredproof', name: '100 Proof Stage', short: '100P', color: '--marigold-gold', headerColor: '--bourbon-and-beyond-2026-hundredproof-header' },
+  { id: 'revival',      name: 'Revival Stage', short: 'REV', color: '--dusk-purple', headerColor: '--bourbon-and-beyond-2026-revival-header' },
+  { id: 'bluegrass',    name: 'Bluegrass Situation', short: 'BLUE', color: '--jungle-green', headerColor: '--bourbon-and-beyond-2026-bluegrass-header' },
+  { id: 'forkflask',    name: 'Fork & Flask Stage', short: 'F&F', color: '--deep-teal', headerColor: '--bourbon-and-beyond-2026-forkflask-header' },
 ];
 
 const days = [
@@ -237,6 +237,36 @@ const sets = {
 
 };
 
+// Theme. Sampled from bourbonandbeyond.com: cream (#FFF0D3), amber (#E89A24)
+// and teal (#43919D). Already a daylight palette, so it comes across more
+// directly than its two sister festivals do.
+//
+// Rye is the display face — a woodtype slab, which is the register the
+// festival's own artwork is in.
+const theme = {
+  tokens: {
+    '--bg': '#FFF0D3',
+    '--paper': '#FFF9EC',
+    '--ink': '#4A2D14',
+    '--btn-secondary': '#3B808A',
+    '--block-ink': '#FFFFFF',
+    '--brick-clay': '#7D4E23',
+    '--sunset-coral': '#BA5B25',
+    '--marigold-gold': '#9A6F14',
+    '--dusk-purple': '#8A5A9E',
+    '--jungle-green': '#3C7A55',
+    '--deep-teal': '#3B808A',
+    '--bourbon-and-beyond-2026-oak-header': '#8D633E',
+    '--bourbon-and-beyond-2026-barrel-header': '#B25019',
+    '--bourbon-and-beyond-2026-hundredproof-header': '#8C6512',
+    '--bourbon-and-beyond-2026-revival-header': '#8A5A9E',
+    '--bourbon-and-beyond-2026-bluegrass-header': '#3B7954',
+    '--bourbon-and-beyond-2026-forkflask-header': '#36757F',
+    '--font-display': 'rye',
+    '--font-body': 'montserrat',
+  },
+};
+
 export default {
   slug,
   name: 'Bourbon & Beyond 2026',
@@ -264,6 +294,7 @@ export default {
     'Portugal. The Man',
     'Live',
   ],
+  theme,
   stages,
   days,
   sets,
