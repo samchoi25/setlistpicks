@@ -119,8 +119,8 @@ export default function NamePrompt({ groupId, member, memberDisplayName, groupNa
           <div style={{
             fontSize: '0.82rem', fontWeight: 600,
             color: 'var(--ink)', lineHeight: 1.4,
-            background: 'rgba(36,103,177,0.08)',
-            border: '1px solid rgba(36,103,177,0.2)',
+            background: 'color-mix(in srgb, var(--ink) 8%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--ink) 20%, transparent)',
             borderRadius: '4px', padding: '8px 12px',
           }}>
             <strong>{existingMatch.displayName}</strong> is already in this group

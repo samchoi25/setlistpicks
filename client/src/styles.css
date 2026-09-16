@@ -1,14 +1,34 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
 
+/*
+ * The design system. A festival definition can override the colour and font
+ * tokens below for itself alone — see shared/theme.js for which ones and how
+ * the override reaches the page. This file stays authoritative for the *values*;
+ * shared/theme.js holds only names, and a test parses the :root block below so
+ * the two cannot drift.
+ *
+ * Deliberately NOT themeable, and so still written as literals further down:
+ * the danger red (#b42828), the warn chip's amber, and the two highlighter
+ * wash colours. Those are semantic — they mean "destructive", "careful" and
+ * "you voted for this" — and must not shift meaning per festival.
+ *
+ * The ink layer derives from --ink rather than repeating it: color-mix with
+ * transparent in srgb is premultiplied, so `var(--ink) 18%` is exactly --ink at
+ * alpha 0.18. Theming one token therefore carries every border, shadow, chip
+ * and divider with it.
+ */
 :root {
   --bg: rgb(241, 233, 215);
   --paper: #fbf6e9;
   --ink: rgb(36, 103, 177);
-  --ink-soft: rgba(36, 103, 177, 0.75);
-  --ink-dim: rgba(36, 103, 177, 0.4);
-  --rule: rgba(36, 103, 177, 0.12);
-  --btn-primary: rgb(36, 103, 177);
+  --ink-soft: color-mix(in srgb, var(--ink) 75%, transparent);
+  --ink-dim: color-mix(in srgb, var(--ink) 40%, transparent);
+  --rule: color-mix(in srgb, var(--ink) 12%, transparent);
+  --btn-primary: var(--ink);
   --btn-secondary: rgb(149, 178, 86);
+  /* Text on a stage-coloured show block. White suits the current palette; a
+     festival with pale poster colours themes this dark instead. */
+  --block-ink: #fff;
   --ocean-deep: #2169B0;
   --pink-carnation: #F38DBB;
   --muted-olive: #95B258;
@@ -18,8 +38,6 @@
   --brick-clay: #B0453E;
   --deep-teal: #14788C;
   --marigold-gold: #BF8F0F;
-  --marker-yellow: rgba(255, 221, 87, 0.55);
-  --marker-pink: rgba(243, 141, 187, 0.55);
   --font-display: Georgia, 'Times New Roman', serif;
   --font-body: 'Montserrat', system-ui, sans-serif;
   /* Height of one 5-minute slot. Sized so the shortest set in the lineup
@@ -82,7 +100,7 @@ input[type="text"] {
   font-size: max(1rem, 16px);
   color: var(--ink);
   background: var(--paper);
-  border: 1.5px solid rgba(36, 103, 177, 0.3);
+  border: 1.5px solid color-mix(in srgb, var(--ink) 30%, transparent);
   padding: 12px 14px;
   width: 100%;
   outline: none;
@@ -140,8 +158,8 @@ input[type="text"]::placeholder {
   z-index: 10;
   min-width: 160px;
   background: var(--paper);
-  border: 1px solid rgba(36, 103, 177, 0.18);
-  box-shadow: 0 8px 24px rgba(36, 103, 177, 0.15);
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 15%, transparent);
   padding: 6px;
   display: grid;
   gap: 2px;
@@ -158,7 +176,7 @@ input[type="text"]::placeholder {
   white-space: nowrap;
 }
 a.brand-logo-option:hover {
-  background: rgba(36, 103, 177, 0.08);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
 }
 .brand-logo-option.current {
   color: var(--ink-soft);
@@ -197,8 +215,8 @@ a.brand-logo-option:hover {
   min-width: 200px;
   max-width: min(320px, calc(100vw - 32px));
   background: var(--paper);
-  border: 1px solid rgba(36, 103, 177, 0.18);
-  box-shadow: 0 8px 24px rgba(36, 103, 177, 0.15);
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 15%, transparent);
   padding: 6px;
   display: grid;
   gap: 2px;
@@ -222,7 +240,7 @@ a.brand-logo-option:hover {
 }
 a.brand-title-option:hover,
 button.brand-title-option:hover {
-  background: rgba(36, 103, 177, 0.08);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
 }
 .brand-title-option.current {
   color: var(--ink-soft);
@@ -248,7 +266,7 @@ button.brand-title-option:hover {
 /* ─── Card ───────────────────────────────────────────────────────────── */
 .card {
   background: var(--paper);
-  border: 1px solid rgba(36, 103, 177, 0.18);
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
   padding: 20px;
   margin: 12px 0;
 }
@@ -281,7 +299,7 @@ button.brand-title-option:hover {
 .btn.ghost {
   background: transparent;
   color: var(--ink);
-  border: 1.5px solid rgba(36, 103, 177, 0.35);
+  border: 1.5px solid color-mix(in srgb, var(--ink) 35%, transparent);
 }
 .btn.danger {
   background: #b42828;
@@ -341,9 +359,9 @@ button.brand-title-option:hover {
 .tabs {
   display: flex;
   gap: 4px;
-  background: rgba(36, 103, 177, 0.06);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
   padding: 4px;
-  border: 1px solid rgba(36, 103, 177, 0.12);
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
 }
 .tab {
   flex: 1;
@@ -361,7 +379,7 @@ button.brand-title-option:hover {
 .tab.active {
   background: var(--paper);
   color: var(--ink);
-  box-shadow: 0 1px 4px rgba(36, 103, 177, 0.15);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--ink) 15%, transparent);
 }
 
 /* ─── Toolbar ────────────────────────────────────────────────────────── */
@@ -632,7 +650,7 @@ button.brand-title-option:hover {
   text-align: left;
   border: none;
   outline: none;
-  color: #fff;
+  color: var(--block-ink);
   line-height: 1.15;
   transition: filter 0.1s ease;
   /* show block fills its grid cell */
@@ -869,21 +887,21 @@ button.brand-title-option:hover {
   gap: 6px;
   padding: 3px 10px 3px 4px;
   border-radius: 999px;
-  background: rgba(36, 103, 177, 0.08);
-  border: 1px solid rgba(36, 103, 177, 0.2);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
   color: var(--ink);
   font-size: 0.78rem;
   font-weight: 600;
 }
 .member-chip.you {
   border-color: var(--ink);
-  background: rgba(36, 103, 177, 0.14);
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
 }
 .chip-avatar {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: rgba(36, 103, 177, 0.18);
+  background: color-mix(in srgb, var(--ink) 18%, transparent);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -920,13 +938,13 @@ button.brand-title-option:hover {
 }
 .name-prompt-card {
   background: var(--paper);
-  border: 1px solid rgba(36, 103, 177, 0.2);
+  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
   border-radius: 4px;
   padding: 28px 24px;
   width: min(380px, calc(100vw - 32px));
   display: grid;
   gap: 14px;
-  box-shadow: 0 12px 40px rgba(36, 103, 177, 0.12);
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--ink) 12%, transparent);
 }
 
 /* ─── Toast ──────────────────────────────────────────────────────── */
@@ -955,7 +973,7 @@ button.brand-title-option:hover {
 .picks-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(36, 103, 177, 0.12);
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
   z-index: 200;
@@ -966,13 +984,13 @@ button.brand-title-option:hover {
 }
 .picks-popup {
   background: var(--paper);
-  border: 1px solid rgba(36, 103, 177, 0.2);
+  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
   padding: 16px 18px;
   width: 100%;
   max-width: 280px;
   max-height: 70vh;
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(36, 103, 177, 0.15);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--ink) 15%, transparent);
 }
 .picks-artist {
   font-weight: 800;
@@ -1066,7 +1084,7 @@ button.brand-title-option:hover {
 }
 .legend {
   padding: 8px 0 10px;
-  border-bottom: 1px solid rgba(36, 103, 177, 0.15);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
@@ -1084,7 +1102,7 @@ button.brand-title-option:hover {
 }
 .legend .pill {
   padding: 3px 9px;
-  border: 1px solid rgba(36, 103, 177, 0.2);
+  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
   background: var(--paper);
 }
 
@@ -1135,7 +1153,7 @@ button.brand-title-option:hover {
   background: transparent;
   color: var(--ink);
   cursor: pointer;
-  border: 1px solid rgba(36, 103, 177, 0.4);
+  border: 1px solid color-mix(in srgb, var(--ink) 40%, transparent);
   font-family: var(--font-body);
   font-size: 0.82rem;
   font-weight: 600;
@@ -1144,7 +1162,7 @@ button.brand-title-option:hover {
   transition: opacity 0.15s ease, transform 0.05s ease;
 }
 .profile-badge:hover {
-  background: rgba(36, 103, 177, 0.06);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
   border-color: var(--ink);
 }
 .profile-badge:active {
@@ -1154,7 +1172,7 @@ button.brand-title-option:hover {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: rgba(36, 103, 177, 0.1);
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1171,8 +1189,8 @@ button.brand-title-option:hover {
 }
 /* legacy — conflict */
 .conflict-banner {
-  background: rgba(36, 103, 177, 0.08);
-  border: 1px solid rgba(36, 103, 177, 0.3);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
   padding: 10px 14px;
   font-size: 0.88rem;
 }

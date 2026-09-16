@@ -313,8 +313,8 @@ export default function Header({
             return editMatch ? (
               <div style={{
                 fontSize: '0.82rem', fontWeight: 600, lineHeight: 1.4,
-                background: 'rgba(36,103,177,0.08)',
-                border: '1px solid rgba(36,103,177,0.2)',
+                background: 'color-mix(in srgb, var(--ink) 8%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--ink) 20%, transparent)',
                 borderRadius: '4px', padding: '8px 12px', color: 'var(--ink)',
               }}>
                 <strong>{editMatch.displayName}</strong> is already in this group &mdash; saving
