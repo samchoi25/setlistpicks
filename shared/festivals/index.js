@@ -5,6 +5,9 @@
  * Everything else (routing, SEO pages, sitemap, the grid) reads from this.
  */
 import { buildFestival, festivalEndsAt, festivalStartsAt } from '../festival.js';
+import {
+  isThemeableToken, knownStageTokens, parseColor, FONT_STACKS,
+} from '../theme.js';
 import outsideLands2026 from './outside-lands-2026.js';
 import daisyChainFields2026 from './daisy-chain-fields-2026.js';
 import portola2026 from './portola-2026.js';
@@ -71,7 +74,71 @@ function validate(def) {
   if (!Array.isArray(def.groupNames) || def.groupNames.length === 0) {
     throw new Error(`${slug}: groupNames must be a non-empty array`);
   }
+  validateTheme(def);
   return def;
+}
+
+/*
+ * Theme and stage-colour checks. Deliberately names, allowlists and
+ * parseability only — no contrast. Contrast needs the base palette's *values*,
+ * which live in styles.css, and this module is in the browser bundle: reaching
+ * them here would mean shipping the palette twice and letting the copies
+ * disagree. test/schedule.test.js does the contrast checking, where it can read
+ * the stylesheet.
+ *
+ * Throwing at import rather than leaving this to the tests is the point: a
+ * mistyped token then fails the dev server, the build and the API on startup,
+ * instead of rendering a transparent block that only a person looking at the
+ * right festival would notice.
+ */
+function validateTheme(def) {
+  const { slug, theme } = def;
+
+  if (theme !== undefined) {
+    if (theme === null || typeof theme !== 'object' || Array.isArray(theme)) {
+      throw new Error(`${slug}: theme must be an object`);
+    }
+    const { tokens } = theme;
+    if (tokens === null || typeof tokens !== 'object' || Array.isArray(tokens)) {
+      throw new Error(`${slug}: theme.tokens must be an object`);
+    }
+    for (const [name, value] of Object.entries(tokens)) {
+      if (!isThemeableToken(slug, name)) {
+        throw new Error(
+          `${slug}: '${name}' is not a themeable token — add it to `
+          + `THEMEABLE_TOKENS in shared/theme.js, or namespace it as --${slug}-*`,
+        );
+      }
+      if (name === '--font-display' || name === '--font-body') {
+        if (!FONT_STACKS[value]) {
+          throw new Error(
+            `${slug}: '${name}: ${value}' names no font — pick one of `
+            + `${Object.keys(FONT_STACKS).join(', ')}, or add it to FONT_STACKS `
+            + 'and to the @import in client/src/styles.css',
+          );
+        }
+      } else if (!parseColor(value)) {
+        throw new Error(`${slug}: '${name}: ${value}' is not a colour this understands`);
+      }
+    }
+  }
+
+  // Independent of whether there is a theme at all: every stage colour must
+  // name a token something actually defines.
+  const known = knownStageTokens(def);
+  for (const stage of def.stages) {
+    for (const field of ['color', 'headerColor']) {
+      const name = stage[field];
+      if (name === undefined) continue;
+      if (!known.has(name)) {
+        throw new Error(
+          `${slug}: stage '${stage.id}' ${field} '${name}' is not a known token — `
+          + 'it must be one of the stage colours in client/src/styles.css, or a '
+          + "token this festival's own theme block defines",
+        );
+      }
+    }
+  }
 }
 
 const bySlug = new Map();

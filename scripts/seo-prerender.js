@@ -6,6 +6,8 @@
 // Everything here is a function of the festival passed in — nothing reads a
 // module-level schedule — so one build can emit a page per festival.
 
+import { themeCss, themeColor } from '../shared/theme.js';
+
 export const SITE_ORIGIN = 'https://setlistpicks.com';
 
 // Every festival is canonical at its own slug. `/` redirects to the default
@@ -173,7 +175,22 @@ export function pageDescription(festival) {
 
 // Tokens the template carries. Kept in one place so the tests can assert that
 // a built page has none left unresolved.
-export const PAGE_TOKENS = ['{{TITLE}}', '{{DESCRIPTION}}', '{{CANONICAL}}', '{{JSON_LD}}', '{{SEO_BODY}}'];
+export const PAGE_TOKENS = [
+  '{{TITLE}}', '{{DESCRIPTION}}', '{{CANONICAL}}', '{{THEME_COLOR}}', '{{THEME_STYLE}}',
+  '{{JSON_LD}}', '{{SEO_BODY}}',
+];
+
+/*
+ * The festival's own palette, baked into its page so the first paint is already
+ * right rather than flashing the default cream and blue.
+ *
+ * Always emitted, even when the festival has no theme and the rule is empty:
+ * FestivalProvider takes ownership of this element at runtime and rewrites it
+ * on every festival change, and it should find one rather than create one.
+ */
+function renderThemeStyle(festival) {
+  return `<style id="festival-theme">${themeCss(festival)}</style>`;
+}
 
 /*
  * Fill a template for one festival. Used by the dev-server plugin and by the
@@ -185,6 +202,8 @@ export function renderPage(template, festival) {
     .replaceAll('{{TITLE}}', escHtml(pageTitle(festival)))
     .replaceAll('{{DESCRIPTION}}', escHtml(pageDescription(festival)))
     .replaceAll('{{CANONICAL}}', escHtml(canonicalUrl(festival)))
+    .replaceAll('{{THEME_COLOR}}', escHtml(themeColor(festival)))
+    .replace('{{THEME_STYLE}}', renderThemeStyle(festival))
     .replace('{{JSON_LD}}', renderJsonLd(festival))
     .replace('{{SEO_BODY}}', renderLineupHtml(festival));
 }

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#f1e9d7" />
+    <meta name="theme-color" content="{{THEME_COLOR}}" />
     <!--
       The double-brace placeholders below are filled per festival: by the dev
       plugin while serving, and by scripts/build-pages.js once per festival at
@@ -27,6 +27,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="/src/styles.css" />
     {{JSON_LD}}
+    <!--
+      Last in <head> by intent, though the rule inside is :root:root so it wins
+      regardless: Vite drops the stylesheet link above and re-injects the bundled
+      one after everything here, which would otherwise outrank a plain :root in
+      the build while losing to it in dev.
+    -->
+    {{THEME_STYLE}}
   </head>
   <body>
     <div id="app"></div>
