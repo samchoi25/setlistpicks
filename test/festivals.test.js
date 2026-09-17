@@ -131,6 +131,78 @@ test('every headliner named in metadata actually appears in the lineup', () => {
   }
 });
 
+test('artist links are well-formed and only name platforms the popup renders', () => {
+  // ArtistPopup keys off exactly these three; a fourth key, or an http:// URL
+  // on the wrong host, would silently render nothing or leak a bad link.
+  const HOSTS = {
+    spotify: 'open.spotify.com',
+    appleMusic: 'music.apple.com',
+    soundcloud: 'soundcloud.com',
+  };
+  for (const f of listFestivals()) {
+    for (const [name, links] of Object.entries(f.artistLinks ?? {})) {
+      const where = `${f.slug}: '${name}'`;
+      assert.ok(links && typeof links === 'object', `${where} has no link object`);
+      assert.ok(Object.keys(links).length > 0, `${where} has an empty link object`);
+      for (const [platform, url] of Object.entries(links)) {
+        assert.ok(HOSTS[platform], `${where} names unknown platform '${platform}'`);
+        assert.equal(new URL(url).protocol, 'https:', `${where}.${platform} is not https`);
+        // A leading www. is equivalent and appears in one older entry; what
+        // matters is that the link points at the service it claims to.
+        const host = new URL(url).hostname.replace(/^www\./, '');
+        assert.equal(host, HOSTS[platform], `${where}.${platform} wrong host`);
+      }
+    }
+  }
+});
+
+test('the four 2026-season festivals get their links from the shared map', () => {
+  // Those festivals' links live in artist-links.js and are attached by the
+  // registry, because three of the four definitions are regenerated wholesale
+  // by scripts/gen-greencopper-festival.py and would lose an inline map. If
+  // that wiring breaks, every popup quietly loses its listen row — so assert
+  // real coverage rather than mere presence.
+  const expected = {
+    'louder-than-life-2026': 0.8,
+    'bourbon-and-beyond-2026': 0.7,
+    'aftershock-2026': 0.8,
+    'sea-hear-now-2026': 0.8,
+  };
+  for (const [slug, floor] of Object.entries(expected)) {
+    const f = getFestival(slug);
+    const acts = [...new Set(f.SCHEDULE.flatMap((s) => s.artists))];
+    const linked = acts.filter((a) => f.artistLinks?.[a]);
+    const ratio = linked.length / acts.length;
+    assert.ok(ratio >= floor,
+      `${slug}: only ${linked.length}/${acts.length} acts have links (want >= ${floor})`);
+  }
+});
+
+test('the shared artist-links map has no keys nothing is billed under', () => {
+  // Keys must match the `sets` artist string verbatim — casing, punctuation and
+  // all — or the popup looks up a name that is never rendered. A stray key is
+  // the silent failure mode of a typo, so assert every one is actually billed
+  // somewhere across the four festivals that share the map.
+  const slugs = ['louder-than-life-2026', 'bourbon-and-beyond-2026',
+                 'aftershock-2026', 'sea-hear-now-2026'];
+  const billed = new Set(slugs.flatMap(
+    (slug) => getFestival(slug).SCHEDULE.flatMap((s) => s.artists)));
+  for (const name of Object.keys(getFestival(slugs[0]).artistLinks ?? {})) {
+    assert.ok(billed.has(name), `artist-links.js key '${name}' is not billed anywhere`);
+  }
+});
+
+test('festivals with their own artist links keep them', () => {
+  // The shared map is attached only where a definition has none of its own;
+  // portola and the ACL weeks must not be overwritten by it.
+  for (const slug of ['portola-2026', 'austin-city-limits-2026-week-1']) {
+    const f = getFestival(slug);
+    assert.ok(Object.keys(f.artistLinks ?? {}).length > 0, `${slug} lost its artistLinks`);
+  }
+  // ...and a festival on neither list gets nothing attached.
+  assert.equal(getFestival('outside-lands-2026').artistLinks, undefined);
+});
+
 test('buildFestival is memoised per slug', () => {
   // The built object is compared by identity in React and frozen; a second
   // build would silently break memoisation.

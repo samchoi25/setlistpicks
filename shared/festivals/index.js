@@ -18,6 +18,7 @@ import seaHearNow2026 from './sea-hear-now-2026.js';
 import louderThanLife2026 from './louder-than-life-2026.js';
 import bourbonAndBeyond2026 from './bourbon-and-beyond-2026.js';
 import aftershock2026 from './aftershock-2026.js';
+import sharedArtistLinks from './artist-links.js';
 
 const DEFINITIONS = [
   outsideLands2026, daisyChainFields2026, portola2026,
@@ -141,12 +142,27 @@ function validateTheme(def) {
   }
 }
 
+/*
+ * Festivals that take their artist links from the shared artist-links.js map
+ * instead of carrying their own. Three of these four definitions are generated
+ * wholesale by scripts/gen-greencopper-festival.py, which emits no artistLinks,
+ * so links written into the festival file would not survive the next refresh —
+ * attaching them here keeps them out of the generator's way. Listed explicitly
+ * rather than applied to every map-less festival so an unrelated festival can
+ * never pick up links from a same-named act on one of these bills.
+ */
+const SHARED_ARTIST_LINK_SLUGS = new Set([
+  'louder-than-life-2026', 'bourbon-and-beyond-2026', 'aftershock-2026', 'sea-hear-now-2026',
+]);
+
 const bySlug = new Map();
 for (const def of DEFINITIONS) {
   validate(def);
   if (bySlug.has(def.slug)) throw new Error(`Duplicate festival slug '${def.slug}'`);
   const websocketsEnabled = def.websocketsEnabled ?? WEBSOCKETS_ENABLED_DEFAULT;
-  bySlug.set(def.slug, buildFestival({ ...def, websocketsEnabled }));
+  const artistLinks = def.artistLinks
+    ?? (SHARED_ARTIST_LINK_SLUGS.has(def.slug) ? sharedArtistLinks : undefined);
+  bySlug.set(def.slug, buildFestival({ ...def, websocketsEnabled, artistLinks }));
 }
 
 /*
