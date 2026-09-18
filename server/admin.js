@@ -1,6 +1,7 @@
 import express from 'express';
 import { db, deleteGroupCascade } from './db.js';
 import { listFestivals, getFestival } from '../shared/festivals/index.js';
+import { VISIT_SOURCES } from '../shared/traffic.js';
 
 const router = express.Router();
 const parseForm = express.urlencoded({ extended: false });
@@ -107,6 +108,62 @@ const stmts = {
     FROM members m
     WHERE m.group_id = ?
     ORDER BY m.joined_at
+  `),
+
+  // ── Visits ──
+  // Every one of these takes :since and :bots. `:bots = 1 OR bot = 0` reads
+  // as "include crawlers only when asked" — they're recorded but kept out of
+  // the default view, where they'd otherwise swamp a small site's real traffic.
+  visitCount: db.prepare(`
+    SELECT COUNT(*) AS count FROM visits
+    WHERE ts > :since AND (:bots = 1 OR bot = 0)
+  `),
+
+  visitsBySource: db.prepare(`
+    SELECT source, COUNT(*) AS count FROM visits
+    WHERE ts > :since AND (:bots = 1 OR bot = 0)
+    GROUP BY source
+  `),
+
+  visitsBySourceDetail: db.prepare(`
+    SELECT source, detail, COUNT(*) AS count FROM visits
+    WHERE ts > :since AND (:bots = 1 OR bot = 0) AND detail IS NOT NULL
+    GROUP BY source, detail
+    ORDER BY count DESC
+  `),
+
+  visitsByLanding: db.prepare(`
+    SELECT landing_kind, COUNT(*) AS count FROM visits
+    WHERE ts > :since AND (:bots = 1 OR bot = 0)
+    GROUP BY landing_kind
+    ORDER BY count DESC
+  `),
+
+  // How people reach a shared invite URL specifically — the app's main
+  // sharing path, and the question the whole table exists to answer.
+  visitsToGroupLinks: db.prepare(`
+    SELECT source, COUNT(*) AS count FROM visits
+    WHERE ts > :since AND (:bots = 1 OR bot = 0)
+      AND landing_kind IN ('group', 'legacy-group')
+    GROUP BY source
+    ORDER BY count DESC
+  `),
+
+  visitsByFestival: db.prepare(`
+    SELECT festival_slug, COUNT(*) AS count FROM visits
+    WHERE ts > :since AND (:bots = 1 OR bot = 0)
+    GROUP BY festival_slug
+    ORDER BY count DESC
+  `),
+
+  visitsDaily: db.prepare(`
+    SELECT strftime('%Y-%m-%d', ts / 1000, 'unixepoch')  AS day,
+           SUM(CASE WHEN bot = 0 THEN 1 ELSE 0 END)      AS people,
+           SUM(CASE WHEN bot = 1 THEN 1 ELSE 0 END)      AS bots
+    FROM visits
+    WHERE ts > :since
+    GROUP BY day
+    ORDER BY day DESC
   `),
 
   deleteVotesByMember:  db.prepare('DELETE FROM votes   WHERE group_id = ? AND member_key = ?'),
@@ -220,6 +277,52 @@ function ipInfoGrid(info) {
   return `<dl class="info-grid">${fields.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`;
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/*
+ * Plain-language names for the buckets in shared/traffic.js. `unknown` says
+ * what it actually means so nobody reads it as "nothing happened" — it's the
+ * traffic whose referrer was stripped, mostly links opened from native apps.
+ */
+const SOURCE_LABELS = {
+  'group-link': 'Shared group link',
+  search:       'Search engine',
+  social:       'Social / messaging',
+  referral:     'Another site',
+  direct:       'Direct — typed or bookmarked',
+  internal:     'Within the app',
+  unknown:      'Unknown — referrer stripped',
+};
+
+/*
+ * A source breakdown over the fixed bucket list rather than over whatever the
+ * query returned, so every bucket is always on screen. A zero next to
+ * "Search engine" is a finding; that row silently missing is not.
+ */
+function sourceTable(rows, { emptyLabel = 'No visits yet' } = {}) {
+  const counts = new Map(rows.map((r) => [r.source, r.count]));
+  const total = rows.reduce((n, r) => n + r.count, 0);
+  const share = (n) => (total ? `${((n / total) * 100).toFixed(1)}%` : '—');
+
+  return `<div class="table-wrap">
+    <table>
+      <thead><tr><th>Source</th><th>Visits</th><th>Share</th></tr></thead>
+      <tbody>
+        ${total
+          ? VISIT_SOURCES.map((src) => {
+            const n = counts.get(src) ?? 0;
+            return `<tr>
+              <td>${esc(SOURCE_LABELS[src] ?? src)}<span class="mono muted"> ${esc(src)}</span></td>
+              <td>${n}</td>
+              <td class="muted">${share(n)}</td>
+            </tr>`;
+          }).join('')
+          : `<tr><td colspan="3" class="empty">${esc(emptyLabel)}</td></tr>`}
+      </tbody>
+    </table>
+  </div>`;
+}
+
 function deleteGroupForm(secret, groupId, redirectTo) {
   return `<form class="inline" method="POST" action="/admin/${esc(secret)}/delete-group"
       onsubmit="return confirm('Delete group ${esc(groupId)} and ALL its members and votes?')">
@@ -248,6 +351,9 @@ router.get('/:secret', requireSecret, (req, res) => {
   // everything rather than an empty table pretending to be a real result.
   const filter = getFestival(req.query.festival)?.slug ?? null;
   const stats     = stmts.stats.get();
+  const since7d   = Date.now() - 7 * DAY_MS;
+  const visits7d  = stmts.visitCount.get({ since: since7d, bots: 0 }).count;
+  const sources7d = stmts.visitsBySource.all({ since: since7d, bots: 0 });
   const perFest   = stmts.byFestival.all();
   const traffic   = stmts.hourlyTraffic.all();
   const ipRows    = stmts.ipSummary.all();
@@ -277,7 +383,15 @@ router.get('/:secret', requireSecret, (req, res) => {
       <div class="stat"><div class="stat-value">${stats.total_groups}</div><div class="stat-label">Groups</div></div>
       <div class="stat"><div class="stat-value">${stats.total_members}</div><div class="stat-label">Members</div></div>
       <div class="stat"><div class="stat-value">${stats.total_votes}</div><div class="stat-label">Votes</div></div>
+      <div class="stat"><div class="stat-value">${visits7d}</div><div class="stat-label">Visits (7 d)</div></div>
     </div>
+
+    <section>
+      <h2>Where Visitors Came From — last 7 days
+        <a href="/admin/${esc(secret)}/traffic" style="font-size:13px;font-weight:400;margin-left:10px">full breakdown →</a>
+      </h2>
+      ${sourceTable(sources7d)}
+    </section>
 
     <section>
       <h2>Festivals</h2>
@@ -366,6 +480,149 @@ router.get('/:secret', requireSecret, (req, res) => {
     </section>`;
 
   res.send(page(secret, 'Dashboard', breadcrumb, body));
+});
+
+// Traffic sources
+router.get('/:secret/traffic', requireSecret, (req, res) => {
+  const { secret } = req.params;
+  // Anything else falls back to 7 rather than erroring — a hand-edited query
+  // string should narrow the view, not break it.
+  const days = [7, 30, 90, 180].includes(Number(req.query.days)) ? Number(req.query.days) : 7;
+  const bots = req.query.bots === '1' ? 1 : 0;
+  const args = { since: Date.now() - days * DAY_MS, bots };
+
+  const sources    = stmts.visitsBySource.all(args);
+  const details    = stmts.visitsBySourceDetail.all(args);
+  const landings   = stmts.visitsByLanding.all(args);
+  const groupLinks = stmts.visitsToGroupLinks.all(args);
+  const festivals  = stmts.visitsByFestival.all(args);
+  const daily      = stmts.visitsDaily.all({ since: args.since });
+
+  const LANDING_LABELS = {
+    home:           'Front door (/)',
+    festival:       'Festival page',
+    group:          'Group invite link',
+    'legacy-group': 'Legacy group link',
+    unknown:        'Unrecognised path',
+  };
+
+  const rangeUrl = (d, b) => `/admin/${esc(secret)}/traffic?days=${d}${b ? '&bots=1' : ''}`;
+  const toggle = (label, href, on) => (on
+    ? `<strong>${esc(label)}</strong>`
+    : `<a href="${href}">${esc(label)}</a>`);
+
+  const breadcrumb = `<span class="sep">/</span> <a href="/admin/${esc(secret)}">Dashboard</a>
+    <span class="sep">/</span> Traffic`;
+
+  const body = `
+    <div class="page-title">Where visitors came from</div>
+
+    <p class="muted" style="margin-bottom:20px;max-width:70ch">
+      Counted server-side, one row per page the server actually delivered. No IP,
+      user agent, session or cookie is stored — see shared/traffic.js for how each
+      bucket is decided. Loads served from the offline cache aren't counted, which
+      only happens when a visitor has no connection.
+    </p>
+
+    <p style="margin-bottom:24px">
+      Range:
+      ${[7, 30, 90, 180].map((d) => toggle(`${d} d`, rangeUrl(d, bots), d === days)).join(' <span class="sep">·</span> ')}
+      <span class="sep" style="margin:0 10px">|</span>
+      ${toggle('People only', rangeUrl(days, 0), !bots)}
+      <span class="sep">·</span>
+      ${toggle('Include crawlers', rangeUrl(days, 1), !!bots)}
+    </p>
+
+    <section>
+      <h2>By Source</h2>
+      ${sourceTable(sources)}
+    </section>
+
+    <section>
+      <h2>Arrivals on a Shared Invite Link</h2>
+      <p class="muted" style="margin-bottom:12px;max-width:70ch">
+        Visits landing on <span class="mono">/&lt;festival&gt;/&lt;code&gt;</span>. Most
+        messaging apps send no referrer at all, so those show as
+        <span class="mono">group-link</span>; one that survives is attributed to
+        wherever it came from instead.
+      </p>
+      ${sourceTable(groupLinks, { emptyLabel: 'No invite links opened in this range' })}
+    </section>
+
+    <section>
+      <h2>Search Engines &amp; Referring Sites</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Source</th><th>Which</th><th>Visits</th></tr></thead>
+          <tbody>
+            ${details.length
+              ? details.map((r) => `<tr>
+                  <td>${esc(SOURCE_LABELS[r.source] ?? r.source)}</td>
+                  <td class="mono">${esc(r.detail)}</td>
+                  <td>${r.count}</td>
+                </tr>`).join('')
+              : `<tr><td colspan="3" class="empty">Nothing with a referrer yet</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Landing Page</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Landed on</th><th>Visits</th></tr></thead>
+          <tbody>
+            ${landings.length
+              ? landings.map((r) => `<tr>
+                  <td>${esc(LANDING_LABELS[r.landing_kind] ?? r.landing_kind)}
+                      <span class="mono muted"> ${esc(r.landing_kind)}</span></td>
+                  <td>${r.count}</td>
+                </tr>`).join('')
+              : `<tr><td colspan="2" class="empty">No visits yet</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>By Festival</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Festival</th><th>Visits</th></tr></thead>
+          <tbody>
+            ${festivals.length
+              ? festivals.map((r) => `<tr>
+                  <td>${r.festival_slug
+                    ? esc(getFestival(r.festival_slug)?.name ?? r.festival_slug)
+                    : '<span class="muted">—</span>'}</td>
+                  <td>${r.count}</td>
+                </tr>`).join('')
+              : `<tr><td colspan="2" class="empty">No visits yet</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Daily</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Day (UTC)</th><th>People</th><th>Crawlers</th></tr></thead>
+          <tbody>
+            ${daily.length
+              ? daily.map((r) => `<tr>
+                  <td class="mono">${esc(r.day)}</td>
+                  <td>${r.people}</td>
+                  <td class="muted">${r.bots}</td>
+                </tr>`).join('')
+              : `<tr><td colspan="3" class="empty">No visits yet</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </section>`;
+
+  res.send(page(secret, 'Traffic', breadcrumb, body));
 });
 
 // IP drill-down

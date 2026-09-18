@@ -43,6 +43,38 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_members_group ON members(group_id);
   CREATE INDEX IF NOT EXISTS idx_groups_last_active ON groups(last_active);
   CREATE INDEX IF NOT EXISTS idx_groups_festival ON groups(festival_slug);
+
+  /*
+   * Where visitors arrive from. One row per server-reached navigation.
+   *
+   * Every column here is either a verdict from a fixed set (see
+   * shared/traffic.js) or a bare hostname — there is deliberately no IP, no
+   * user agent, no session id, no cookie and no raw URL, so the table cannot
+   * identify anyone and nothing needs to be redacted before reading it.
+   *
+   * creator_ip on groups/members is a separate thing with a narrower job:
+   * it exists only for the per-IP creation limits in groups.js. It is not to
+   * be joined against this table — doing so would turn two innocuous records
+   * into a per-person browsing history, which is exactly what leaving it out
+   * of here is meant to prevent.
+   */
+  CREATE TABLE IF NOT EXISTS visits (
+    id            INTEGER PRIMARY KEY,
+    ts            INTEGER NOT NULL,
+    -- group-link | search | social | referral | direct | internal | unknown
+    source        TEXT    NOT NULL,
+    -- An allowlisted label ('google', 'reddit') or a bare referring hostname.
+    detail        TEXT,
+    -- parsePath()'s kind: home | festival | group | legacy-group | unknown
+    landing_kind  TEXT    NOT NULL,
+    festival_slug TEXT,
+    -- Crawlers are flagged rather than dropped: knowing Googlebot is coming
+    -- back is worth something on a site built to be indexed. The admin view
+    -- excludes them by default, and the user agent itself is never stored.
+    bot           INTEGER NOT NULL DEFAULT 0
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_visits_ts ON visits(ts);
 `;
 
 // Indexes over columns the MIGRATIONS below add — they cannot live in SCHEMA,
@@ -133,16 +165,29 @@ export function pruneStaleGroups(db, now = Date.now()) {
   return stale.length;
 }
 
+// Visit rows are tiny and append-only, so they'd otherwise accumulate for
+// ever. Half a year is long enough to compare this festival season against
+// the last one, which is the longest comparison anyone actually makes here.
+const ONE_EIGHTY_DAYS_MS = 180 * 24 * 60 * 60 * 1000;
+
+export function pruneOldVisits(db, now = Date.now()) {
+  const cutoff = now - ONE_EIGHTY_DAYS_MS;
+  return db.prepare('DELETE FROM visits WHERE ts < ?').run(cutoff).changes;
+}
+
 // The process-wide database. Tests build their own with openDb(':memory:'),
 // so pruning is scheduled here rather than inside openDb.
 export const db = openDb();
 
-const pruned = pruneStaleGroups(db);
-if (pruned) console.log(`[db] pruned ${pruned} stale group(s)`);
-setInterval(() => {
-  const n = pruneStaleGroups(db);
-  if (n) console.log(`[db] pruned ${n} stale group(s)`);
-}, 6 * 60 * 60 * 1000).unref(); // every 6 hours, non-blocking
+function prune() {
+  const groups = pruneStaleGroups(db);
+  if (groups) console.log(`[db] pruned ${groups} stale group(s)`);
+  const visits = pruneOldVisits(db);
+  if (visits) console.log(`[db] pruned ${visits} old visit(s)`);
+}
+
+prune();
+setInterval(prune, 6 * 60 * 60 * 1000).unref(); // every 6 hours, non-blocking
 
 // One-time sweep, not a recurring job — going forward, removeMember deletes
 // a group the moment it empties, so this only mops up anything already
