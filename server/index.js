@@ -17,6 +17,7 @@ import {
   updateMemberDisplayName,
   removeMember,
 } from './groups.js';
+import { recordRequestVisit } from './visits.js';
 import { adminRouter } from './admin.js';
 import { getFestival, listFestivals, DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
 import { parsePath, canonicalRedirect, isGroupPath } from '../shared/routes.js';
@@ -244,6 +245,14 @@ if (fs.existsSync(distDir)) {
       // Aliases and legacy group links are permanently relocated.
       return res.redirect(301, target + qs);
     }
+
+    // Where this visitor came from. Recorded after the redirect above so a
+    // 301 and the request that follows it aren't counted as two arrivals.
+    //
+    // Purely a side effect: it reads request headers and writes one row. It
+    // injects nothing, so the boot-time `pages` cache and the noindex variant
+    // both stay exactly as built.
+    recordRequestVisit(req, parsed);
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
 
