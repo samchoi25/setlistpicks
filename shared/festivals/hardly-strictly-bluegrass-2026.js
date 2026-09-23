@@ -3,133 +3,158 @@
 // Pure data: no schedule is built here. buildFestival() in shared/festival.js
 // turns this into placed blocks and grid bounds.
 //
-// Sources, both read on 2026-09-08:
-//   - The day split comes from the festival's own "2026 Lineup by Day" poster,
-//     https://hardlystrictlybluegrass.com/wp-content/uploads/2026/09/HSB26_FullLineUp_NamesDay.png
-//     which is an image, so it was read by OCR rather than parsed.
-//   - The names themselves come from the announced-lineup page,
-//     https://hardlystrictlybluegrass.com/headline/2026-lineup-announcements/
-//     whose markup carries each act's billed mixed-case form. The poster sets
-//     names in upper case, so it can't settle capitalisation on its own.
+// Source: the festival's own schedule page, read on 2026-09-23,
+//   https://hardlystrictlybluegrass.com/2026-2/
+// Its "By Day" view is server-rendered HTML with one box per act carrying the
+// day, stage, set time and billed name as separate elements, so every set
+// below was parsed straight out of that markup — no OCR, no transcription.
+// All 71 boxes parsed; each converts to a range inside the 11:00–19:00 park
+// hours the page gives for each day.
 //
-// The two were reconciled against each other: all 70 acts on the poster match
-// all 70 on the lineup page exactly, with nothing left over on either side and
-// no act appearing on two days. That check is what makes the OCR trustworthy
-// here — a dropped or hallucinated line would have shown up as a mismatch.
-// (The one name that needed a judgement call: the lineup page bills the
-// storyteller as "Joel ben Izzy - Storyteller" and the poster as plain "JOEL
-// BEN IZZY"; the page's fuller form is used below.)
+// Changes against the day-split lineup this replaces (2026-09-08):
+//   - Added: Rilo Kiley (Sat) and Robert Plant w/ Saving Grace and Suzi Dian
+//     (Sun), both new on the schedule page.
+//   - Dropped: Alison Krauss & Union Station feat. Jerry Douglas, which no
+//     longer appears anywhere on the page (schedule, A–Z, grid or lineup).
+//   - Renamed to the schedule's billing: "Joel ben Izzy – Traveling
+//     Storyteller" and "Yasmin Williams and William Tyler". Only the page's
+//     curly apostrophe in Mama's Broke is normalised to a straight one.
 //
-// STAGES AND SET TIMES ARE STILL UNANNOUNCED. HSB has now published which day
-// each act plays, but not where or when — those land much closer to the event.
-// So each day is modeled with bare-string entries (see dayModeOf() and
-// buildUntimedDay() in shared/festival.js), which render as one alphabetical
-// list per day. Inventing a stage per act or placeholder start times would put
-// fabricated detail in front of people voting on what to go see.
+// Set ids are derived from day + stage + position, so moving from the untimed
+// day lists to timed stage columns changes every id: votes cast against the
+// untimed lineup don't carry across.
 //
-// When set times land: swap the bare strings for
-// `[stageId, 'HH:MM start', 'HH:MM end', 'Artist']` and fill in `stages`. Set
-// ids are derived from day + position, so they *will* change at that point and
-// any votes cast against the current ids won't map across — worth rolling out
-// the real schedule before it matters, or accepting the reset. Note that the
-// same caveat applied to the ids this commit replaces: the whole lineup
-// previously sat under a single 'weekend' day, so every id has just changed.
+// Times are PT (24h). Nothing crosses midnight (latest end 19:00).
 
 const slug = 'hardly-strictly-bluegrass-2026';
 
-// No stages announced. HSB traditionally runs six (Banjo, Rooster, Towers of
-// Gold, Swan, Arrow, Porch), but which act plays which is exactly what hasn't
-// been said yet, so the list stays empty and the days render stageless rather
-// than guessing. See the header comment.
-const stages = [];
+// The six stages, in HSB's traditional billing order. HSB publishes no stage
+// colours of its own, so these are the shared base palette.
+const stages = [
+  { id: 'banjo', name: 'Banjo Stage', short: 'BANJO', color: '--ocean-deep' },
+  { id: 'rooster', name: 'Rooster Stage', short: 'ROOST', color: '--brick-clay' },
+  { id: 'towers', name: 'Towers of Gold Stage', short: 'TOWERS', color: '--marigold-gold' },
+  { id: 'swan', name: 'Swan Stage', short: 'SWAN', color: '--dusk-purple' },
+  { id: 'arrow', name: 'Arrow Stage', short: 'ARROW', color: '--deep-teal' },
+  { id: 'horseshoe', name: 'Horseshoe Hill Stage', short: 'HSHOE', color: '--jungle-green' },
+];
 
-// The three real festival days, now that the lineup is split by day.
+// The three festival days.
 const days = [
   { id: 'fri', name: 'Friday', date: 'Oct 2' },
   { id: 'sat', name: 'Saturday', date: 'Oct 3' },
   { id: 'sun', name: 'Sunday', date: 'Oct 4' },
 ];
 
-// Every announced act, as a bare string: no stage, no set time (see
-// entryKind() in shared/festival.js). buildUntimedDay() sorts these
-// alphabetically, so the order here doesn't matter — it's listed alphabetically
-// anyway for ease of re-checking against the source.
+// Each set: [stageId, start, end, artist]
 const sets = {
   fri: [
-    'Larry Campbell & Teresa Williams',
-    'Los Lobos',
-    'Lukas Nelson',
-    "Mama's Broke",
-    'Marty Stuart and His Fabulous Superlatives',
-    'Meels',
-    'Molly Tuttle',
-    'My Morning Jacket',
-    'Reckless Kelly',
-    'Shawn Camp',
-    'Sierra Hull',
-    'Stacey Earle',
-    'Stella Heath Quartet',
-    'The Crooked Jades',
-    'Todd Snider Rules!',
-    'Tyler Ballgame',
-    'Wreckless Strangers',
+    // ── Banjo Stage ─────────────────────────────────────────────
+    ['banjo', '13:00', '13:45', 'Larry Campbell & Teresa Williams'],
+    ['banjo', '14:30', '15:20', 'Reckless Kelly'],
+    ['banjo', '16:05', '17:00', 'Marty Stuart and His Fabulous Superlatives'],
+    ['banjo', '17:50', '19:00', 'Molly Tuttle'],
+
+    // ── Towers of Gold Stage ────────────────────────────────────
+    ['towers', '13:40', '14:20', 'Tyler Ballgame'],
+    ['towers', '15:05', '16:00', 'Todd Snider Rules!'],
+    ['towers', '16:55', '18:00', 'My Morning Jacket'],
+
+    // ── Swan Stage ──────────────────────────────────────────────
+    ['swan', '13:00', '13:40', 'Shawn Camp'],
+    ['swan', '14:20', '15:05', 'Sierra Hull'],
+    ['swan', '16:00', '16:55', 'Los Lobos'],
+    ['swan', '18:00', '19:00', 'Lukas Nelson'],
+
+    // ── Arrow Stage ─────────────────────────────────────────────
+    ['arrow', '13:45', '14:30', 'Meels'],
+    ['arrow', '15:20', '16:05', 'Wreckless Strangers'],
+    ['arrow', '17:00', '17:50', 'Stacey Earle'],
+
+    // ── Horseshoe Hill Stage ────────────────────────────────────
+    ['horseshoe', '13:45', '14:25', 'The Crooked Jades'],
+    ['horseshoe', '15:10', '16:00', "Mama's Broke"],
+    ['horseshoe', '16:55', '18:00', 'Stella Heath Quartet'],
   ],
   sat: [
-    'Aaron Lee Tasjan',
-    'AJ Lee & Blue Summit',
-    'Alex Amen',
-    'Alison Brown',
-    'Alison Krauss & Union Station feat. Jerry Douglas',
-    'Anna Moss',
-    'Bandits on the Run',
-    'Buddy Miller',
-    'DUG',
-    'Elizabeth Cook',
-    'Fantastic Cat',
-    'Gillian Welch & David Rawlings',
-    'Hot Tuna Acoustic',
-    'Ismay',
-    'John Craigie w/ The Coffis Brothers',
-    'Kathleen Edwards',
-    'Laurie Lewis & The Right Hands',
-    'Martha Scanlan & Jon Neufeld',
-    'Mavis Staples',
-    'Moonalice',
-    'Old Crow Medicine Show',
-    'SCUFF: Queer Line Dancing F: Jail Preacher',
-    'SF Porchfest: Los Jefes, Seldon, Isabel Dumaa',
-    'Steve Earle & the Hardly Strictly Dukes',
-    'Sweet Sally',
-    'The Crosby Collective',
-    'The Deslondes',
-    'Tony Kamel & Kym Warner',
+    // ── Banjo Stage ─────────────────────────────────────────────
+    ['banjo', '12:25', '13:15', 'Laurie Lewis & The Right Hands'],
+    ['banjo', '14:15', '15:05', 'Mavis Staples'],
+    ['banjo', '15:50', '17:00', 'Gillian Welch & David Rawlings'],
+    ['banjo', '17:45', '19:00', 'Steve Earle & the Hardly Strictly Dukes'],
+
+    // ── Rooster Stage ───────────────────────────────────────────
+    ['rooster', '11:00', '11:40', 'Alex Amen'],
+    ['rooster', '12:10', '12:55', 'Tony Kamel & Kym Warner'],
+    ['rooster', '13:05', '13:55', 'Kathleen Edwards'],
+    ['rooster', '14:10', '15:00', 'The Deslondes'],
+    ['rooster', '15:25', '16:15', 'Elizabeth Cook'],
+    ['rooster', '16:30', '17:20', 'Buddy Miller'],
+    ['rooster', '18:00', '19:00', 'John Craigie w/ The Coffis Brothers'],
+
+    // ── Towers of Gold Stage ────────────────────────────────────
+    ['towers', '11:40', '12:25', 'Fantastic Cat'],
+    ['towers', '13:15', '14:05', 'Aaron Lee Tasjan'],
+    ['towers', '14:55', '15:50', 'Hot Tuna Acoustic'],
+    ['towers', '16:50', '17:55', 'Rilo Kiley'],
+
+    // ── Swan Stage ──────────────────────────────────────────────
+    ['swan', '11:00', '11:40', 'The Crosby Collective'],
+    ['swan', '12:25', '13:15', 'Moonalice'],
+    ['swan', '14:05', '14:55', 'Alison Brown'],
+    ['swan', '15:50', '16:50', 'AJ Lee & Blue Summit'],
+    ['swan', '17:55', '19:00', 'Old Crow Medicine Show'],
+
+    // ── Arrow Stage ─────────────────────────────────────────────
+    ['arrow', '11:15', '12:25', 'SF Porchfest: Los Jefes, Seldon, Isabel Dumaa'],
+    ['arrow', '13:15', '14:15', 'Anna Moss'],
+    ['arrow', '15:05', '15:50', 'Ismay'],
+    ['arrow', '16:55', '17:45', 'SCUFF: Queer Line Dancing F: Jail Preacher'],
+
+    // ── Horseshoe Hill Stage ────────────────────────────────────
+    ['horseshoe', '11:40', '12:25', 'Sweet Sally'],
+    ['horseshoe', '13:15', '14:05', 'Martha Scanlan & Jon Neufeld'],
+    ['horseshoe', '14:55', '15:45', 'Bandits on the Run'],
+    ['horseshoe', '16:50', '17:45', 'DUG'],
   ],
   sun: [
-    'A Tribute to Joe Ely With The Flatlanders and Friends',
-    'Cristina Vane',
-    'Darrell Scott String Band w/ Rob Ickes',
-    'Dean Johnson',
-    'Dry Branch F: Ron Thomason & Friends',
-    'El Khat',
-    'Emmylou Harris',
-    'Grace Cummings',
-    'Hiss Golden Messenger',
-    'Jesse Welles',
-    'Joel ben Izzy - Storyteller',
-    'Kam Franklin',
-    'Langford, Hogan & Timms',
-    'Marco and The Polos w/ Special Guests Hills to Hollers',
-    'Miko Marks',
-    'Punch Brothers',
-    '¿Qiensave?',
-    'Rahim AlHaj',
-    'Steve Poltz',
-    'The Record Company',
-    'The Third Mind',
-    'Theo Lawrence',
-    'Tift Merritt',
-    'Willy Tea Taylor',
-    'Yasmin Williams & William Tyler',
+    // ── Banjo Stage ─────────────────────────────────────────────
+    ['banjo', '11:00', '11:50', 'Dry Branch F: Ron Thomason & Friends'],
+    ['banjo', '12:35', '13:25', 'Miko Marks'],
+    ['banjo', '14:10', '15:00', '¿Qiensave?'],
+    ['banjo', '15:45', '17:00', 'A Tribute to Joe Ely With The Flatlanders and Friends'],
+    ['banjo', '17:45', '19:00', 'Emmylou Harris'],
+
+    // ── Rooster Stage ───────────────────────────────────────────
+    ['rooster', '11:00', '11:45', 'Kam Franklin'],
+    ['rooster', '12:30', '13:25', 'Dean Johnson'],
+    ['rooster', '14:10', '15:05', 'Darrell Scott String Band w/ Rob Ickes'],
+    ['rooster', '15:50', '16:50', 'Punch Brothers'],
+    ['rooster', '17:35', '18:50', 'Hiss Golden Messenger'],
+
+    // ── Towers of Gold Stage ────────────────────────────────────
+    ['towers', '11:20', '12:10', 'Grace Cummings'],
+    ['towers', '13:00', '13:50', 'Tift Merritt'],
+    ['towers', '14:40', '15:45', 'Jesse Welles'],
+    ['towers', '16:40', '17:55', 'Robert Plant w/ Saving Grace and Suzi Dian'],
+
+    // ── Swan Stage ──────────────────────────────────────────────
+    ['swan', '12:10', '13:00', 'Steve Poltz'],
+    ['swan', '13:50', '14:40', 'Langford, Hogan & Timms'],
+    ['swan', '15:45', '16:40', 'The Record Company'],
+    ['swan', '17:55', '19:00', 'The Third Mind'],
+
+    // ── Arrow Stage ─────────────────────────────────────────────
+    ['arrow', '11:50', '12:35', 'El Khat'],
+    ['arrow', '13:25', '14:10', 'Marco and The Polos w/ Special Guests Hills to Hollers'],
+    ['arrow', '15:00', '15:45', 'Cristina Vane'],
+    ['arrow', '17:00', '17:45', 'Theo Lawrence'],
+
+    // ── Horseshoe Hill Stage ────────────────────────────────────
+    ['horseshoe', '11:20', '12:10', 'Joel ben Izzy – Traveling Storyteller'],
+    ['horseshoe', '13:00', '13:50', 'Yasmin Williams and William Tyler'],
+    ['horseshoe', '14:45', '15:40', 'Willy Tea Taylor'],
+    ['horseshoe', '16:50', '17:50', 'Rahim AlHaj'],
   ],
 };
 
@@ -140,7 +165,8 @@ const sets = {
 // the festival's own pick of which page represents an act. Every id was then
 // confirmed to resolve to the expected name through Spotify's public oEmbed
 // endpoint (the original batch on 2026-08-21, the acts added with the day
-// split on 2026-09-08); the handful the page didn't link were found via
+// split on 2026-09-08, and Rilo Kiley and Robert Plant with the set times on
+// 2026-09-23); the handful the page didn't link were found via
 // MusicBrainz's editor-verified artist-URL relationships or Wikidata's Spotify
 // artist id (P1902) and confirmed the same way.
 //
@@ -152,7 +178,8 @@ const sets = {
 //   John Craigie w/ The Coffis Brothers        → John Craigie
 //   Marty Stuart and His Fabulous Superlatives → Marty Stuart
 //   Steve Earle & the Hardly Strictly Dukes    → Steve Earle
-//   Yasmin Williams & William Tyler            → Yasmin Williams
+//   Yasmin Williams and William Tyler          → Yasmin Williams
+//   Robert Plant w/ Saving Grace and Suzi Dian → Robert Plant
 //   Lukas Nelson                               → Lukas Nelson and Promise of
 //     the Real (billed solo here, but that is the page the festival links)
 //   Dry Branch F: Ron Thomason & Friends       → Dry Branch Fire Squad
@@ -169,7 +196,7 @@ const sets = {
 //   Martha Scanlan & Jon Neufeld (the page links an album, not an artist)
 //   Grace Cummings, Rahim AlHaj, Stella Heath Quartet, The Crosby Collective,
 //     The Deslondes, Tony Kamel & Kym Warner, Wreckless Strangers
-//   Joel ben Izzy - Storyteller (a storyteller, not a recording act)
+//   Joel ben Izzy – Traveling Storyteller (a storyteller, not a recording act)
 //   Marco and The Polos w/ Special Guests Hills to Hollers, SCUFF: Queer Line
 //     Dancing F: Jail Preacher, SF Porchfest: Los Jefes, Seldon, Isabel Dumaa,
 //     Todd Snider Rules! — festival-specific billings with no page of their own
@@ -184,7 +211,6 @@ const artistLinks = {
   'Aaron Lee Tasjan': { spotify: 'https://open.spotify.com/artist/4PztbfCny3X9gBjlpgvjYo' },
   'Alex Amen': { spotify: 'https://open.spotify.com/artist/70qCuX4YtspN8K6g4lKHnM' },
   'Alison Brown': { spotify: 'https://open.spotify.com/artist/01ts5a7R3WkeE2oKIouXEK' },
-  'Alison Krauss & Union Station feat. Jerry Douglas': { spotify: 'https://open.spotify.com/artist/0OTnx2X2FDXeewcm72lavT' },
   'Anna Moss': { spotify: 'https://open.spotify.com/artist/79EqLrXbrtaK3sNgSQYoRE' },
   'Bandits on the Run': { spotify: 'https://open.spotify.com/artist/40wE5c0s5AtxRwWXoPzBg6' },
   'Buddy Miller': { spotify: 'https://open.spotify.com/artist/6RwBVkrxTbbtS4bwxYQXcp' },
@@ -218,6 +244,8 @@ const artistLinks = {
   'Moonalice': { spotify: 'https://open.spotify.com/artist/03UgRdV3bSLEHGmdagyM0e' },
   'My Morning Jacket': { spotify: 'https://open.spotify.com/artist/43O3c6wewpzPKwVaGEEtBM' },
   'Old Crow Medicine Show': { spotify: 'https://open.spotify.com/artist/4DBi4EYXgiqbkxvWUXUzMi' },
+  'Rilo Kiley': { spotify: 'https://open.spotify.com/artist/2cevwbv7ISD92VMNLYLHZA' },
+  'Robert Plant w/ Saving Grace and Suzi Dian': { spotify: 'https://open.spotify.com/artist/1OwarW4LEHnoep20ixRA0y' },
   'Punch Brothers': { spotify: 'https://open.spotify.com/artist/4gFssfOmWNY3LfIZ3zyoy4' },
   'Reckless Kelly': { spotify: 'https://open.spotify.com/artist/0jmPjksXqVrO92Urmx58vg' },
   'Shawn Camp': { spotify: 'https://open.spotify.com/artist/7McONMYw24sAXoYYhMRpY4' },
@@ -234,7 +262,7 @@ const artistLinks = {
   'Tyler Ballgame': { spotify: 'https://open.spotify.com/artist/1pQ0Axx7UF8LDDOqSgdVmK' },
   'Willy Tea Taylor': { spotify: 'https://open.spotify.com/artist/7wFk6kv7WudeSu1bEhG89g' },
   '¿Qiensave?': { spotify: 'https://open.spotify.com/artist/2zzLwsB8sY1dkIDAKevDrc' },
-  'Yasmin Williams & William Tyler': { spotify: 'https://open.spotify.com/artist/4j8CsPzssbM8TCjSvgnmSs' },
+  'Yasmin Williams and William Tyler': { spotify: 'https://open.spotify.com/artist/4j8CsPzssbM8TCjSvgnmSs' },
 };
 
 export default {
@@ -253,20 +281,20 @@ export default {
   },
   utcOffset: '-07:00',
   dateRange: 'October 2–4, 2026',
-  officialUrl: 'https://hardlystrictlybluegrass.com/headline/2026-lineup-announcements/',
-  dataVerifiedOn: '2026-09-08',
+  officialUrl: 'https://hardlystrictlybluegrass.com/2026-2/',
+  dataVerifiedOn: '2026-09-23',
   // HSB deliberately bills its lineup alphabetically with no headliner tier —
   // there is no poster hierarchy to read this off, unlike every other festival
   // in here. These are the biggest draws on the bill, picked to give the SEO
   // page a <title> and description worth reading; they carry no billing claim.
   headliners: [
     'My Morning Jacket', 'Emmylou Harris', 'Gillian Welch & David Rawlings',
-    'Alison Krauss & Union Station feat. Jerry Douglas', 'Mavis Staples', 'Los Lobos',
+    'Robert Plant w/ Saving Grace and Suzi Dian', 'Mavis Staples', 'Los Lobos',
   ],
   notableActs: [
     'Old Crow Medicine Show', 'Punch Brothers',
     'Steve Earle & the Hardly Strictly Dukes', 'Molly Tuttle',
-    'Marty Stuart and His Fabulous Superlatives', 'Hot Tuna Acoustic',
+    'Marty Stuart and His Fabulous Superlatives', 'Hot Tuna Acoustic', 'Rilo Kiley',
   ],
   stages,
   days,
