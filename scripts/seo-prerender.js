@@ -20,10 +20,10 @@ export function canonicalUrl(festival) {
   return SITE_ORIGIN + canonicalPath(festival);
 }
 
-// 'HH:MM' (24h) → '12:30 PM' display form
+// 'HH:MM' (24h, or past 24 after midnight) → '12:30 PM' display form
 function fmtTime(hhmm) {
   const [h, m] = hhmm.split(':').map(Number);
-  const ampm = h >= 12 ? 'PM' : 'AM';
+  const ampm = h % 24 >= 12 ? 'PM' : 'AM';
   const h12 = h % 12 === 0 ? 12 : h % 12;
   const mm = String(m).padStart(2, '0');
   return `${h12}:${mm} ${ampm}`;
@@ -34,12 +34,17 @@ const MONTHS = {
   Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12,
 };
 
-// 'HH:MM' + a day's date string ('Aug 7') → ISO 8601 with the festival's offset
+// 'HH:MM' + a day's date string ('Aug 7') → ISO 8601 with the festival's offset.
+// An hour of 24 or more is after midnight, so it rolls onto the next calendar
+// date ('25:15' on Oct 22 → Oct 23 01:15). Date.UTC does the month/year carry;
+// it's only used as a calendar here, the offset is appended as-is.
 function toIso(festival, hhmm, dateStr) {
   const [mon, day] = dateStr.split(' ');
-  const month = String(MONTHS[mon]).padStart(2, '0');
-  const dayPad = String(day).padStart(2, '0');
-  return `${festival.year}-${month}-${dayPad}T${hhmm}:00${festival.utcOffset}`;
+  const [h, m] = hhmm.split(':').map(Number);
+  const date = new Date(Date.UTC(festival.year, MONTHS[mon] - 1, Number(day) + Math.floor(h / 24)));
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`
+    + `T${pad(h % 24)}:${pad(m)}:00${festival.utcOffset}`;
 }
 
 function list(items) {

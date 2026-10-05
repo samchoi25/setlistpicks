@@ -11,7 +11,9 @@
  * compared by identity in React, so it must be the same object every call.
  */
 
-// 'HH:MM' → minutes since midnight.
+// 'HH:MM' → minutes since midnight. Hours run past 23 for sets after midnight
+// ('25:15' is 1:15 AM the next morning), so a late-night set stays on the day
+// people think of it as part of and sorts after that evening's sets.
 const toMin = (s) => {
   const [h, m] = s.split(':').map(Number);
   return h * 60 + m;
@@ -29,10 +31,10 @@ export function stageName(stage, dayId) {
   return stage.namesByDay?.[dayId] ?? stage.name;
 }
 
-// Format 'HH:MM' (24h) into 'H:MMa/p' friendly form.
+// Format 'HH:MM' (24h, or past 24 after midnight) into 'H:MMa/p' friendly form.
 export function fmtTime(hhmm) {
   const [h, m] = hhmm.split(':').map(Number);
-  const ampm = h >= 12 ? 'p' : 'a';
+  const ampm = h % 24 >= 12 ? 'p' : 'a';
   const h12 = h % 12 === 0 ? 12 : h % 12;
   return m === 0 ? `${h12}${ampm}` : `${h12}:${String(m).padStart(2, '0')}${ampm}`;
 }

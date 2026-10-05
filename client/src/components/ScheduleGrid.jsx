@@ -8,7 +8,7 @@ function timeAxisLabel(slotIndex, { GRID_START_MIN, SLOT_MINS, TOTAL_SLOTS }) {
   const totalMin = GRID_START_MIN + slotIndex * SLOT_MINS;
   const hour = Math.floor(totalMin / 60);
   const h12 = hour % 12 === 0 ? 12 : hour % 12;
-  const suffix = hour >= 12 ? ' PM' : ' AM';
+  const suffix = hour % 24 >= 12 ? ' PM' : ' AM';
   // Label the two ends with the meridiem for orientation; the rest are bare
   // hour numbers so the narrow axis stays readable.
   if (slotIndex === 0 || slotIndex === TOTAL_SLOTS) {

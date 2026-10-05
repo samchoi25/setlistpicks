@@ -126,6 +126,26 @@ test('JSON-LD is valid and derived from the schedule', () => {
   }
 });
 
+test('sets past midnight are dated the next morning, not the next evening', () => {
+  // '25:00' on Thursday Oct 22 is 1 AM Friday. Left unhandled it renders as
+  // "1:00 PM" and an ISO time of T25:00, which is not a time at all.
+  const late = buildFestival({
+    ...other,
+    slug: 'test-late-2027',
+    days: [{ id: 'sat', name: 'Saturday', date: 'Dec 31' }],
+    sets: { sat: [['main', '23:00', '24:00', 'Headliner One'], ['main', '25:15', '26:45', 'After Hours']] },
+  });
+  const raw = renderJsonLd(late);
+  const json = JSON.parse(raw.replace(/^<script[^>]*>/, '').replace(/<\/script>$/, ''));
+  const ev = json.subEvent.find((e) => e.name === 'After Hours');
+  // Rolls over the year end too.
+  assert.equal(ev.startDate, '2028-01-01T01:15:00-07:00');
+  assert.equal(ev.endDate, '2028-01-01T02:45:00-07:00');
+  const html = renderPage(TEMPLATE, late);
+  assert.ok(html.includes('1:15 AM'), 'late set shown as AM');
+  assert.ok(!html.includes('1:15 PM'), 'late set not shown as PM');
+});
+
 test('the sitemap lists every festival at its canonical URL', () => {
   const xml = renderSitemap(listFestivals());
   assert.ok(xml.startsWith('<?xml'));
