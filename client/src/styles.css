@@ -957,6 +957,25 @@ button.brand-title-option:hover {
   box-shadow: 0 12px 40px color-mix(in srgb, var(--ink) 12%, transparent);
 }
 
+/* ─── Generic modal shell (Modal.jsx) ─────────────────────────────
+   Positioning only — the panel's look belongs to whatever uses it. */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 15vh 16px 16px;
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.modal-panel {
+  width: min(480px, 100%);
+  max-height: 70vh;
+  overflow: auto;
+  outline: none;
+}
+
 /* ─── Toast ──────────────────────────────────────────────────────── */
 .toast {
   position: fixed;
