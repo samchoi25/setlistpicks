@@ -24,7 +24,7 @@ function targetFor(slug) {
 
 /*
  * Replaces the plain "Portola"-style wordmark with a switcher once there's
- * more than one live festival to switch to — lets a crew member with picks
+ * another live festival to switch to — lets a crew member with picks
  * in several festivals jump between them. Plain anchors, not a client-side
  * navigate() call: App.jsx already intercepts same-origin link clicks, and
  * this component is used both inside GroupView (which has that context) and
@@ -35,7 +35,9 @@ export default function FestivalSwitcher() {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
 
-  const upcoming = listFestivals().filter((f) => !hasFestivalEnded(f));
+  // Live festivals, plus the one being viewed even if it's over — an ended
+  // festival still needs the menu as the way out to whatever's next.
+  const options = listFestivals().filter((f) => f.slug === festival.slug || !hasFestivalEnded(f));
 
   useEffect(() => {
     if (!open) return;
@@ -50,7 +52,7 @@ export default function FestivalSwitcher() {
   }, [open]);
 
   // Nothing else live to switch to — the plain wordmark, no dropdown affordance.
-  if (upcoming.length <= 1) {
+  if (options.length <= 1) {
     return <div className="brand-logo">{festival.shortName}</div>;
   }
 
@@ -68,7 +70,7 @@ export default function FestivalSwitcher() {
       </button>
       {open && (
         <div className="brand-logo-dropdown" role="listbox">
-          {upcoming.map((f) => {
+          {options.map((f) => {
             const isCurrent = f.slug === festival.slug;
             return isCurrent ? (
               <span key={f.slug} className="brand-logo-option current" aria-current="true">
