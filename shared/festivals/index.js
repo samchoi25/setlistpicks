@@ -18,6 +18,8 @@ import seaHearNow2026 from './sea-hear-now-2026.js';
 import louderThanLife2026 from './louder-than-life-2026.js';
 import bourbonAndBeyond2026 from './bourbon-and-beyond-2026.js';
 import aftershock2026 from './aftershock-2026.js';
+import suwanneeHulaween2026 from './suwannee-hulaween-2026.js';
+import escapeHalloween2026 from './escape-halloween-2026.js';
 import sharedArtistLinks from './artist-links.js';
 
 const DEFINITIONS = [
@@ -25,6 +27,7 @@ const DEFINITIONS = [
   austinCityLimits2026Week1, austinCityLimits2026Week2,
   hardlyStrictlyBluegrass2026,
   seaHearNow2026, louderThanLife2026, bourbonAndBeyond2026, aftershock2026,
+  suwanneeHulaween2026, escapeHalloween2026,
 ];
 
 // A slug must never be mistakable for a group code, which is exactly 10
@@ -179,6 +182,9 @@ export const FESTIVAL_ALIASES = Object.freeze({
   'louder-than-life': 'louder-than-life-2026',
   'bourbon-and-beyond': 'bourbon-and-beyond-2026',
   'aftershock': 'aftershock-2026',
+  'hulaween': 'suwannee-hulaween-2026',
+  'suwannee-hulaween': 'suwannee-hulaween-2026',
+  'escape-halloween': 'escape-halloween-2026',
 });
 
 /*
