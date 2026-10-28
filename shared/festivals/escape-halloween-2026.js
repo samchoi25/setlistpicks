@@ -1,35 +1,40 @@
 // Escape Halloween 2026 — festival definition.
 //
 // Pure data: no schedule is built here. buildFestival() in shared/festival.js
-// turns this into placed blocks and grid bounds.
+// turns this into placed blocks, lanes and grid bounds.
 //
-// Source: the festival's own lineup page, read on 2026-10-05,
-//   https://escapehalloween.com/lineup/
-// Its "By Day" and "By Stage" tabs are both server-rendered HTML, one link per
-// act carrying a data-artist-name attribute, with B2B pairings as two links
-// joined by the literal text " B2B ". Both tabs were parsed out of that markup
-// — no transcription — and joined on the billed name to place each stage
-// slot on a day. The two tabs agree exactly: every stage slot maps to one day,
-// and the only acts counted more than once are the ones the page itself lists
-// twice (Acyan and Cat & Maomi play Saturday on both their stage and the
-// Beatbox Art Car; Morelia and Pixie Dust each play a solo set and a b2b
-// together on Friday).
+// Source: the festival's own set-times pages, read on 2026-10-27,
+//   https://escapehalloween.com/lineup/set-times/day-1/   (Friday)
+//   https://escapehalloween.com/lineup/set-times/day-2/   (Saturday)
+// Both are server-rendered HTML. Each slot is an <a class="set-block"> whose
+// text node carries the billed name and a
+// `<span data-timestamp-start=… data-timestamp-end=…>`, so these times were
+// parsed out of the markup rather than transcribed.
 //
-// SET TIMES ARE STILL UNANNOUNCED ("set times are still to come", per the
-// page), so each slot is `[stageId, artist]` — stage known, no time — and
-// renders as one list per stage column (see buildUntimedDay() in
-// shared/festival.js). The page lists each stage alphabetically, so the order
-// within a column carries no running-order signal here, unlike a flyer.
+// Two traps in that markup, in case it needs re-reading:
+//   - The timestamps are venue-local wall clock stored as if they were UTC —
+//     the grid header renders 1793376000 as "04:00 PM", and that value is
+//     16:00 UTC. Read them in UTC and treat the result as local time.
+//   - Every set appears TWICE: once in the "By Stage" lists and again in the
+//     "Full Schedule" grid below them. Only the markup before
+//     `.schedule__scrollable` is counted, or every set is doubled.
 //
-// Billed names are the page's own, set-type suffixes included ("Frontliner
-// (Journey Set)", "JOYRYDE (Sunset Set)"). "VNSSA B2B ????" is a mystery
-// partner the page doesn't name, kept as billed.
+// Both nights run 4 PM to 2 AM, so the after-midnight sets are written as
+// 24:00+ (25:30 is 1:30 AM) to keep them on the evening they belong to — see
+// toMin() in shared/festival.js.
 //
-// When set times land: swap each pair for
-// `[stageId, 'HH:MM start', 'HH:MM end', artist]` (times past midnight as
-// 24:00+, the night runs to 2 AM). Set ids are derived from day + stage +
-// position, so ids will shift and earlier votes won't map across.
-
+// B2B billings are stored as an array of their members, as they were when
+// this file was untimed. "MALUGI presents Matteo & Friends B2B" is the page's
+// own billing, trailing "B2B" and all, with no second act named — it stays a
+// single name.
+//
+// Changes since the 2026-10-05 lineup reading: Friday's Discovery Project
+// slot is now billed as Solitaire; Saturday adds Ja Rule, Too $hort, Girl
+// Math and MALUGI presents Matteo & Friends B2B; and "VNSSA B2B ????" is off
+// the bill entirely (its artistLinks entry went with it).
+//
+// Format per set: [stageId, 'HH:MM start', 'HH:MM end', 'Artist' | [names]]
+// All times are PT (24h, past 24 after midnight).
 const slug = 'escape-halloween-2026';
 
 // The seven stages in the page's own order. Escape publishes no stage
@@ -51,136 +56,155 @@ const days = [
 
 const sets = {
   fri: [
-    ['bigtop', 'Benny Benassi'],
-    ['bigtop', 'Cascada'],
-    ['bigtop', 'Cloonee'],
-    ['bigtop', 'Dimitri Vegas & Like Mike'],
-    ['bigtop', 'Discovery Project'],
-    ['bigtop', 'KREAM'],
-    ['bigtop', 'MORTEN'],
-    ['bigtop', 'Nervo'],
-    ['bigtop', 'Steve Aoki'],
+    // ── The Big Top ───────────────────────────────────────────
+    ['bigtop', '16:00', '17:15', 'Solitaire'],
+    ['bigtop', '17:15', '18:30', 'Nervo'],
+    ['bigtop', '18:30', '19:00', 'Cascada'],
+    ['bigtop', '19:00', '20:00', 'MORTEN'],
+    ['bigtop', '20:00', '21:00', 'KREAM'],
+    ['bigtop', '21:00', '22:15', 'Benny Benassi'],
+    ['bigtop', '22:15', '23:30', 'Dimitri Vegas & Like Mike'],
+    ['bigtop', '23:30', '24:40', 'Steve Aoki'],
+    ['bigtop', '24:45', '26:00', 'Cloonee'],
 
-    ['sewer', 'A Little Sound'],
-    ['sewer', 'All The Reason'],
-    ['sewer', 'Cyclops'],
-    ['sewer', 'Excision'],
-    ['sewer', 'Getter'],
-    ['sewer', 'HerShe'],
-    ['sewer', 'Kai Wachi'],
-    ['sewer', 'Level Up'],
-    ['sewer', 'MODAL NODES'],
-    ['sewer', 'YDG'],
+    // ── Sewer District ────────────────────────────────────────
+    ['sewer', '16:00', '16:45', 'All The Reason'],
+    ['sewer', '16:45', '17:45', 'MODAL NODES'],
+    ['sewer', '17:45', '18:45', 'HerShe'],
+    ['sewer', '18:45', '19:45', 'A Little Sound'],
+    ['sewer', '19:45', '20:45', 'Cyclops'],
+    ['sewer', '20:45', '21:45', 'Getter'],
+    ['sewer', '21:45', '22:45', 'YDG'],
+    ['sewer', '22:50', '23:50', 'Level Up'],
+    ['sewer', '23:55', '24:55', 'Kai Wachi'],
+    ['sewer', '25:00', '26:00', 'Excision'],
 
-    ['feeding', 'AniMe - No Boundaries'],
-    ['feeding', ['Coone', 'DJ Isaac']],
-    ['feeding', 'Darren Styles'],
-    ['feeding', 'Frontliner (Journey Set)'],
-    ['feeding', 'Gammer'],
-    ['feeding', 'k?d presents: Kill The Kid'],
-    ['feeding', ['Lady Faith', 'LNY TNZ']],
-    ['feeding', 'Mish'],
-    ['feeding', 'Pixie Dust'],
-    ['feeding', 'Showtek (Hardstyle Set)'],
+    // ── Feeding Grounds ───────────────────────────────────────
+    ['feeding', '16:00', '17:00', 'Pixie Dust'],
+    ['feeding', '17:00', '18:00', 'k?d presents: Kill The Kid'],
+    ['feeding', '18:00', '19:00', 'Mish'],
+    ['feeding', '19:00', '20:00', 'Gammer'],
+    ['feeding', '20:00', '21:00', 'Frontliner (Journey Set)'],
+    ['feeding', '21:00', '22:00', 'AniMe - No Boundaries'],
+    ['feeding', '22:00', '23:00', 'Showtek (Hardstyle Set)'],
+    ['feeding', '23:00', '24:00', 'Darren Styles'],
+    ['feeding', '24:00', '25:00', ['Coone', 'DJ Isaac']],
+    ['feeding', '25:00', '26:00', ['Lady Faith', 'LNY TNZ']],
 
-    ['cage', 'Adam Ten'],
-    ['cage', 'DJ Tennis'],
-    ['cage', ['Jamie Jones', 'Franky Rizardo']],
-    ['cage', ['Joseph Capriati', 'Sosa']],
-    ['cage', 'Kana Hishiya'],
-    ['cage', 'Silvie Loto'],
+    // ── The Cage ──────────────────────────────────────────────
+    ['cage', '16:00', '17:30', 'Kana Hishiya'],
+    ['cage', '17:30', '19:00', 'Silvie Loto'],
+    ['cage', '19:00', '20:30', 'DJ Tennis'],
+    ['cage', '20:30', '22:00', 'Adam Ten'],
+    ['cage', '22:00', '24:00', ['Joseph Capriati', 'Sosa']],
+    ['cage', '24:00', '26:00', ['Jamie Jones', 'Franky Rizardo']],
 
-    ['warehouse', 'Azyr'],
-    ['warehouse', 'Cera Khin'],
-    ['warehouse', 'Clara Cuvé'],
-    ['warehouse', 'Kloud'],
-    ['warehouse', 'Morelia'],
-    ['warehouse', 'Trancemaster Krause'],
-    ['warehouse', 'Trym'],
+    // ── The Warehouse ─────────────────────────────────────────
+    ['warehouse', '16:00', '17:00', 'Morelia'],
+    ['warehouse', '17:00', '18:25', 'Trancemaster Krause'],
+    ['warehouse', '18:25', '19:50', 'Kloud'],
+    ['warehouse', '19:50', '21:15', 'Cera Khin'],
+    ['warehouse', '21:15', '22:40', 'Azyr'],
+    ['warehouse', '22:40', '24:10', 'Clara Cuvé'],
+    ['warehouse', '24:10', '26:00', 'Trym'],
 
-    ['danse', 'All Rise'],
-    ['danse', 'B2'],
-    ['danse', 'Comadoses'],
-    ['danse', 'Death Simulator'],
-    ['danse', 'HIWATER'],
-    ['danse', 'HoneyPacq'],
-    ['danse', 'Kimmo'],
-    ['danse', 'Monic'],
-    ['danse', ['RoRoll', 'HUA']],
-    ['danse', 'SEUNG'],
+    // ── Danse Macabre ─────────────────────────────────────────
+    ['danse', '16:00', '17:00', 'HIWATER'],
+    ['danse', '17:00', '18:00', 'Kimmo'],
+    ['danse', '18:00', '19:00', 'Monic'],
+    ['danse', '19:00', '20:00', 'All Rise'],
+    ['danse', '20:00', '21:00', ['RoRoll', 'HUA']],
+    ['danse', '21:00', '22:00', 'SEUNG'],
+    ['danse', '22:00', '23:00', 'HoneyPacq'],
+    ['danse', '23:00', '24:00', 'B2'],
+    ['danse', '24:00', '25:00', 'Death Simulator'],
+    ['danse', '25:00', '26:00', 'Comadoses'],
 
-    ['artcar', 'Benni Ola'],
-    ['artcar', 'Dr. Greco'],
-    ['artcar', 'Lady Sinclair'],
-    ['artcar', ['Morelia', 'Pixie Dust']],
-    ['artcar', 'Mr. Fowler'],
-    ['artcar', 'Sabrosura Boyz'],
+    // ── Beatbox Art Car ───────────────────────────────────────
+    ['artcar', '16:00', '17:30', 'Mr. Fowler'],
+    ['artcar', '17:30', '19:00', 'Lady Sinclair'],
+    ['artcar', '19:00', '20:30', 'Benni Ola'],
+    ['artcar', '20:30', '22:00', 'Sabrosura Boyz'],
+    ['artcar', '22:00', '24:00', 'Dr. Greco'],
+    ['artcar', '24:00', '26:00', ['Morelia', 'Pixie Dust']],
   ],
+
   sat: [
-    ['bigtop', 'Alok'],
-    ['bigtop', 'Disco Lines'],
-    ['bigtop', 'Galantis'],
-    ['bigtop', 'Ian Asher'],
-    ['bigtop', 'JOYRYDE (Sunset Set)'],
-    ['bigtop', 'LUMI'],
-    ['bigtop', 'Maddix'],
-    ['bigtop', 'TELYKAST'],
-    ['bigtop', 'Zedd'],
+    // ── The Big Top ───────────────────────────────────────────
+    ['bigtop', '16:00', '17:00', 'LUMI'],
+    ['bigtop', '17:00', '18:00', 'TELYKAST'],
+    ['bigtop', '18:00', '19:00', 'JOYRYDE (Sunset Set)'],
+    ['bigtop', '19:00', '20:00', 'Ian Asher'],
+    ['bigtop', '20:00', '21:00', 'Maddix'],
+    ['bigtop', '21:00', '22:10', 'Alok'],
+    ['bigtop', '22:15', '23:25', 'Galantis'],
+    ['bigtop', '23:25', '24:40', 'Disco Lines'],
+    ['bigtop', '24:45', '26:00', 'Zedd'],
 
-    ['sewer', 'Acyan'],
-    ['sewer', 'Adventure Club'],
-    ['sewer', 'Bou'],
-    ['sewer', 'Dabin'],
-    ['sewer', 'Dr. Fresch'],
-    ['sewer', 'ero808'],
-    ['sewer', 'Jon Casey'],
-    ['sewer', 'Know Good'],
-    ['sewer', 'Liquid Stranger'],
+    // ── Sewer District ────────────────────────────────────────
+    ['sewer', '16:00', '16:40', 'Acyan'],
+    ['sewer', '16:40', '17:40', 'ero808'],
+    ['sewer', '17:40', '18:40', 'Jon Casey'],
+    ['sewer', '18:40', '19:40', 'Know Good'],
+    ['sewer', '19:40', '20:40', 'Bou'],
+    ['sewer', '20:40', '21:40', 'Dr. Fresch'],
+    ['sewer', '21:40', '22:40', 'Adventure Club'],
+    ['sewer', '22:45', '23:45', 'Liquid Stranger'],
+    ['sewer', '23:45', '24:15', 'Too $hort'],
+    ['sewer', '24:15', '24:45', 'Ja Rule'],
+    ['sewer', '24:50', '26:00', 'Dabin'],
 
-    ['feeding', 'AC Slater'],
-    ['feeding', ['Andruss', 'Juos']],
-    ['feeding', 'Cat & Maomi'],
-    ['feeding', 'OMNOM'],
-    ['feeding', 'PEDROZ'],
-    ['feeding', 'Rommii'],
-    ['feeding', 'San Pacho'],
-    ['feeding', ['VNSSA', '????']],
+    // ── Feeding Grounds ───────────────────────────────────────
+    ['feeding', '16:00', '17:00', 'Cat & Maomi'],
+    ['feeding', '17:00', '18:00', 'PEDROZ'],
+    ['feeding', '18:00', '19:00', 'Rommii'],
+    ['feeding', '19:00', '20:15', ['Andruss', 'Juos']],
+    ['feeding', '20:15', '21:30', 'Girl Math'],
+    ['feeding', '21:30', '23:00', 'AC Slater'],
+    ['feeding', '23:00', '24:30', 'San Pacho'],
+    ['feeding', '24:30', '26:00', 'OMNOM'],
 
-    ['cage', '999999999'],
-    ['cage', 'Funk Assault'],
-    ['cage', 'Indira Paganotto'],
-    ['cage', 'JSMN'],
-    ['cage', 'Nina Kraviz'],
-    ['cage', 'Richie Hawtin'],
-    ['cage', 'Yanamaste'],
+    // ── The Cage ──────────────────────────────────────────────
+    ['cage', '16:00', '17:15', 'JSMN'],
+    ['cage', '17:15', '18:30', 'Yanamaste'],
+    ['cage', '18:30', '20:00', 'Funk Assault'],
+    ['cage', '20:00', '21:30', 'Richie Hawtin'],
+    ['cage', '21:30', '23:00', 'Nina Kraviz'],
+    ['cage', '23:00', '24:30', 'Indira Paganotto'],
+    ['cage', '24:30', '26:00', '999999999'],
 
-    ['warehouse', ['Alex Chapman', 'Zoe Gitter']],
-    ['warehouse', 'Avalon Emerson'],
-    ['warehouse', 'Champion'],
-    ['warehouse', 'Chrysalis'],
-    ['warehouse', 'DJ Heartstring'],
-    ['warehouse', 'MALUGI'],
-    ['warehouse', 'Sedef Adasï'],
+    // ── The Warehouse ─────────────────────────────────────────
+    ['warehouse', '16:00', '17:15', 'Chrysalis'],
+    ['warehouse', '17:15', '18:45', ['Alex Chapman', 'Zoe Gitter']],
+    ['warehouse', '18:45', '20:00', 'Sedef Adasï'],
+    ['warehouse', '20:00', '21:10', 'Champion'],
+    ['warehouse', '21:10', '22:20', 'Avalon Emerson'],
+    ['warehouse', '22:20', '23:30', 'DJ Heartstring'],
+    ['warehouse', '23:30', '24:40', 'MALUGI'],
+    ['warehouse', '24:40', '25:40', 'MALUGI presents Matteo & Friends B2B'],
 
-    ['danse', '$coe'],
-    ['danse', 'Desa Deca'],
-    ['danse', 'Landopolo'],
-    ['danse', 'Marie Nyx'],
-    ['danse', 'Mark Lizaola'],
-    ['danse', 'Nina J'],
-    ['danse', 'Richard Vission'],
-    ['danse', 'SHAKING'],
-    ['danse', 'Spency Be'],
-    ['danse', 'TYKNI'],
+    // ── Danse Macabre ─────────────────────────────────────────
+    ['danse', '16:00', '17:00', 'Landopolo'],
+    ['danse', '17:00', '18:00', '$coe'],
+    ['danse', '18:00', '19:00', 'Desa Deca'],
+    ['danse', '19:00', '20:00', 'Nina J'],
+    ['danse', '20:00', '21:00', 'Spency Be'],
+    ['danse', '21:00', '22:00', 'Mark Lizaola'],
+    ['danse', '22:00', '23:00', 'Richard Vission'],
+    ['danse', '23:00', '24:00', 'SHAKING'],
+    ['danse', '24:00', '25:00', 'Marie Nyx'],
+    ['danse', '25:00', '26:00', 'TYKNI'],
 
-    ['artcar', 'Acyan'],
-    ['artcar', 'Cat & Maomi'],
-    ['artcar', 'CRaymak'],
-    ['artcar', 'FVLAKO'],
-    ['artcar', 'Juos'],
-    ['artcar', 'KILLMATTER'],
-    ['artcar', 'Sim Ivy'],
+    // ── Beatbox Art Car ───────────────────────────────────────
+    ['artcar', '16:00', '17:00', 'KILLMATTER'],
+    ['artcar', '17:00', '18:30', 'CRaymak'],
+    ['artcar', '18:30', '20:00', 'Acyan'],
+    ['artcar', '20:00', '21:30', 'Sim Ivy'],
+    ['artcar', '21:30', '23:00', 'Cat & Maomi'],
+    ['artcar', '23:00', '24:30', 'FVLAKO'],
+    ['artcar', '24:30', '26:00', 'Juos'],
   ],
+
 };
 
 // Spotify / Apple Music / SoundCloud links, shown on long-press (see
@@ -304,7 +328,6 @@ const artistLinks = {
   'TELYKAST': { spotify: 'https://open.spotify.com/artist/7vWC03wqXwUqjPON8hc1tz', appleMusic: 'https://music.apple.com/us/artist/1133299760', soundcloud: 'https://soundcloud.com/TELYKast' },
   'Trancemaster Krause': { spotify: 'https://open.spotify.com/artist/5zKJhJZNLAQoVoycu4Esnw', appleMusic: 'https://music.apple.com/us/artist/1667612556' },
   'Trym': { spotify: 'https://open.spotify.com/artist/5Nd385K2g3s0828W8Ab70z', appleMusic: 'https://music.apple.com/us/artist/187278791', soundcloud: 'https://soundcloud.com/trymofficial' },
-  'VNSSA': { spotify: 'https://open.spotify.com/artist/6fjbZ7zQBYEy3kvB5JL5PM', soundcloud: 'https://soundcloud.com/v_nss_a' },
   'Yanamaste': { spotify: 'https://open.spotify.com/artist/6zRdaJArenH7DjolPTm6hY', appleMusic: 'https://music.apple.com/us/artist/1409458570', soundcloud: 'https://soundcloud.com/yanamaste14' },
   'YDG': { soundcloud: 'https://soundcloud.com/itsydg' },
   'Zedd': { spotify: 'https://open.spotify.com/artist/2qxJFvFYMEDqd7ui6kSAcq', appleMusic: 'https://music.apple.com/us/artist/368433979', soundcloud: 'https://soundcloud.com/zedd' },
@@ -327,8 +350,8 @@ export default {
   },
   utcOffset: '-07:00',
   dateRange: 'October 30–31, 2026',
-  officialUrl: 'https://escapehalloween.com/lineup/',
-  dataVerifiedOn: '2026-10-05',
+  officialUrl: 'https://escapehalloween.com/lineup/set-times/',
+  dataVerifiedOn: '2026-10-27',
   // Insomniac bills the lineup alphabetically with no tiers, so these are the
   // biggest names on the page, picked for the SEO title; no billing claim.
   headliners: ['Zedd', 'Excision', 'Dimitri Vegas & Like Mike', 'Steve Aoki', 'Galantis', 'Alok'],
