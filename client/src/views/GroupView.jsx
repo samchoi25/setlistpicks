@@ -16,6 +16,7 @@ import MemberLineupPopup from '../components/MemberLineupPopup.jsx';
 import OfflineBanner from '../components/OfflineBanner.jsx';
 import FestivalEndedBanner from '../components/FestivalEndedBanner.jsx';
 import UserSetSignup from '../components/UserSetSignup.jsx';
+import Modal from '../components/Modal.jsx';
 
 export default function GroupView({
   groupId, member, groupMeta, freshJoin, onLeave,
@@ -33,6 +34,10 @@ export default function GroupView({
   const isJoiner = (groupMeta?.members ?? []).some((m) => m.key !== member.key);
   const [popup,            setPopup]            = useState(null); // { id, artist }
   const [memberPopup,      setMemberPopup]      = useState(null); // { key, displayName }
+  // A party event (userSets) keeps the invite box behind a header icon rather
+  // than inline, so the cocktail list sits higher on the page.
+  const shareInHeader = Boolean(festival.userSets);
+  const [shareOpen,        setShareOpen]        = useState(false);
 
   // Tracks in-flight local vote changes so the WS sync below doesn't clobber
   // an optimistic update before our own save round-trips back to us.
@@ -233,8 +238,9 @@ export default function GroupView({
           memberVoteCounts={memberVoteCounts}
           onLeave={onLeave}
           onEditingChange={setHeaderEditing}
+          onShare={shareInHeader ? () => setShareOpen(true) : undefined}
         />
-        {!headerEditing && (
+        {!headerEditing && !shareInHeader && (
           <ShareCard
             groupId={groupId}
             memberKey={member.key}
@@ -266,6 +272,21 @@ export default function GroupView({
         onLongPress={handleLongPress}
         onNotMember={handleNotMember}
       />}
+
+      {/* Invite box, opened from the header's share icon */}
+      {shareInHeader && (
+        <Modal open={shareOpen} onClose={() => setShareOpen(false)} label="Invite guests"
+          className="modal-card" backdropClassName="is-centered">
+          <ShareCard
+            inModal
+            groupId={groupId}
+            memberKey={member.key}
+            mutedMembers={mutedMembers}
+            memberVoteCounts={memberVoteCounts}
+            onMemberClick={(m) => { setShareOpen(false); setMemberPopup({ key: m.key, displayName: m.displayName }); }}
+          />
+        </Modal>
+      )}
 
       {/* Name prompt modal */}
       {showNamePrompt && (

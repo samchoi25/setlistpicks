@@ -368,12 +368,10 @@ button.brand-title-option:hover {
   color: var(--btn-primary);
   font-weight: 700;
 }
-.brand-sub {
+.brand-title-count {
+  font-weight: 600;
   color: var(--ink-soft);
-  font-size: var(--text-lg);
-  font-family: var(--font-display);
-  font-style: italic;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
 }
 
 /* ─── Card ───────────────────────────────────────────────────────────── */
@@ -1428,18 +1426,32 @@ input[type="text"].is-tight {
   flex: 1;
   min-width: 0;
 }
-.brand-sub {
-  display: flex;
+/* Header share icon (a party event — opens the invite box in a dialog).
+   Sized and outlined to sit beside .profile-badge as its pair. */
+.share-icon-btn {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-1-5);
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--ink) 40%, transparent);
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.05s ease;
 }
-.brand-sub-sep {
-  color: var(--ink-dim);
-  user-select: none;
+.share-icon-btn:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  border-color: var(--ink);
 }
-.brand-sub .link-button {
-  font-weight: 600;
-  color: var(--ink-soft);
+.share-icon-btn:active {
+  transform: translateY(1px);
+}
+.share-icon-btn svg {
+  width: 17px;
+  height: 17px;
 }
 .profile-badge.is-static {
   cursor: default;
@@ -1639,15 +1651,18 @@ input[type="text"].is-tight {
   /* Two-row brand header on mobile */
   .brand {
     display: grid;
-    grid-template-columns: 1fr auto;
+    /* The middle column holds the share icon when there is one (a party
+       event); with nothing in it, it collapses to zero width. */
+    grid-template-columns: 1fr auto auto;
     grid-template-areas:
-      "logo badge"
-      "info info";
+      "logo share badge"
+      "info info info";
     gap: var(--space-0-5) 0;
     padding-bottom: var(--space-3);
   }
   .brand-logo    { grid-area: logo; align-self: center; }
   .brand-info    { grid-area: info; }
+  .share-icon-btn { grid-area: share; align-self: center; margin-right: var(--space-2); }
   .profile-badge { grid-area: badge; align-self: center; }
 
   /*

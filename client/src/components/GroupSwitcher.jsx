@@ -21,7 +21,17 @@ function ChevronIcon() {
  * anchors for existing groups, same as FestivalSwitcher, so App.jsx's
  * same-origin click interceptor handles the actual navigation.
  */
-export default function GroupSwitcher({ groupId, groupName, disabled }) {
+// "(4)" after the group name — how many people are in it.
+function MemberCount({ count }) {
+  if (count == null) return null;
+  return (
+    <span className="brand-title-count" aria-label={`${count} ${count === 1 ? 'member' : 'members'}`}>
+      ({count})
+    </span>
+  );
+}
+
+export default function GroupSwitcher({ groupId, groupName, memberCount, disabled }) {
   const festival = useFestival();
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -40,7 +50,7 @@ export default function GroupSwitcher({ groupId, groupName, disabled }) {
   }, [open]);
 
   if (disabled) {
-    return <div className="brand-title">{groupName}</div>;
+    return <div className="brand-title">{groupName} <MemberCount count={memberCount} /></div>;
   }
 
   const others = getGroupHistory(festival.slug).filter((g) => g.groupId !== groupId);
@@ -55,6 +65,7 @@ export default function GroupSwitcher({ groupId, groupName, disabled }) {
         aria-expanded={open}
       >
         {groupName}
+        <MemberCount count={memberCount} />
         <ChevronIcon />
       </button>
       {open && (

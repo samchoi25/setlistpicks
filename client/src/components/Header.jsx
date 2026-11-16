@@ -21,10 +21,26 @@ function ChevronIcon() {
   );
 }
 
+// Square-with-arrow "share" glyph.
+function ShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3v12" />
+      <path d="M7 8l5-5 5 5" />
+      <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+    </svg>
+  );
+}
+
 export default function Header({
   groupId, member, groupName, setGroupName,
   memberDisplayName, setMemberDisplayName,
   mutedMembers, setMutedMembers, memberVoteCounts = {}, onLeave, onEditingChange,
+  // When given, a share icon sits beside the profile badge and calls this —
+  // GroupView uses it to open the invite box in a dialog (a party event, see
+  // shared/festivals/lucky-13.js) instead of showing it inline.
+  onShare,
 }) {
   const festival = useFestival();
   const [editing, setEditing] = useState(false);
@@ -236,17 +252,15 @@ export default function Header({
     <div className="brand">
       <FestivalSwitcher />
       <div className="brand-info">
-        <GroupSwitcher groupId={groupId} groupName={displayGroupName} disabled={editing} />
-        <div className="brand-sub">
-          {memberCount} {memberCount === 1 ? 'member' : 'members'}
-          {!editing && online && !ended && (
-            <>
-              <span className="brand-sub-sep">&middot;</span>
-              <button className="link-button dotted" onClick={openEdit}>edit</button>
-            </>
-          )}
-        </div>
+        {/* Member count rides beside the name; editing is reached from the
+            profile badge, so there's no separate "edit" link here. */}
+        <GroupSwitcher groupId={groupId} groupName={displayGroupName} memberCount={memberCount} disabled={editing} />
       </div>{/* .brand-info */}
+      {onShare && !editing && (
+        <button className="share-icon-btn" onClick={onShare} aria-label="Invite guests" title="Invite guests">
+          <ShareIcon />
+        </button>
+      )}
       <button className={`profile-badge${editing || !online || ended ? ' is-static' : ''}`}
         onClick={editing || !online || ended ? undefined : openEdit}
         title={editing || !online || ended ? undefined : 'Edit your name & crew'}>
