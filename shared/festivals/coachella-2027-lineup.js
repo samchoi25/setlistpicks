@@ -221,9 +221,8 @@ export const sets = {
 // Left out, not confidently identifiable: Solid Grooves (a label/party brand
 // with no artist profile) and Talón (ten same-named acts on Apple Music).
 //
-// CHRIS STASSY: billed that way on both the poster and AEG's data, but AEG's
-// Spotify ID resolves to a profile whose SoundCloud handle is djchrisstussy —
-// worth confirming whether the bill should read "Chris Stussy".
+// CHRIS STASSY also performs as Chris Stussy — same artist, so the
+// djchrisstussy SoundCloud is his. The bill keeps the poster's spelling.
 //
 // Two-act bills ("Amelie Lens x Sara Landry") are keyed by the billed string;
 // their links are whatever profile the festival attached to that billing.
