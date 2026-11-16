@@ -811,6 +811,14 @@ button.brand-title-option:hover {
   margin-top: 0;
 }
 
+.show-block .block-submitter {
+  display: block;
+  font-size: var(--text-2xs);
+  font-weight: 400;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
 .show-block .show-time {
   font-size: var(--text-2xs);
   font-weight: 400;
@@ -1755,20 +1763,10 @@ input[type="text"].is-tight {
 .user-set-message {
   margin: 0;
   font-size: var(--text-md);
+  color: var(--danger);
 }
-.user-set-message.is-ok { color: var(--ink); }
-.user-set-message.is-error { color: var(--danger); }
-.user-set-mine {
-  list-style: none;
+.user-set-name {
   margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--space-2);
-}
-.user-set-mine li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
+  font-weight: 600;
 }

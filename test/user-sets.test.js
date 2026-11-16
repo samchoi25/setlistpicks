@@ -108,9 +108,16 @@ test('entering is refused for duplicates, blanks, non-members and past the cap',
   assert.deepEqual(store.addUserSet(group.id, sara.key, 'negroni'), { error: 'duplicate' });
   assert.deepEqual(store.addUserSet(group.id, sara.key, '   '), { error: 'invalid_name' });
   assert.deepEqual(store.addUserSet(group.id, 'nobody', 'Mojito'), { error: 'not_a_member' });
-  store.addUserSet(group.id, sam.key, 'Mojito');
-  store.addUserSet(group.id, sam.key, 'Paloma');
-  assert.deepEqual(store.addUserSet(group.id, sam.key, 'Gimlet'), { error: 'too_many' });
+  // One cocktail each.
+  assert.deepEqual(store.addUserSet(group.id, sam.key, 'Mojito'), { error: 'too_many' });
+});
+
+test('removing your cocktail frees your one slot', () => {
+  const { store } = fresh();
+  const { group, members: [sam] } = party(store, 'Sam');
+  const { set } = store.addUserSet(group.id, sam.key, 'Negroni');
+  store.removeUserSet(SLUG, set.id, { groupId: group.id, memberKey: sam.key });
+  assert.ok(store.addUserSet(group.id, sam.key, 'Mojito').set);
 });
 
 test('guests vote on cocktails with the ordinary scores', () => {

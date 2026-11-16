@@ -35,6 +35,9 @@ const LineupBlock = React.memo(function LineupBlock({
       onPointerCancel={cancelLongPress}
     >
       <ArtistNames names={s.artists} />
+      {/* Who entered it, for a guest-entered set (a userSets event — see
+          shared/festivals/lucky-13.js). Hardcoded sets carry no submitter. */}
+      {s.submittedBy && <span className="block-submitter">by {s.submittedBy}</span>}
       <WashSvg data={washDataRef.current} />
       <GroupVotesEl
         votes={groupVotes}

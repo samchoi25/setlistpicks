@@ -36,7 +36,8 @@ const VALID_SCORES = new Set([0, 1, 3]);
 
 // Guest-entered sets (a userSets festival — see shared/festivals/lucky-13.js).
 const MAX_USER_SET_LEN = 60;
-const MAX_USER_SETS_PER_MEMBER = 3;
+// One each: a guest brings one cocktail. Removing it frees the slot.
+const MAX_USER_SETS_PER_MEMBER = 1;
 
 function cleanDisplayName(name, maxLen = MAX_DISPLAY_NAME_LEN) {
   return String(name || '').trim().slice(0, maxLen);
