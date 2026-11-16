@@ -34,10 +34,10 @@ export default function GroupView({
   const isJoiner = (groupMeta?.members ?? []).some((m) => m.key !== member.key);
   const [popup,            setPopup]            = useState(null); // { id, artist }
   const [memberPopup,      setMemberPopup]      = useState(null); // { key, displayName }
-  // A party event (userSets) keeps the invite box behind a header icon rather
-  // than inline, so the cocktail list sits higher on the page.
-  const shareInHeader = Boolean(festival.userSets);
+  // The invite box lives behind the header's share icon, in a dialog, rather
+  // than inline above the lineup — so the grid sits higher on the page.
   const [shareOpen,        setShareOpen]        = useState(false);
+  const inviteLabel = festival.userSets ? 'Invite guests' : 'Invite your crew';
 
   // Tracks in-flight local vote changes so the WS sync below doesn't clobber
   // an optimistic update before our own save round-trips back to us.
@@ -238,17 +238,9 @@ export default function GroupView({
           memberVoteCounts={memberVoteCounts}
           onLeave={onLeave}
           onEditingChange={setHeaderEditing}
-          onShare={shareInHeader ? () => setShareOpen(true) : undefined}
+          onShare={() => setShareOpen(true)}
+          shareLabel={inviteLabel}
         />
-        {!headerEditing && !shareInHeader && (
-          <ShareCard
-            groupId={groupId}
-            memberKey={member.key}
-            mutedMembers={mutedMembers}
-            memberVoteCounts={memberVoteCounts}
-            onMemberClick={(m) => setMemberPopup({ key: m.key, displayName: m.displayName })}
-          />
-        )}
       </div>
 
       {/* Guests enter what's being voted on (a userSets event) */}
@@ -274,19 +266,17 @@ export default function GroupView({
       />}
 
       {/* Invite box, opened from the header's share icon */}
-      {shareInHeader && (
-        <Modal open={shareOpen} onClose={() => setShareOpen(false)} label="Invite guests"
-          className="modal-card" backdropClassName="is-centered">
-          <ShareCard
-            inModal
-            groupId={groupId}
-            memberKey={member.key}
-            mutedMembers={mutedMembers}
-            memberVoteCounts={memberVoteCounts}
-            onMemberClick={(m) => { setShareOpen(false); setMemberPopup({ key: m.key, displayName: m.displayName }); }}
-          />
-        </Modal>
-      )}
+      <Modal open={shareOpen} onClose={() => setShareOpen(false)} label={inviteLabel}
+        className="modal-card" backdropClassName="is-centered">
+        <ShareCard
+          inModal
+          groupId={groupId}
+          memberKey={member.key}
+          mutedMembers={mutedMembers}
+          memberVoteCounts={memberVoteCounts}
+          onMemberClick={(m) => { setShareOpen(false); setMemberPopup({ key: m.key, displayName: m.displayName }); }}
+        />
+      </Modal>
 
       {/* Name prompt modal */}
       {showNamePrompt && (

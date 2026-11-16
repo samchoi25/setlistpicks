@@ -38,9 +38,9 @@ export default function Header({
   memberDisplayName, setMemberDisplayName,
   mutedMembers, setMutedMembers, memberVoteCounts = {}, onLeave, onEditingChange,
   // When given, a share icon sits beside the profile badge and calls this —
-  // GroupView uses it to open the invite box in a dialog (a party event, see
-  // shared/festivals/lucky-13.js) instead of showing it inline.
-  onShare,
+  // GroupView uses it to open the invite box in a dialog. shareLabel names it
+  // for screen readers and the hover tooltip.
+  onShare, shareLabel = 'Invite your crew',
 }) {
   const festival = useFestival();
   const [editing, setEditing] = useState(false);
@@ -260,7 +260,7 @@ export default function Header({
         <GroupSwitcher groupId={groupId} groupName={displayGroupName} memberCount={memberCount} disabled={editing} />
       </div>{/* .brand-info */}
       {onShare && !editing && (
-        <button className="share-icon-btn" onClick={onShare} aria-label="Invite guests" title="Invite guests">
+        <button className="share-icon-btn" onClick={onShare} aria-label={shareLabel} title={shareLabel}>
           <ShareIcon />
         </button>
       )}

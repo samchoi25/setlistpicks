@@ -1465,8 +1465,8 @@ input[type="text"].is-tight {
   flex: 1;
   min-width: 0;
 }
-/* Header share icon (a party event — opens the invite box in a dialog).
-   Sized and outlined to sit beside .profile-badge as its pair. */
+/* Header share icon (opens the invite box in a dialog). Sized and outlined to
+   sit beside .profile-badge as its pair. */
 .share-icon-btn {
   display: inline-flex;
   align-items: center;
@@ -1695,8 +1695,8 @@ input[type="text"].is-tight {
   /* Two-row brand header on mobile */
   .brand {
     display: grid;
-    /* The middle column holds the share icon when there is one (a party
-       event); with nothing in it, it collapses to zero width. */
+    /* The middle column holds the share icon; with nothing in it (no group
+       loaded yet), it collapses to zero width. */
     grid-template-columns: 1fr auto auto;
     grid-template-areas:
       "logo share badge"
