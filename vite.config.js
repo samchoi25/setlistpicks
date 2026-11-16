@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { renderPage } from './scripts/seo-prerender.js';
-import { getFestival, DEFAULT_FESTIVAL_SLUG } from './shared/festivals/index.js';
+import { renderPage, renderHomePage } from './scripts/seo-prerender.js';
+import { getFestival, listPublicFestivals, DEFAULT_FESTIVAL_SLUG } from './shared/festivals/index.js';
+import { parsePath } from './shared/routes.js';
 
 /*
  * Dev only. The build deliberately leaves the template's placeholders in
@@ -12,8 +13,10 @@ function seoPrerender() {
   return {
     name: 'seo-prerender',
     apply: 'serve',
-    transformIndexHtml(html) {
-      return renderPage(html, getFestival(DEFAULT_FESTIVAL_SLUG));
+    transformIndexHtml(html, ctx) {
+      const route = parsePath(ctx.originalUrl ?? '/');
+      if (route.kind === 'home') return renderHomePage(html, listPublicFestivals());
+      return renderPage(html, getFestival(route.canonicalSlug) ?? getFestival(DEFAULT_FESTIVAL_SLUG));
     },
   };
 }

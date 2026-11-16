@@ -5,8 +5,9 @@
  * plugin only fills them while serving). This reads that file as a template and
  * writes:
  *
- *   dist/index.html            the default festival, a fallback — `/` redirects
- *                              to its slug, so this is only hit for unknown paths
+ *   dist/index.html            the landing page for `/`, which lists every
+ *                              festival; also the (noindexed) fallback for
+ *                              unknown paths
  *   dist/<slug>/index.html     one indexable page per festival
  *   dist/sitemap.xml           generated from the registry
  *
@@ -16,8 +17,8 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { listFestivals, listPublicFestivals, getFestival, DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
-import { renderPage, renderSitemap, PAGE_TOKENS } from './seo-prerender.js';
+import { listFestivals, listPublicFestivals } from '../shared/festivals/index.js';
+import { renderPage, renderHomePage, renderSitemap, PAGE_TOKENS } from './seo-prerender.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -44,10 +45,10 @@ export function buildPages({ dist = DIST, log = console.log } = {}) {
     written.push(`${festival.slug}/index.html`);
   }
 
-  // Fallback copy at the root for any path that is not a known festival.
-  const fallback = renderPage(template, getFestival(DEFAULT_FESTIVAL_SLUG));
-  assertResolved(fallback, 'index.html');
-  writeFileSync(templatePath, fallback);
+  // The landing page, at the root. Written last: it overwrites the template.
+  const home = renderHomePage(template, listPublicFestivals());
+  assertResolved(home, 'index.html');
+  writeFileSync(templatePath, home);
   written.push('index.html');
 
   writeFileSync(path.join(dist, 'sitemap.xml'), renderSitemap(listPublicFestivals()));

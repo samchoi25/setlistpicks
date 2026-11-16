@@ -10,8 +10,8 @@ import { themeCss, themeColor } from '../shared/theme.js';
 
 export const SITE_ORIGIN = 'https://setlistpicks.com';
 
-// Every festival is canonical at its own slug. `/` redirects to the default
-// one rather than serving it, so `/` is never a canonical address.
+// Every festival is canonical at its own slug. `/` is the landing page, which
+// lists them all (see renderHomePage below).
 export function canonicalPath(festival) {
   return `/${festival.slug}/`;
 }
@@ -222,7 +222,56 @@ export function renderPage(template, festival) {
     .replace('{{SEO_BODY}}', festival.unlisted ? '' : renderLineupHtml(festival));
 }
 
+/* ─── Landing page (`/`) ─────────────────────────────────────────────────── */
+
+export const HOME_TITLE = 'Setlist Picks | Plan your festival sets with your crew';
+export const HOME_DESCRIPTION = 'Pick the sets you want to see at a music festival, '
+  + 'share one link with your friends, and see everyone\'s picks on a single schedule. '
+  + 'Free, no account needed.';
+
+// Crawlable copy of what the landing page lists, hidden like the festival
+// pages' lineup — the SPA renders the visible version once React mounts.
+function renderHomeHtml(festivals) {
+  const items = festivals.map((f) => `<li><a href="${escHtml(canonicalPath(f))}">${escHtml(f.name)}</a>`
+    + ` &ndash; ${escHtml(f.dateRange)}, ${escHtml(f.venue)}</li>`).join('');
+  return `<div id="seo-prerender" aria-hidden="true" style="display:none">
+<h1>Setlist Picks</h1>
+<p>${escHtml(HOME_DESCRIPTION)}</p>
+<h2>Festivals</h2>
+<ul>${items}</ul>
+</div>`;
+}
+
+/*
+ * Fill the template for `/`. No festival theme — the landing page wears the
+ * site's own default palette — and a WebSite schema instead of a festival's.
+ */
+export function renderHomePage(template, festivals) {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Setlist Picks',
+    url: `${SITE_ORIGIN}/`,
+    description: HOME_DESCRIPTION,
+  };
+  return template
+    .replaceAll('{{TITLE}}', escHtml(HOME_TITLE))
+    .replaceAll('{{DESCRIPTION}}', escHtml(HOME_DESCRIPTION))
+    .replaceAll('{{CANONICAL}}', escHtml(`${SITE_ORIGIN}/`))
+    .replaceAll('{{THEME_COLOR}}', escHtml(themeColor(null)))
+    .replace('{{THEME_STYLE}}', renderThemeStyle(null))
+    .replace('{{JSON_LD}}', `<script type="application/ld+json">${JSON.stringify(schema)}</script>`)
+    .replace('{{SEO_BODY}}', renderHomeHtml(festivals));
+}
+
 export function renderSitemap(festivals) {
+  const home = [
+    '  <url>',
+    `    <loc>${SITE_ORIGIN}/</loc>`,
+    '    <changefreq>weekly</changefreq>',
+    '    <priority>1.0</priority>',
+    '  </url>',
+  ].join('\n');
   const urls = festivals.map((f) => [
     '  <url>',
     `    <loc>${escHtml(canonicalUrl(f))}</loc>`,
@@ -234,6 +283,7 @@ export function renderSitemap(festivals) {
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${home}
 ${urls}
 </urlset>
 `;

@@ -6,7 +6,7 @@
  * disagreement would mean the server serving a page the client refuses to
  * route, or vice versa. Both now parse through here.
  *
- *   /                       the front door
+ *   /                       the landing page — what this is, every festival
  *   /:slug                  a festival — resume or start a group
  *   /:slug/:code            a group within a festival
  *   /:code                  legacy: a group link shared before slugs existed
@@ -90,9 +90,7 @@ export function parsePath(pathname) {
 export function canonicalRedirect(parsed, { lookupFestival } = {}) {
   switch (parsed.kind) {
     case 'home':
-      // `/` is answered, not redirected. Which group a returning visitor
-      // belongs in lives in their browser, so only the client can decide —
-      // a server redirect would settle it before that could be read.
+      // `/` is answered, not redirected: it is the landing page.
       return null;
     case 'festival':
       return parsed.isAlias ? festivalPath(parsed.canonicalSlug) : null;

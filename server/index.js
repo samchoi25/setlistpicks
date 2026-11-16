@@ -272,7 +272,7 @@ const distDir = path.join(ROOT, 'dist');
 
 if (fs.existsSync(distDir)) {
   // index:false so `/` falls through to the route handler below — otherwise
-  // static serves dist/index.html directly and the redirect never runs.
+  // static serves dist/index.html without the visit being recorded.
   // redirect:false because dist now holds a directory per festival, and
   // serve-static would otherwise bounce /outside-lands-2026 to a trailing
   // slash before our router ever sees it.
@@ -316,7 +316,10 @@ if (fs.existsSync(distDir)) {
     const html = readPage(festival.slug);
     pages.set(festival.slug, { festivalHtml: html, groupHtml: noindex(html) });
   }
-  const fallbackHtml = readPage(null);
+  // dist/index.html is the landing page; for an unknown path it doubles as
+  // the SPA shell, noindexed.
+  const homeHtml = readPage(null);
+  const fallbackHtml = homeHtml;
 
   app.get(/^(?!\/api\/|\/healthz).*/, (req, res) => {
     const parsed = parsePath(req.path);
@@ -338,12 +341,8 @@ if (fs.existsSync(distDir)) {
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
 
-    // `/` serves the default festival's page. Its canonical points at that
-    // festival's own URL, so this is not a duplicate; the client then replaces
-    // it with the visitor's most recent group if they have one.
-    if (parsed.kind === 'home') {
-      return res.send(pages.get(DEFAULT_FESTIVAL_SLUG).festivalHtml);
-    }
+    // `/` is the landing page — every festival, with a search box.
+    if (parsed.kind === 'home') return res.send(homeHtml);
     const page = pages.get(parsed.canonicalSlug);
     // An unlisted event (a private party) is never indexed, even its own page.
     if (parsed.kind === 'festival') {

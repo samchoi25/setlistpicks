@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
   renderPage, renderSitemap, pageTitle, pageDescription, canonicalUrl,
-  renderJsonLd, PAGE_TOKENS,
+  renderJsonLd, PAGE_TOKENS, HOME_TITLE, canonicalPath,
 } from '../scripts/seo-prerender.js';
 import { buildPages } from '../scripts/build-pages.js';
 import { listFestivals, getFestival, DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
@@ -152,8 +152,9 @@ test('the sitemap lists every festival at its canonical URL', () => {
   for (const f of listFestivals()) {
     assert.ok(xml.includes(`<loc>${canonicalUrl(f)}</loc>`), f.slug);
   }
-  assert.equal((xml.match(/<url>/g) ?? []).length, listFestivals().length);
-  assert.ok(!xml.includes('<loc>https://setlistpicks.com/</loc>'), '/ is not canonical');
+  // Every festival, plus the landing page.
+  assert.equal((xml.match(/<url>/g) ?? []).length, listFestivals().length + 1);
+  assert.ok(xml.includes('<loc>https://setlistpicks.com/</loc>'), 'the landing page is listed');
 });
 
 test('the sitemap dates each festival from when its data was verified', () => {
@@ -169,7 +170,7 @@ function stagedDist() {
   return dir;
 }
 
-test('the build writes a page per festival, a fallback and a sitemap', () => {
+test('the build writes a page per festival, a landing page and a sitemap', () => {
   const dist = stagedDist();
   buildPages({ dist, log: () => {} });
 
@@ -180,8 +181,14 @@ test('the build writes a page per festival, a fallback and a sitemap', () => {
     assert.ok(html.includes(`<title>${escapeForHtml(pageTitle(f))}</title>`), f.slug);
   }
 
-  const fallback = readFileSync(path.join(dist, 'index.html'), 'utf8');
-  assert.ok(fallback.includes(escapeForHtml(pageTitle(getFestival(DEFAULT_FESTIVAL_SLUG)))));
+  const home = readFileSync(path.join(dist, 'index.html'), 'utf8');
+  assert.ok(home.includes(`<title>${escapeForHtml(HOME_TITLE)}</title>`));
+  assert.ok(home.includes('<link rel="canonical" href="https://setlistpicks.com/" />'));
+  // Lists every public festival, linked at its canonical path — and no
+  // unlisted (private) event.
+  for (const f of listFestivals()) {
+    assert.equal(home.includes(`href="${canonicalPath(f)}"`), !f.unlisted, f.slug);
+  }
 
   const xml = readFileSync(path.join(dist, 'sitemap.xml'), 'utf8');
   assert.ok(xml.includes(canonicalUrl(real)));

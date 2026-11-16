@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from './api.js';
 import {
-  getIdentity, setIdentity, getActiveGroup, setActiveGroup, clearActiveGroup, getMostRecentGroup,
+  getIdentity, setIdentity, getActiveGroup, setActiveGroup, clearActiveGroup,
   recordGroupVisit,
 } from './storage.js';
 import { isOnline } from './net-status.js';
 import { ensureSvgDefs } from './svgDefs.js';
 import GroupView from './views/GroupView.jsx';
 import ReadOnlyView from './views/ReadOnlyView.jsx';
+import LandingView from './views/LandingView.jsx';
 import FestivalSwitcher from './components/FestivalSwitcher.jsx';
 import Button from './components/Button.jsx';
 import { FestivalProvider } from './festival-context.jsx';
@@ -153,25 +154,6 @@ function AppRoutes() {
   // returned as is.
   const festivalWithSets = useFestivalWithUserSets(festival);
 
-  /*
-   * `/` sends you back to the group you were last in, whichever festival it
-   * belongs to — the server cannot do this, since the answer lives in your
-   * browser. With nothing stored we fall through to the default festival,
-   * which then starts a group.
-   */
-  useEffect(() => {
-    if (route.kind !== 'home') return;
-    if (navigating.current) return;
-    navigating.current = true;
-
-    const recent = getMostRecentGroup();
-    navigating.current = false;
-    navigate(
-      recent ? groupUrlPath(recent.slug, recent.groupId) : festivalPath(DEFAULT_FESTIVAL_SLUG),
-      { replace: true },
-    );
-  }, [path, navigate]); // eslint-disable-line
-
   // A festival page: resume this festival's stored group, else start one.
   useEffect(() => {
     if (route.kind !== 'festival') return;
@@ -265,6 +247,10 @@ function AppRoutes() {
     </div>
   );
 
+  // `/` is the landing page — it wears the site's own palette, so it sits
+  // outside FestivalProvider (see LandingView's useSiteTheme).
+  if (route.kind === 'home') return <LandingView />;
+
   const content = (() => {
     if (error) {
       if (error.readOnly) return <ReadOnlyView />;
@@ -289,7 +275,7 @@ function AppRoutes() {
     const singleGroupHere = route.kind === 'festival' && festival.userSets
       && groupState?.groupMeta?.festivalSlug === festival.slug;
 
-    if (loading || route.kind === 'home' || (route.kind === 'festival' && !singleGroupHere)) {
+    if (loading || (route.kind === 'festival' && !singleGroupHere)) {
       return shell(
         <div className="card center loading-card">
           Setting up your crew…
