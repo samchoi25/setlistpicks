@@ -40,13 +40,6 @@
  * mobile — so theming it would silently break the sticky stage-header offset
  * on phones, and only on phones.
  */
-export const THEMEABLE_TOKENS = Object.freeze(new Set([
-  '--bg', '--paper', '--ink', '--btn-primary', '--btn-secondary', '--block-ink',
-  '--ocean-deep', '--pink-carnation', '--muted-olive', '--jungle-green',
-  '--dusk-purple', '--sunset-coral', '--brick-clay', '--deep-teal', '--marigold-gold',
-  '--font-display', '--font-body',
-]));
-
 /*
  * The nine stage colours, in the order styles.css defines them. A stage's
  * `color`/`headerColor` must name one of these (or a token the festival's own
@@ -57,6 +50,32 @@ export const STAGE_TOKENS = Object.freeze(new Set([
   '--ocean-deep', '--pink-carnation', '--muted-olive', '--jungle-green',
   '--dusk-purple', '--sunset-coral', '--brick-clay', '--deep-teal', '--marigold-gold',
 ]));
+
+// Each stage colour's text tokens: `-header` for its name on --bg, `-ink` for
+// text on its block.
+const STAGE_TEXT_TOKENS = [...STAGE_TOKENS].flatMap((t) => [`${t}-header`, `${t}-ink`]);
+
+export const THEMEABLE_TOKENS = Object.freeze(new Set([
+  '--bg', '--paper', '--ink', '--btn-primary', '--btn-secondary', '--on-btn-secondary',
+  '--block-ink',
+  ...STAGE_TOKENS, ...STAGE_TEXT_TOKENS,
+  '--font-display', '--font-body',
+]));
+
+/*
+ * The colours a stage's text is drawn in, as CSS values. A festival's own
+ * namespaced stage colour has no -header/-ink token, so each falls back: the
+ * header to the colour itself, block text to --block-ink.
+ */
+export function stageHeaderColor(stage) {
+  return stage.headerColor
+    ? `var(${stage.headerColor})`
+    : `var(${stage.color}-header, var(${stage.color}))`;
+}
+
+export function stageBlockInk(stage) {
+  return `var(${stage.color}-ink, var(--block-ink))`;
+}
 
 /*
  * Fonts a theme may choose, by key. A definition names the key ('anton'), not
@@ -208,6 +227,13 @@ export function parseRootTokens(cssText) {
 // A festival's theme as a flat {token: value} map. Font keys resolve to their
 // stack here; an unknown key is dropped rather than emitted as a bare word that
 // would read as a font family name.
+//
+// The base palette's text tokens are tuned to the base fills: --pink-carnation-ink
+// is a dark pink because white fails on the base pink. A festival that repaints
+// a fill and doesn't say what goes on it gets those reset to what it had before
+// they existed — the fill itself for a header, --block-ink or --on-color for
+// text on top — so its tested choices aren't overridden by ones made for
+// another colour.
 export function resolveTheme(festival) {
   const tokens = festival?.theme?.tokens;
   if (!tokens || typeof tokens !== 'object') return {};
@@ -220,6 +246,12 @@ export function resolveTheme(festival) {
       out[name] = value;
     }
   }
+  const reset = (name, value) => { if (!(name in tokens)) out[name] = value; };
+  for (const stage of STAGE_TOKENS) {
+    if (stage in tokens) reset(`${stage}-header`, `var(${stage})`);
+    if (stage in tokens || '--block-ink' in tokens) reset(`${stage}-ink`, 'var(--block-ink)');
+  }
+  if ('--btn-secondary' in tokens) reset('--on-btn-secondary', 'var(--on-color)');
   return out;
 }
 

@@ -81,7 +81,7 @@ test('relativeLuminance: black is 0, white is 1', () => {
 /* ─── parseRootTokens against the real stylesheet ──────────────────────── */
 
 test('parseRootTokens: reads the base palette out of styles.css', () => {
-  assert.equal(BASE.get('--ink'), 'rgb(36, 103, 177)');
+  assert.equal(BASE.get('--ink'), 'rgb(30, 85, 147)');
   assert.equal(BASE.get('--paper'), '#fbf6e9');
   assert.equal(BASE.get('--block-ink'), '#fff');
 });
@@ -224,4 +224,22 @@ test('themeCss strips angle brackets so it cannot break out of its <style>', () 
   const nasty = { slug: 'x-2026', theme: { tokens: { '--bg': '</style><script>' } } };
   assert.ok(!themeCss(nasty).includes('<'));
   assert.ok(!themeCss(nasty).includes('>'));
+});
+
+test('resolveTheme: repainting a fill resets the base text tokens tuned to it', () => {
+  // --pink-carnation-ink is a dark pink chosen for the BASE pink; a festival
+  // that repaints the stage keeps the text it was tested with instead.
+  const f = { theme: { tokens: { '--pink-carnation': '#7A1F4A', '--btn-secondary': '#2D5016' } } };
+  const t = resolveTheme(f);
+  assert.equal(t['--pink-carnation-header'], 'var(--pink-carnation)');
+  assert.equal(t['--pink-carnation-ink'], 'var(--block-ink)');
+  assert.equal(t['--on-btn-secondary'], 'var(--on-color)');
+  assert.equal(t['--muted-olive-ink'], undefined, 'untouched stages keep their base text');
+});
+
+test('resolveTheme: a dark --block-ink applies to every stage unless one says otherwise', () => {
+  const f = { theme: { tokens: { '--block-ink': '#1A1A1A', '--deep-teal-ink': '#FFFFFF' } } };
+  const t = resolveTheme(f);
+  assert.equal(t['--pink-carnation-ink'], 'var(--block-ink)');
+  assert.equal(t['--deep-teal-ink'], '#FFFFFF');
 });

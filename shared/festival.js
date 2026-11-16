@@ -289,7 +289,9 @@ function buildSchedule(def) {
 
 function build(def) {
   const schedule = buildSchedule(def);
-  if (!schedule.length) throw new Error(`${def.slug}: festival has no sets`);
+  // A userSets event (see shared/festivals/lucky-13.js) starts with nothing:
+  // its guests add the sets at runtime, merged in by withUserSets below.
+  if (!schedule.length && !def.userSets) throw new Error(`${def.slug}: festival has no sets`);
 
   // Stages that actually have sets on a given day, in canonical order, each
   // carrying the grid column it occupies (column 1 is the time axis, or an
@@ -312,7 +314,7 @@ function build(def) {
   // stagesByDay above) renders as one flowing alphabetical list instead of
   // columns; see ScheduleGrid.jsx.
   const modeByDay = Object.fromEntries(
-    def.days.map((day) => [day.id, dayModeOf(def.sets[day.id] ?? [])]),
+    def.days.map((day) => [day.id, def.userSets ? 'untimed' : dayModeOf(def.sets[day.id] ?? [])]),
   );
 
   // Grid bounds come from the timed sets only — an untimed day contributes no
@@ -336,6 +338,54 @@ function build(def) {
     GRID_START_MIN: gridStartMin,
     GRID_END_MIN: gridEndMin,
     TOTAL_SLOTS: (gridEndMin - gridStartMin) / SLOT_MINS,
+  });
+}
+
+/*
+ * Guest-entered sets for a userSets event. Each row is one stored set
+ * (server/db.js user_sets): { id, artist, submittedBy }.
+ *
+ * The id comes from the database row, not the set's position like a
+ * hardcoded untimed set's does — those are renumbered by an alphabetical
+ * sort, so a new entry landing earlier in the alphabet would shift every
+ * later id and move votes onto the wrong set.
+ */
+export const userSetId = (slug, dayId, rowId) => `${slug}:${dayId}-user-${rowId}`;
+
+export function userSetRowId(festival, setId) {
+  const prefix = `${festival.slug}:${festival.days[0].id}-user-`;
+  if (typeof setId !== 'string' || !setId.startsWith(prefix)) return null;
+  const n = Number(setId.slice(prefix.length));
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+/*
+ * The festival with its guest-entered sets merged in, as untimed stageless
+ * sets on the first (only) day — the grid flows those alphabetically. Not
+ * memoised: callers hold the result for as long as the rows are unchanged,
+ * since the rows themselves change at runtime.
+ */
+export function withUserSets(festival, rows = []) {
+  if (!festival.userSets) return festival;
+  const dayId = festival.days[0].id;
+  const added = rows
+    .map((r) => ({
+      id: userSetId(festival.slug, dayId, r.id),
+      festivalSlug: festival.slug,
+      dayId,
+      stageId: null,
+      artists: [r.artist],
+      artist: r.artist,
+      submittedBy: r.submittedBy ?? null,
+      timed: false,
+    }))
+    .sort((a, b) => byName(a.artist, b.artist))
+    .map((s, i) => ({ ...s, order: i }));
+  const schedule = [...festival.SCHEDULE, ...added];
+  return Object.freeze({
+    ...festival,
+    SCHEDULE: schedule,
+    SCHEDULE_BY_ID: Object.fromEntries(schedule.map((s) => [s.id, s])),
   });
 }
 

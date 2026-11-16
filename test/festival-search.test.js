@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { suggestFestivals, normalize } from '../shared/festival-search.js';
-import { listFestivals } from '../shared/festivals/index.js';
+import { listPublicFestivals } from '../shared/festivals/index.js';
 
 const slugs = (q, opts) => suggestFestivals(q, { limit: Infinity, ...opts }).map((f) => f.slug);
 
@@ -11,8 +11,13 @@ test('normalize folds case, accents, punctuation and &', () => {
   assert.equal(normalize('Tiësto'), 'tiesto');
 });
 
-test('empty query returns every festival', () => {
-  assert.equal(slugs('').length, listFestivals().length);
+test('empty query returns every listed festival', () => {
+  assert.equal(slugs('').length, listPublicFestivals().length);
+});
+
+test('an unlisted event never shows up in search', () => {
+  assert.ok(!slugs('').includes('lucky-13'));
+  assert.ok(!slugs('lucky').includes('lucky-13'));
 });
 
 test('prefix of the short name ranks first', () => {

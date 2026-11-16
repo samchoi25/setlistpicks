@@ -1,4 +1,5 @@
 import React from 'react';
+import { stageBlockInk } from '../../../shared/theme.js';
 import { useFestival } from '../festival-context.jsx';
 import { useVoteBlock, WashSvg, GroupVotesEl, ArtistName, scoreClass } from './blockShared.jsx';
 
@@ -33,6 +34,7 @@ const ShowBlock = React.memo(function ShowBlock({
         gridColumn: String(col),
         gridRow: `${startSlot + 2} / ${endSlot + 2}`,
         background: `var(${stage.color})`,
+        '--block-fg': stageBlockInk(stage),
         // Share the column when this set collides with another on the same
         // stage; laneCount is 1 for the overwhelming majority of sets.
         ...(s.laneCount > 1 && {

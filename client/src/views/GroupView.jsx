@@ -15,6 +15,7 @@ import ArtistPopup from '../components/ArtistPopup.jsx';
 import MemberLineupPopup from '../components/MemberLineupPopup.jsx';
 import OfflineBanner from '../components/OfflineBanner.jsx';
 import FestivalEndedBanner from '../components/FestivalEndedBanner.jsx';
+import UserSetSignup from '../components/UserSetSignup.jsx';
 
 export default function GroupView({
   groupId, member, groupMeta, freshJoin, onLeave,
@@ -174,7 +175,12 @@ export default function GroupView({
 
   // ── Name prompt dismiss ──────────────────────────────────────────────────────
   function handleNameDismiss(newName) {
-    if (newName) setMemberDisplayName(newName);
+    if (newName) {
+      setMemberDisplayName(newName);
+      // Without live sync the member list would keep the placeholder name
+      // until a reload.
+      setMutedMembers((prev) => prev.map((m) => (m.key === member.key ? { ...m, displayName: newName } : m)));
+    }
     setShowNamePrompt(false);
   }
 
@@ -238,6 +244,11 @@ export default function GroupView({
           />
         )}
       </div>
+
+      {/* Guests enter what's being voted on (a userSets event) */}
+      {!headerEditing && festival.userSets && (
+        <UserSetSignup groupId={groupId} memberKey={member.key} memberDisplayName={memberDisplayName} />
+      )}
 
       {/* Legend + grid hidden while editing */}
       {!headerEditing && <Legend />}

@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { api } from '../api.js';
 import { toast } from '../toast.js';
 import { groupPath } from '../../../shared/routes.js';
+import Modal from './Modal.jsx';
+import Button from './Button.jsx';
 
 // No React router and no navigate() reachable from here — App.jsx owns
 // `path` as local state and only updates it via a real popstate event or
@@ -38,32 +40,26 @@ export default function CreateGroupModal({ festivalSlug, onClose }) {
   }
 
   return (
-    <div className="name-prompt-backdrop"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="name-prompt-card">
-        <div style={{ fontWeight: 800, fontSize: '1.1rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Start a new crew
-        </div>
-        <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--ink-soft)' }}>
-          Set up a second group for this festival, separate from your other crews.
-        </p>
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder="Crew name"
-          maxLength={100}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && submit()}
-          style={{ fontSize: '16px' }}
-        />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn" disabled={!name.trim() || submitting} onClick={submit}>
-            {submitting ? 'Creating…' : 'Create group'}
-          </button>
-          <button className="btn ghost" onClick={onClose} disabled={submitting}>Cancel</button>
-        </div>
+    <Modal onClose={onClose} label="Start a new crew" className="modal-card" backdropClassName="is-frosted">
+      <div className="modal-title">Start a new crew</div>
+      <p className="modal-lede">
+        Set up a second group for this festival, separate from your other crews.
+      </p>
+      <input
+        ref={inputRef}
+        type="text"
+        placeholder="Crew name"
+        maxLength={100}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && submit()}
+      />
+      <div className="modal-actions">
+        <Button disabled={!name.trim() || submitting} onClick={submit}>
+          {submitting ? 'Creating…' : 'Create group'}
+        </Button>
+        <Button variant="ghost" onClick={onClose} disabled={submitting}>Cancel</Button>
       </div>
-    </div>
+    </Modal>
   );
 }

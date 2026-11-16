@@ -75,6 +75,26 @@ const SCHEMA = `
   );
 
   CREATE INDEX IF NOT EXISTS idx_visits_ts ON visits(ts);
+
+  /*
+   * Sets entered by guests, for a festival whose definition says userSets
+   * (a party voting on cocktails — see shared/festivals/lucky-13.js). They are
+   * ordinary sets once merged in: votes on them live in \`votes\` under the id
+   * userSetId() derives from this row's id. group_id/member_key record who
+   * entered it, so they can take it back; the set itself belongs to the
+   * festival, not the group, and survives that group being pruned.
+   */
+  CREATE TABLE IF NOT EXISTS user_sets (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    festival_slug TEXT    NOT NULL,
+    artist        TEXT    NOT NULL,
+    submitted_by  TEXT    NOT NULL,
+    group_id      TEXT,
+    member_key    TEXT,
+    created_at    INTEGER NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_user_sets_festival ON user_sets(festival_slug);
 `;
 
 // Indexes over columns the MIGRATIONS below add — they cannot live in SCHEMA,

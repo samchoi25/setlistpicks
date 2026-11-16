@@ -1,5 +1,7 @@
 import express from 'express';
 import { db, deleteGroupCascade } from './db.js';
+import { festivalTally, listUserSets, removeUserSet } from './groups.js';
+import { withUserSets } from '../shared/festival.js';
 import { listFestivals, getFestival } from '../shared/festivals/index.js';
 import { VISIT_SOURCES } from '../shared/traffic.js';
 
@@ -242,7 +244,7 @@ const CSS = `
   .empty { padding: 20px 12px; color: #475569; font-style: italic; }
 `;
 
-function page(secret, title, breadcrumb, body) {
+function page(secret, title, breadcrumb, body, extraHead = '') {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -251,6 +253,7 @@ function page(secret, title, breadcrumb, body) {
   <meta name="robots" content="noindex, nofollow" />
   <title>${esc(title)} — Admin</title>
   <style>${CSS}</style>
+  ${extraHead}
 </head>
 <body>
   <nav>
@@ -401,7 +404,7 @@ router.get('/:secret', requireSecret, (req, res) => {
           <tbody>
             ${festivalRows.map(r => `
               <tr>
-                <td>${festivalLink(r.slug)}${r.unknown ? '<span class="badge badge-red">not in registry</span>' : ''}</td>
+                <td>${festivalLink(r.slug)}${r.unknown ? '<span class="badge badge-red">not in registry</span>' : ''}${getFestival(r.slug)?.secretVotes ? ` <a href="/admin/${esc(secret)}/tally/${encodeURIComponent(r.slug)}" style="font-size:12px;margin-left:8px">vote tally →</a>` : ''}</td>
                 <td class="mono muted">${esc(r.slug)}</td>
                 <td>${r.groups}</td>
                 <td>${r.members}</td>
@@ -763,6 +766,80 @@ router.get('/:secret/group/:groupId', requireSecret, (req, res) => {
     </section>`;
 
   res.send(page(secret, `Group ${groupId}`, breadcrumb, body));
+});
+
+/*
+ * Running vote tally for a secretVotes event (a party vote — see
+ * shared/festivals/lucky-13.js). Guests never see counts; this is the one
+ * place that shows them, summed over every group on the event. Refreshes
+ * itself so it can sit open on a phone through the party.
+ */
+router.get('/:secret/tally/:slug', requireSecret, (req, res) => {
+  const { secret, slug } = req.params;
+  const base = getFestival(slug);
+  if (!base?.secretVotes) return res.status(404).send('Not a secret-vote event');
+  const festival = withUserSets(base, listUserSets(base.slug));
+  const { counts, voters } = festivalTally(base.slug);
+  const noun = base.entryNoun ?? 'set';
+
+  const rows = festival.SCHEDULE.map((s) => {
+    const c = counts[s.id] ?? { must: 0, want: 0 };
+    return { set: s, ...c, score: c.must * 3 + c.want };
+  }).sort((a, b) => b.score - a.score || b.must - a.must || a.set.artist.localeCompare(b.set.artist));
+
+  // Shared rank for ties, so a dead heat reads as one.
+  let rank = 0;
+  rows.forEach((r, i) => {
+    if (i === 0 || r.score !== rows[i - 1].score || r.must !== rows[i - 1].must) rank = i + 1;
+    r.rank = rank;
+  });
+  const top = rows[0]?.score || 1;
+  const here = `/admin/${secret}/tally/${slug}`;
+  const rowIdOf = (s) => Number(s.id.split('-user-')[1]);
+
+  const breadcrumb = `<span class="sep">/</span> <a href="/admin/${esc(secret)}">Dashboard</a>
+    <span class="sep">/</span> ${esc(base.name)} tally`;
+  const body = `
+    <div class="page-title">${esc(base.name)} — running tally</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-value">${rows.length}</div><div class="stat-label">${esc(noun)}s</div></div>
+      <div class="stat"><div class="stat-value">${voters}</div><div class="stat-label">Guests voting</div></div>
+    </div>
+    <section>
+      <h2>Standings <span class="muted" style="font-size:12px;font-weight:400">· 🔥 = 3 pts, 👍 = 1 pt · refreshes every 10 s · ${esc(fmt(Date.now()))}</span></h2>
+      ${rows.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>#</th><th>${esc(noun[0].toUpperCase() + noun.slice(1))}</th><th>By</th><th>🔥</th><th>👍</th><th>Score</th><th></th><th></th></tr></thead>
+        <tbody>
+          ${rows.map((r) => `
+            <tr>
+              <td>${r.rank}</td>
+              <td><strong>${esc(r.set.artist)}</strong></td>
+              <td class="muted">${esc(r.set.submittedBy ?? '')}</td>
+              <td>${r.must}</td>
+              <td>${r.want}</td>
+              <td><strong>${r.score}</strong></td>
+              <td style="width:30%"><div style="height:8px;border-radius:4px;background:#60a5fa;width:${Math.round((r.score / top) * 100)}%"></div></td>
+              <td>${r.set.submittedBy !== undefined ? `<form class="inline" method="POST" action="/admin/${esc(secret)}/delete-user-set"
+                  onsubmit="return confirm('Remove ${esc(r.set.artist).replace(/'/g, '&#39;')} and its votes?')">
+                <input type="hidden" name="slug" value="${esc(slug)}" />
+                <input type="hidden" name="setId" value="${rowIdOf(r.set)}" />
+                <input type="hidden" name="redirect" value="${esc(here)}" />
+                <button class="del" type="submit">Remove</button>
+              </form>` : ''}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table></div>` : `<div class="empty">No ${esc(noun)}s entered yet.</div>`}
+    </section>`;
+  res.send(page(secret, `${base.name} tally`, breadcrumb, body, '<meta http-equiv="refresh" content="10" />'));
+});
+
+router.post('/:secret/delete-user-set', requireSecret, parseForm, (req, res) => {
+  const { secret } = req.params;
+  const { slug, setId, redirect } = req.body ?? {};
+  if (slug && setId) {
+    try { removeUserSet(slug, setId, { asAdmin: true }); } catch (e) { console.error('[admin] delete-user-set error', e); }
+  }
+  res.redirect(redirect || `/admin/${secret}`);
 });
 
 // Delete group

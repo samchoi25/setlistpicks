@@ -20,6 +20,7 @@ import bourbonAndBeyond2026 from './bourbon-and-beyond-2026.js';
 import aftershock2026 from './aftershock-2026.js';
 import suwanneeHulaween2026 from './suwannee-hulaween-2026.js';
 import escapeHalloween2026 from './escape-halloween-2026.js';
+import lucky13 from './lucky-13.js';
 import sharedArtistLinks from './artist-links.js';
 
 const DEFINITIONS = [
@@ -28,6 +29,7 @@ const DEFINITIONS = [
   hardlyStrictlyBluegrass2026,
   seaHearNow2026, louderThanLife2026, bourbonAndBeyond2026, aftershock2026,
   suwanneeHulaween2026, escapeHalloween2026,
+  lucky13,
 ];
 
 // A slug must never be mistakable for a group code, which is exactly 10
@@ -74,6 +76,11 @@ function validate(def) {
   }
   if (def.websocketsEnabled !== undefined && typeof def.websocketsEnabled !== 'boolean') {
     throw new Error(`${slug}: websocketsEnabled must be a boolean`);
+  }
+  for (const flag of ['userSets', 'secretVotes', 'unlisted']) {
+    if (def[flag] !== undefined && typeof def[flag] !== 'boolean') {
+      throw new Error(`${slug}: ${flag} must be a boolean`);
+    }
   }
   if (!Array.isArray(def.groupNames) || def.groupNames.length === 0) {
     throw new Error(`${slug}: groupNames must be a non-empty array`);
@@ -209,7 +216,7 @@ export const LEGACY_FESTIVAL_SLUG = 'outside-lands-2026';
  * fall back to the one that ended most recently rather than nothing.
  */
 function pickDefaultFestival(now = Date.now()) {
-  const ranked = [...bySlug.values()]
+  const ranked = listPublicFestivals()
     .map((f) => ({ slug: f.slug, startsAt: +festivalStartsAt(f), endsAt: +festivalEndsAt(f) }))
     // By when gates open, not when the festival finishes: two festivals can
     // share an end date while one opened days earlier, and that earlier one is
@@ -223,6 +230,13 @@ export const DEFAULT_FESTIVAL_SLUG = pickDefaultFestival();
 
 export function listFestivals() {
   return [...bySlug.values()];
+}
+
+// Everything except `unlisted` events (private parties — see lucky-13.js).
+// What any public listing should use: search, the switcher, the sitemap and
+// the default page. listFestivals() stays complete for routing and admin.
+export function listPublicFestivals() {
+  return listFestivals().filter((f) => !f.unlisted);
 }
 
 // Resolves a canonical slug or an alias. Returns undefined for anything else,

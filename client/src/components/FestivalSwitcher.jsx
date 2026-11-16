@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useFestival } from '../festival-context.jsx';
 import { getActiveGroup } from '../storage.js';
-import { listFestivals } from '../../../shared/festivals/index.js';
+import { listPublicFestivals } from '../../../shared/festivals/index.js';
 import { hasFestivalEnded } from '../../../shared/festival.js';
 import { groupPath, festivalPath } from '../../../shared/routes.js';
 
@@ -37,7 +37,7 @@ export default function FestivalSwitcher() {
 
   // Live festivals, plus the one being viewed even if it's over — an ended
   // festival still needs the menu as the way out to whatever's next.
-  const options = listFestivals().filter((f) => f.slug === festival.slug || !hasFestivalEnded(f));
+  const options = listPublicFestivals().filter((f) => f.slug === festival.slug || !hasFestivalEnded(f));
 
   useEffect(() => {
     if (!open) return;

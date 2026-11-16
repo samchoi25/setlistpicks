@@ -17,10 +17,15 @@
  * shared/theme.js holds only names, and a test parses the :root block below so
  * the two cannot drift.
  *
- * Deliberately NOT themeable, and so still written as literals further down:
- * the danger red (#b42828), the warn chip's amber, and the two highlighter
- * wash colours. Those are semantic — they mean "destructive", "careful" and
- * "you voted for this" — and must not shift meaning per festival.
+ * Deliberately NOT themeable: the semantic colours (--danger, --warn, the
+ * --want/--must highlighter washes and their ink) and the streaming-service
+ * brand colours. Those mean "destructive", "careful", "you voted for this" and
+ * "this is Spotify" — they must not shift meaning per festival. They are still
+ * tokens, so nothing below this block writes a colour literal; a test enforces
+ * that (test/styles.test.js).
+ *
+ * Nor are the scales (type, space, radius, shadow, layer): festivals change
+ * colour and typeface, not rhythm.
  *
  * The ink layer derives from --ink rather than repeating it: color-mix with
  * transparent in srgb is premultiplied, so `var(--ink) 18%` is exactly --ink at
@@ -30,12 +35,19 @@
 :root {
   --bg: rgb(241, 233, 215);
   --paper: #fbf6e9;
-  --ink: rgb(36, 103, 177);
-  --ink-soft: color-mix(in srgb, var(--ink) 75%, transparent);
+  /* Every text pair clears WCAG AA (4.5:1) for small text, which is what most
+     of this UI is; test/schedule.test.js checks each festival's palette. --ink
+     is 6.26:1 on --bg, which leaves room for --ink-soft at 85% to clear 4.5. */
+  --ink: rgb(30, 85, 147);
+  --ink-soft: color-mix(in srgb, var(--ink) 85%, transparent);
+  /* Decorative only: the dots and commas between names. It is below 4.5:1,
+     so never set readable text in it. */
   --ink-dim: color-mix(in srgb, var(--ink) 40%, transparent);
   --rule: color-mix(in srgb, var(--ink) 12%, transparent);
   --btn-primary: var(--ink);
   --btn-secondary: rgb(149, 178, 86);
+  /* Label on --btn-secondary: white is 2.39:1 on the olive, so it's dark. */
+  --on-btn-secondary: #2b3418;
   /* Text on a stage-coloured show block. White suits the current palette; a
      festival with pale poster colours themes this dark instead. */
   --block-ink: #fff;
@@ -48,8 +60,99 @@
   --brick-clay: #B0453E;
   --deep-teal: #14788C;
   --marigold-gold: #BF8F0F;
+  /* Per-stage text: -header is the stage name on --bg, -ink the text on the
+     block. Where the stage colour itself (or white) reads at 4.5:1 these just
+     point back at it; where it doesn't, they're a darker shade of the same hue.
+     A festival that themes a stage colour gets these reset to the colour and
+     --block-ink (see resolveTheme in shared/theme.js) unless it sets them. */
+  --ocean-deep-header: var(--ocean-deep);
+  --ocean-deep-ink: var(--block-ink);
+  --pink-carnation-header: #925570;
+  --pink-carnation-ink: #5a3445;
+  --muted-olive-header: #5c6e37;
+  --muted-olive-ink: #343e1f;
+  --jungle-green-header: #157553;
+  --jungle-green-ink: #04150f;
+  --dusk-purple-header: var(--dusk-purple);
+  --dusk-purple-ink: var(--block-ink);
+  --sunset-coral-header: #a44f25;
+  --sunset-coral-ink: #2c150a;
+  --brick-clay-header: var(--brick-clay);
+  --brick-clay-ink: var(--block-ink);
+  --deep-teal-header: #137285;
+  --deep-teal-ink: var(--block-ink);
+  --marigold-gold-header: #84630a;
+  --marigold-gold-ink: #3b2c05;
   --font-display: Georgia, 'Times New Roman', serif;
   --font-body: 'Montserrat', system-ui, sans-serif;
+
+  /* ── Semantic colour (not themeable — see above) ── */
+  /* Text and icons on a filled --ink / --btn-* / brand surface. */
+  --on-color: #fff;
+  --danger: #b42828;
+  --danger-edge: color-mix(in srgb, var(--danger) 40%, transparent);
+  --danger-wash: color-mix(in srgb, var(--danger) 5%, transparent);
+  --warn: rgb(180, 130, 40);
+  /* Highlighter inks. Applied with mix-blend-mode: multiply, at an alpha the
+     caller picks via color-mix — see .show-block.vote-* and .legend .pill. */
+  --want-wash: rgb(255, 200, 40);
+  --must-wash: rgb(255, 59, 48);
+  /* Text set directly on those washes. */
+  --want-ink: #5c4000;
+  --must-ink: #5c0000;
+  --brand-spotify: #1DB954;
+  --brand-apple: #FA243C;
+  --brand-soundcloud: #FF5500;
+  /* Label on the brand fills: white misses 4.5:1 on all three. */
+  --on-brand: #000;
+  /* Scrim behind modals. */
+  --scrim: color-mix(in srgb, var(--ink) 12%, transparent);
+
+  /* ── Type scale ──
+     Dense by design: the schedule grid sets artist names at --text-xs so a
+     20-minute set still fits three lines. Chrome around the grid starts at
+     --text-sm. */
+  --text-3xs: 0.52rem;  /* grid labels on phones */
+  --text-2xs: 0.6rem;   /* set times, avatars, counts */
+  --text-xs: 0.65rem;   /* artist names, stage headers, time axis */
+  --text-sm: 0.7rem;    /* uppercase labels, section heads, links */
+  --text-md: 0.8rem;    /* secondary UI text, hints, chips */
+  --text-base: 0.88rem; /* body UI text, buttons */
+  --text-lg: 1rem;
+  --text-xl: 1.15rem;   /* modal titles */
+  --text-2xl: 1.5rem;   /* day heading */
+  --text-3xl: 1.75rem;  /* logo */
+
+  /* ── Space — a 4px grid, with half steps for dense UI ── */
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* ── Radius — the look is square-cornered; these are the exceptions ── */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-pill: 999px;
+  --radius-round: 50%;
+
+  /* ── Elevation — tinted with --ink, so it themes with the palette ── */
+  --shadow-sm: 0 1px 4px color-mix(in srgb, var(--ink) 15%, transparent);
+  --shadow-md: 0 8px 24px color-mix(in srgb, var(--ink) 15%, transparent);
+  --shadow-lg: 0 12px 40px color-mix(in srgb, var(--ink) 14%, transparent);
+
+  /* ── Layers, page-level. Inside the schedule grid, 0–3 order the rules,
+     blocks, time axis and its backdrop locally. ── */
+  --z-sticky: 4;       /* stage-header bar; the day heading sits one above */
+  --z-dropdown: 10;
+  --z-modal: 150;
+  --z-toast: 200;      /* above modals, so a modal's own errors are visible */
+
   /* Height of one 5-minute slot. Sized so the shortest set in the lineup
      (20 min) still has room for a three-line artist name. */
   --slot-h: 15px;
@@ -120,7 +223,7 @@ input[type="text"]:focus {
   border-color: var(--ink);
 }
 input[type="text"]::placeholder {
-  color: var(--ink-dim);
+  color: var(--ink-soft);
 }
 
 .app {
@@ -133,13 +236,13 @@ input[type="text"]::placeholder {
 .brand {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 12px 4px 20px;
+  gap: var(--space-5);
+  padding: var(--space-3) var(--space-1) var(--space-5);
 }
 .brand-logo {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 1.75rem;
+  font-size: var(--text-3xl);
   color: var(--ink);
   line-height: 1;
   letter-spacing: 0.01em;
@@ -165,21 +268,21 @@ input[type="text"]::placeholder {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
-  z-index: 10;
+  z-index: var(--z-dropdown);
   min-width: 160px;
   background: var(--paper);
   border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 15%, transparent);
-  padding: 6px;
+  box-shadow: var(--shadow-md);
+  padding: var(--space-1-5);
   display: grid;
-  gap: 2px;
+  gap: var(--space-0-5);
 }
 .brand-logo-option {
   display: block;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2-5);
   font-family: var(--font-body);
   font-style: normal;
-  font-size: 0.88rem;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--ink);
   text-decoration: none;
@@ -194,7 +297,7 @@ a.brand-logo-option:hover {
 }
 .brand-title {
   font-weight: 800;
-  font-size: 1.05rem;
+  font-size: var(--text-lg);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--ink);
@@ -208,7 +311,7 @@ a.brand-logo-option:hover {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   font: inherit;
   max-width: 100%;
   min-width: 0;
@@ -221,23 +324,23 @@ a.brand-logo-option:hover {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
-  z-index: 10;
+  z-index: var(--z-dropdown);
   min-width: 200px;
   max-width: min(320px, calc(100vw - 32px));
   background: var(--paper);
   border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 15%, transparent);
-  padding: 6px;
+  box-shadow: var(--shadow-md);
+  padding: var(--space-1-5);
   display: grid;
-  gap: 2px;
+  gap: var(--space-0-5);
 }
 .brand-title-option {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2-5);
   font-family: var(--font-body);
-  font-size: 0.82rem;
+  font-size: var(--text-md);
   font-weight: 600;
   color: var(--ink);
   text-decoration: none;
@@ -259,7 +362,7 @@ button.brand-title-option:hover {
 .brand-title-divider {
   height: 1px;
   background: var(--rule);
-  margin: 4px 2px;
+  margin: var(--space-1) var(--space-0-5);
 }
 .brand-title-option.create {
   color: var(--btn-primary);
@@ -267,7 +370,7 @@ button.brand-title-option:hover {
 }
 .brand-sub {
   color: var(--ink-soft);
-  font-size: 1rem;
+  font-size: var(--text-lg);
   font-family: var(--font-display);
   font-style: italic;
   letter-spacing: 0.01em;
@@ -277,8 +380,8 @@ button.brand-title-option:hover {
 .card {
   background: var(--paper);
   border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
-  padding: 20px;
-  margin: 12px 0;
+  padding: var(--space-5);
+  margin: var(--space-3) 0;
 }
 
 /* ─── Buttons ────────────────────────────────────────────────────────── */
@@ -286,13 +389,13 @@ button.brand-title-option:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 20px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
   background: var(--btn-primary);
-  color: #fff;
+  color: var(--on-color);
   font-weight: 700;
   font-family: var(--font-body);
-  font-size: 0.88rem;
+  font-size: var(--text-base);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
@@ -304,7 +407,7 @@ button.brand-title-option:hover {
 }
 .btn.secondary {
   background: var(--btn-secondary);
-  color: #fff;
+  color: var(--on-btn-secondary);
 }
 .btn.ghost {
   background: transparent;
@@ -312,26 +415,23 @@ button.brand-title-option:hover {
   border: 1.5px solid color-mix(in srgb, var(--ink) 35%, transparent);
 }
 .btn.danger {
-  background: #b42828;
-  color: #fff;
+  background: var(--danger);
+  color: var(--on-color);
 }
 .btn.leave {
   background: transparent;
-  color: #b42828;
-  border: 1.5px solid rgba(180, 40, 40, 0.4);
+  color: var(--danger);
+  border: 1.5px solid var(--danger-edge);
   transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 .btn.leave:hover {
-  background: #b42828;
-  color: #fff;
-  border-color: #b42828;
+  background: var(--danger);
+  color: var(--on-color);
+  border-color: var(--danger);
 }
 .btn.small {
   padding: 8px 14px;
-  font-size: 0.78rem;
-}
-.btn.danger {
-  background: #b42828;
+  font-size: var(--text-md);
 }
 .btn[disabled] {
   opacity: 0.5;
@@ -339,94 +439,49 @@ button.brand-title-option:hover {
 }
 
 /* ─── Utilities ──────────────────────────────────────────────────────── */
-.row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.muted {
-  color: var(--ink-soft);
-}
-.small {
-  font-size: 0.85rem;
-}
 .stack {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .center {
   text-align: center;
-}
-.spacer-1 {
-  height: 8px;
-}
-.hint {
-  font-size: 0.8rem;
-  color: var(--ink-dim);
-}
-
-/* ─── Tabs ───────────────────────────────────────────────────────────── */
-.tabs {
-  display: flex;
-  gap: 4px;
-  background: color-mix(in srgb, var(--ink) 6%, transparent);
-  padding: 4px;
-  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
-}
-.tab {
-  flex: 1;
-  padding: 8px 10px;
-  text-align: center;
-  color: var(--ink-soft);
-  font-weight: 700;
-  font-size: 0.82rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.12s ease, color 0.12s ease;
-}
-.tab.active {
-  background: var(--paper);
-  color: var(--ink);
-  box-shadow: 0 1px 4px color-mix(in srgb, var(--ink) 15%, transparent);
 }
 
 /* ─── Toolbar ────────────────────────────────────────────────────────── */
 .toolbar {
   padding: 8px 0 14px;
   display: grid;
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 
 /* ─── Offline banner ─────────────────────────────────────────────────── */
 .offline-banner {
-  margin-top: 8px;
-  padding: 8px 12px;
-  font-size: 0.8rem;
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-md);
   font-weight: 600;
   color: var(--ink);
-  background: rgba(180, 130, 40, 0.1);
-  border: 1px solid rgba(180, 130, 40, 0.25);
-  border-radius: 4px;
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 25%, transparent);
+  border-radius: var(--radius-sm);
 }
 
 /* ─── Day heading ────────────────────────────────────────────────────── */
 .day-heading {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: var(--space-2-5);
   padding: 6px 2px 14px;
   /* Pinned so you always know which day you're looking at once you've
      scrolled into its grid. Opaque background: blocks scroll up behind it. */
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: calc(var(--z-sticky) + 1);
   background: var(--bg);
 }
 .day-heading .day-festival {
   font-weight: 700;
-  font-size: 0.7rem;
+  font-size: var(--text-sm);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--ink-soft);
@@ -434,7 +489,7 @@ button.brand-title-option:hover {
 }
 .day-heading .day-name {
   font-weight: 800;
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--ink);
@@ -442,7 +497,7 @@ button.brand-title-option:hover {
 .day-heading .day-date {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 1.4rem;
+  font-size: var(--text-2xl);
   color: var(--ink-soft);
   line-height: 1;
 }
@@ -458,13 +513,13 @@ button.brand-title-option:hover {
 .day-header-bar {
   position: sticky;
   top: var(--day-heading-h);
-  z-index: 4;
+  z-index: var(--z-sticky);
   overflow: hidden;
   background: var(--bg);
   /* Matches .schedule-wrap's horizontal padding exactly, so column 1 starts
      at the same x position in both — anything else and the mirrored
      transform below would be offset from the columns it's meant to label. */
-  padding: 4px 10px 4px 0;
+  padding: var(--space-1) var(--space-2-5) var(--space-1) 0;
 }
 .day-header-bar-row {
   display: grid;
@@ -494,7 +549,7 @@ button.brand-title-option:hover {
      The vertical padding is headroom for the marker wash, which bleeds 5px
      above and below each block and would otherwise clip against this box. */
   overflow-x: auto;
-  padding: 6px 10px 6px 0;
+  padding: var(--space-1-5) var(--space-2-5) var(--space-1-5) 0;
   overscroll-behavior-x: contain;
 }
 
@@ -552,7 +607,7 @@ button.brand-title-option:hover {
   min-width: calc(12px + (var(--stage-count, 5) + var(--flow-count, 0)) * (var(--stage-col-min, 76px) + var(--col-gap, 20px)));
   grid-auto-rows: minmax(36px, auto);
   column-gap: var(--col-gap, 20px);
-  row-gap: 8px;
+  row-gap: var(--space-2);
 }
 .lineup-grid .show-block {
   height: auto;
@@ -570,7 +625,7 @@ button.brand-title-option:hover {
    two colliding once more than a couple of people have voted. */
 .lineup-block .group-votes {
   position: static;
-  margin-top: 16px;
+  margin-top: var(--space-4);
   max-width: 100%;
 }
 
@@ -581,7 +636,7 @@ button.brand-title-option:hover {
 .lineup-flow {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 10px;
+  gap: var(--space-2-5);
   max-width: calc(130px * 7 + 10px * 6);
   margin: 0 auto;
 }
@@ -599,16 +654,16 @@ button.brand-title-option:hover {
   justify-content: center;
   text-align: center;
   font-weight: 800;
-  font-size: 0.65rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  padding: 4px 4px;
+  padding: var(--space-1) var(--space-1);
   line-height: 1.15;
   /* Stickiness comes from the .day-header-bar wrapper around this row, not
      this element — see the comment there. */
 }
 .stage-header--tba {
-  color: var(--ink-dim);
+  color: var(--ink-soft);
 }
 /* Header and block colours come from each stage's `color` custom property,
    applied inline — see `stages` in shared/festivals/*.js. Adding a stage needs a new
@@ -628,11 +683,11 @@ button.brand-title-option:hover {
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
-  padding-right: 8px;
-  font-size: 0.65rem;
+  padding-right: var(--space-2);
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.03em;
-  color: var(--ink-dim);
+  color: var(--ink-soft);
   text-transform: uppercase;
   /* Pinned to the left edge so the hours stay readable while the stage columns
      scroll sideways underneath. */
@@ -660,7 +715,9 @@ button.brand-title-option:hover {
   text-align: left;
   border: none;
   outline: none;
-  color: var(--block-ink);
+  /* --block-fg is set inline per stage (ShowBlock / LineupBlock) to that
+     stage's -ink token; blocks with no stage fall back to --block-ink. */
+  color: var(--block-fg, var(--block-ink));
   line-height: 1.15;
   transition: filter 0.1s ease;
   /* show block fills its grid cell */
@@ -671,7 +728,7 @@ button.brand-title-option:hover {
   height: 100%;
 }
 .show-block:focus-visible {
-  outline: 2px solid rgba(255,255,255,0.7);
+  outline: 2px solid color-mix(in srgb, var(--block-fg, var(--block-ink)) 70%, transparent);
   outline-offset: -2px;
 }
 /* Offline: read-only, no vote can be saved — dimmed and non-interactive
@@ -694,7 +751,7 @@ button.brand-title-option:hover {
 
 .show-block .artist-name {
   font-weight: 700;
-  font-size: 0.65rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.03em;
   text-transform: uppercase;
   /* Wrap rather than truncate, up to five lines. --slot-h is sized so every
@@ -730,13 +787,13 @@ button.brand-title-option:hover {
    one continuous column of colour. box-sizing is border-box, so this costs no
    height and keeps blocks aligned to their time slots. */
 .show-block.follows-prev {
-  border-top: 1px solid rgba(255, 255, 255, 0.6);
+  border-top: 1px solid color-mix(in srgb, var(--block-fg, var(--block-ink)) 60%, transparent);
 }
 
 /* Co-billed acts share a block; separate the names so two wrapped titles
    don't read as one run-on. */
 .show-block .artist-name + .artist-name {
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 /* B2B separator between stacked names — see ArtistNames in blockShared.jsx
@@ -747,8 +804,7 @@ button.brand-title-option:hover {
   display: block;
   text-transform: none;
   font-weight: 600;
-  font-size: 0.6rem;
-  opacity: 0.75;
+  font-size: var(--text-2xs);
   margin: 3px 0;
 }
 .show-block .artist-b2b + .artist-name {
@@ -756,9 +812,8 @@ button.brand-title-option:hover {
 }
 
 .show-block .show-time {
-  font-size: 0.6rem;
+  font-size: var(--text-2xs);
   font-weight: 400;
-  opacity: 0.8;
   white-space: nowrap;
   margin-top: 1px;
 }
@@ -800,7 +855,7 @@ button.brand-title-option:hover {
 /* WANT — yellow highlighter */
 .show-block.vote-1 .wash {
   opacity: 1;
-  color: rgba(255, 200, 40, 0.97);
+  color: color-mix(in srgb, var(--want-wash) 97%, transparent);
   mix-blend-mode: multiply;
 }
 .show-block.vote-1 .mark.mark-check {
@@ -810,7 +865,7 @@ button.brand-title-option:hover {
 /* MUST SEE — red highlighter (iOS markup red) */
 .show-block.vote-3 .wash {
   opacity: 1;
-  color: rgba(255, 59, 48, 0.90);
+  color: color-mix(in srgb, var(--must-wash) 90%, transparent);
   mix-blend-mode: multiply;
 }
 .show-block.vote-3 .mark.mark-star {
@@ -849,13 +904,13 @@ button.brand-title-option:hover {
 .gv-row {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-0-5);
   max-width: 100%;
 }
 .gv-check {
   font-size: 11px;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--block-fg, var(--block-ink));
 }
 .gv-fire {
   font-size: 10px;
@@ -863,69 +918,42 @@ button.brand-title-option:hover {
 .gv-name {
   font-size: 8px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--block-fg, var(--block-ink));
   letter-spacing: 0.02em;
   max-width: 36px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.gv-gap {
-  width: 3px;
-}
 
 /* ─── Share row ──────────────────────────────────────────────────── */
 .share-row {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
-}
-.share-row input {
-  font-size: 0.82rem;
 }
 
-/* ─── Member chips ───────────────────────────────────────────────── */
-.members {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.member-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px 3px 4px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--ink) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
-  color: var(--ink);
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-.member-chip.you {
-  border-color: var(--ink);
-  background: color-mix(in srgb, var(--ink) 14%, transparent);
-}
+/* ─── Member avatars ───────────────────────────────────────────────── */
 .chip-avatar {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: color-mix(in srgb, var(--ink) 18%, transparent);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.58rem;
+  font-size: var(--text-2xs);
   font-weight: 800;
   letter-spacing: 0.03em;
   flex-shrink: 0;
 }
-.member-chip.you .chip-avatar {
+.chip-avatar.is-you {
   background: var(--btn-primary);
-  color: #fff;
+  color: var(--on-color);
 }
 .chip-you {
-  font-size: 0.68rem;
+  font-size: var(--text-sm);
   font-weight: 400;
   font-family: var(--font-display);
   font-style: italic;
@@ -933,47 +961,205 @@ button.brand-title-option:hover {
   letter-spacing: 0.01em;
 }
 
-/* ─── Name prompt modal ──────────────────────────────────────────── */
-.name-prompt-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(241, 233, 215, 0.82);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-  z-index: 60;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 15vh;
-}
-.name-prompt-card {
-  background: var(--paper);
-  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
-  border-radius: 4px;
-  padding: 28px 24px;
-  width: min(380px, calc(100vw - 32px));
-  display: grid;
-  gap: 14px;
-  box-shadow: 0 12px 40px color-mix(in srgb, var(--ink) 12%, transparent);
-}
-
-/* ─── Generic modal shell (Modal.jsx) ─────────────────────────────
-   Positioning only — the panel's look belongs to whatever uses it. */
+/* ─── Modal (Modal.jsx) ──────────────────────────────────────────────
+   .modal-backdrop / .modal-panel are the shell — positioning only. The look
+   comes from a variant class passed as className / backdropClassName:
+     .modal-card      a dialog: name prompt, new crew
+     .modal-popover   a compact centred popup: artist picks, member picks */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 150;
+  z-index: var(--z-modal);
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 15vh 16px 16px;
-  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  padding: 15vh var(--space-4) var(--space-4);
+  background: var(--scrim);
 }
 .modal-panel {
   width: min(480px, 100%);
   max-height: 70vh;
   overflow: auto;
   outline: none;
+}
+
+/* Frosted page behind a dialog that opens over the app on arrival. */
+.modal-backdrop.is-frosted {
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+.modal-backdrop.is-centered {
+  align-items: center;
+  padding: var(--space-6);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.modal-card {
+  width: min(380px, 100%);
+  max-height: none;
+  overflow: visible;
+  background: var(--paper);
+  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 28px var(--space-6);
+  display: grid;
+  gap: 14px;
+  box-shadow: var(--shadow-lg);
+}
+.modal-title {
+  font-weight: 800;
+  font-size: var(--text-xl);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.modal-subtitle {
+  font-weight: 800;
+  font-size: var(--text-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.modal-subtitle.is-spaced {
+  margin-top: var(--space-3);
+}
+.modal-lede {
+  margin: 0;
+  font-size: var(--text-base);
+  color: var(--ink-soft);
+}
+.modal-list {
+  margin: var(--space-1) 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--text-base);
+  color: var(--ink-soft);
+}
+.modal-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.modal-popover {
+  width: 100%;
+  max-width: 280px;
+  max-height: 75vh;
+  overflow-y: auto;
+  background: var(--paper);
+  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+  padding: var(--space-4) 18px;
+  box-shadow: var(--shadow-lg);
+}
+
+/* ─── Name prompt ────────────────────────────────────────────────── */
+.name-prompt-members {
+  font-size: var(--text-md);
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+.name-prompt-members-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: var(--text-sm);
+}
+.name-prompt-members .sep {
+  color: var(--ink-dim);
+}
+.name-prompt-members .link-button {
+  font-weight: 700;
+  color: var(--ink);
+}
+.name-prompt-members-hint {
+  margin-top: 3px;
+  font-size: var(--text-md);
+  font-style: italic;
+}
+.name-prompt-note {
+  font-size: var(--text-md);
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.name-prompt-skip {
+  text-align: center;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+/* ─── Shared bits ────────────────────────────────────────────────── */
+/* A button that reads as an inline text link. */
+.link-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.link-button.dotted {
+  text-decoration-style: dotted;
+}
+.link-button.soft {
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+.link-button.dim {
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+
+/* A boxed note under a field, e.g. "that name is already in this group". */
+.callout {
+  font-size: var(--text-md);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+.callout.danger {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2-5);
+  padding: var(--space-3);
+  border-radius: 0;
+  font-weight: inherit;
+  background: var(--danger-wash);
+  border-color: color-mix(in srgb, var(--danger) 20%, transparent);
+}
+.callout-title {
+  font-weight: 700;
+  font-size: var(--text-base);
+}
+.callout.danger .callout-title {
+  color: var(--danger);
+}
+.callout-body {
+  margin: 0;
+  font-size: var(--text-md);
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+/* Uppercase label above a form field. */
+.field-label {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+input[type="text"].is-compact {
+  padding: var(--space-1-5) var(--space-2-5);
+}
+input[type="text"].is-tight {
+  padding: var(--space-1) var(--space-2);
 }
 
 /* ─── Toast ──────────────────────────────────────────────────────── */
@@ -983,13 +1169,13 @@ button.brand-title-option:hover {
   bottom: 24px;
   transform: translateX(-50%);
   background: var(--ink);
-  color: #fff;
-  padding: 10px 20px;
-  font-size: 0.85rem;
+  color: var(--on-color);
+  padding: var(--space-2-5) var(--space-5);
+  font-size: var(--text-base);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  z-index: 100;
+  z-index: var(--z-toast);
   opacity: 0;
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
@@ -998,37 +1184,15 @@ button.brand-title-option:hover {
   transform: translateX(-50%) translateY(-4px);
 }
 
-/* ─── Crew picks popup ───────────────────────────────────────────── */
-.picks-backdrop {
-  position: fixed;
-  inset: 0;
-  background: color-mix(in srgb, var(--ink) 12%, transparent);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-.picks-popup {
-  background: var(--paper);
-  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
-  padding: 16px 18px;
-  width: 100%;
-  max-width: 280px;
-  max-height: 70vh;
-  overflow-y: auto;
-  box-shadow: 0 8px 32px color-mix(in srgb, var(--ink) 15%, transparent);
-}
+/* ─── Crew picks popup (inside .modal-popover) ───────────────────── */
 .picks-artist {
   font-weight: 800;
-  font-size: 0.95rem;
+  font-size: var(--text-lg);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--ink);
-  padding-bottom: 10px;
-  margin-bottom: 12px;
+  padding-bottom: var(--space-2-5);
+  margin-bottom: var(--space-3);
   border-bottom: 1px solid var(--rule);
 }
 /* One group per artist with a link on file (see artistLinks in
@@ -1037,7 +1201,7 @@ button.brand-title-option:hover {
    first group's top pulls it up against .picks-artist's own bottom margin,
    same as the single-group case did before this was split in two. */
 .listen-links-group {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 .listen-links-group:first-child {
   margin-top: -4px;
@@ -1045,50 +1209,50 @@ button.brand-title-option:hover {
 /* Only rendered when the popup covers more than one artist (a B2B pair) —
    labels whose links are whose. */
 .listen-links-name {
-  font-size: 0.7rem;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--ink-soft);
-  margin: 0 0 4px;
+  margin: 0 0 var(--space-1);
 }
 .listen-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 .listen-link {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.7rem;
+  padding: var(--space-1) var(--space-2-5);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: #fff;
+  color: var(--on-brand);
   text-decoration: none;
   white-space: nowrap;
 }
-.listen-link-spotify     { background: #1DB954; }
-.listen-link-apple       { background: #FA243C; }
-.listen-link-soundcloud  { background: #FF5500; }
+.listen-link-spotify     { background: var(--brand-spotify); }
+.listen-link-apple       { background: var(--brand-apple); }
+.listen-link-soundcloud  { background: var(--brand-soundcloud); }
 .picks-section {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 .picks-section:last-child {
   margin-bottom: 0;
 }
 .picks-section-head {
-  font-size: 0.68rem;
+  font-size: var(--text-sm);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--ink-soft);
-  margin-bottom: 6px;
+  margin-bottom: var(--space-1-5);
 }
 .picks-member {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 0.82rem;
+  font-size: var(--text-md);
   font-weight: 600;
   color: var(--ink);
   padding: 3px 0;
@@ -1096,8 +1260,42 @@ button.brand-title-option:hover {
 .picks-empty {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 0.85rem;
-  color: var(--ink-dim);
+  font-size: var(--text-base);
+  color: var(--ink-soft);
+}
+/* One picked show in a member's lineup. */
+.picks-show {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+}
+.picks-show-mark {
+  font-size: var(--text-base);
+  flex-shrink: 0;
+}
+.picks-show-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.picks-show-time {
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+/* The ✓ glyph from svgDefs, sized to sit inline with text. */
+.icon-check {
+  width: 12px;
+  height: 12px;
+  vertical-align: middle;
+}
+.picks-section-head .icon-check {
+  margin-right: var(--space-1);
 }
 
 /* ─── Legend ─────────────────────────────────────────────────────── */
@@ -1112,14 +1310,14 @@ button.brand-title-option:hover {
   overscroll-behavior-x: contain;
 }
 .legend {
-  padding: 8px 0 10px;
+  padding: var(--space-2) 0 var(--space-2-5);
   border-bottom: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   gap: 22px;
   min-width: 280px;
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   color: var(--ink-soft);
   font-weight: 600;
 }
@@ -1143,8 +1341,8 @@ button.brand-title-option:hover {
   position: relative;
   overflow: visible;
 }
-.legend .pill.want { color: #5c4000; }
-.legend .pill.must { color: #800000; }
+.legend .pill.want { color: var(--want-ink); }
+.legend .pill.must { color: var(--must-ink); }
 
 /* Position the wash SVG absolutely so it doesn't push text sideways */
 .legend .pill-highlighted .wash {
@@ -1158,8 +1356,8 @@ button.brand-title-option:hover {
   mix-blend-mode: multiply;
   z-index: 0;
 }
-.legend .pill.want .wash { color: rgba(255, 200, 40, 0.85); }
-.legend .pill.must .wash { color: rgba(255, 59, 48, 0.82); }
+.legend .pill.want .wash { color: color-mix(in srgb, var(--want-wash) 85%, transparent); }
+.legend .pill.must .wash { color: color-mix(in srgb, var(--must-wash) 82%, transparent); }
 
 /* Keep text/icons above the wash layer */
 .legend .pill-highlighted > :not(.wash) {
@@ -1176,15 +1374,15 @@ button.brand-title-option:hover {
 .profile-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   padding: 5px 10px 5px 5px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
   border: 1px solid color-mix(in srgb, var(--ink) 40%, transparent);
   font-family: var(--font-body);
-  font-size: 0.82rem;
+  font-size: var(--text-md);
   font-weight: 600;
   flex-shrink: 0;
   white-space: nowrap;
@@ -1200,12 +1398,12 @@ button.brand-title-option:hover {
 .profile-avatar {
   width: 26px;
   height: 26px;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: color-mix(in srgb, var(--ink) 10%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.65rem;
+  font-size: var(--text-xs);
   font-weight: 800;
   letter-spacing: 0.04em;
   flex-shrink: 0;
@@ -1216,12 +1414,205 @@ button.brand-title-option:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* legacy — conflict */
-.conflict-banner {
+
+/* ─── Group editing (Header.jsx) ─────────────────────────────────── */
+.brand-info {
+  flex: 1;
+  min-width: 0;
+}
+.brand-sub {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
+}
+.brand-sub-sep {
+  color: var(--ink-dim);
+  user-select: none;
+}
+.brand-sub .link-button {
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.profile-badge.is-static {
+  cursor: default;
+}
+.profile-chevron {
+  width: 10px;
+  height: 10px;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+.edit-panel {
+  display: grid;
+  gap: var(--space-2-5);
+}
+.edit-fields {
+  display: grid;
+  gap: var(--space-1-5);
+}
+.edit-fields input + .field-label {
+  margin-top: var(--space-0-5);
+}
+.edit-section {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  padding-top: var(--space-2-5);
+  border-top: 1px solid var(--rule);
+}
+.edit-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1-5);
+  padding-top: var(--space-2-5);
+  border-top: 1px solid var(--rule);
+}
+.edit-actions .btn.leave {
+  margin-left: auto;
+}
+
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.member-row input {
+  flex: 1;
+}
+.member-row-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-md);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.member-row-picks {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--ink-soft);
   background: color-mix(in srgb, var(--ink) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
-  padding: 10px 14px;
-  font-size: 0.88rem;
+  border-radius: var(--radius-pill);
+  padding: 1px 7px;
+}
+.member-row-picks.is-empty {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--ink-soft);
+  background: none;
+  padding: 0;
+}
+.member-row-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+/* A member with no picks yet: quieter, but still legible text. */
+.member-row-name.is-inactive {
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+.chip-avatar.is-inactive {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+/* ─── Share card ─────────────────────────────────────────────────── */
+.card-title {
+  font-weight: 700;
+  font-size: var(--text-md);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.share-url {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-2-5);
+  font-size: var(--text-md);
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid color-mix(in srgb, var(--ink) 35%, transparent);
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.share-row .btn {
+  height: 42px;
+  padding-block: 0;
+}
+/* Flashes primary for a moment after copying. */
+.btn.is-confirmed {
+  background: var(--btn-primary);
+  color: var(--on-color);
+}
+.share-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  font-size: var(--text-base);
+  line-height: 1.6;
+}
+.share-member {
+  display: inline-flex;
+  align-items: center;
+}
+.share-member .link-button {
+  font-weight: 600;
+  color: var(--ink);
+}
+/* Pick count beside a member's name. */
+.count-bubble {
+  position: relative;
+  top: -1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35em;
+  height: 1.35em;
+  padding: 0 0.3em;
+  margin-left: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--ink-soft);
+  color: var(--on-color);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  line-height: 1;
+}
+.share-member-you {
+  position: relative;
+  top: -2px;
+  margin-left: 3px;
+  font-size: 0.7em;
+  color: var(--ink-soft);
+}
+
+/* ─── Page states and footer ─────────────────────────────────────── */
+.loading-card {
+  padding: 40px var(--space-5);
+  color: var(--ink-soft);
+  font-size: var(--text-base);
+}
+.card-message {
+  margin: 0;
+}
+.site-footer {
+  margin-top: 100px;
+  padding-bottom: 40px;
+  text-align: center;
+  font-size: var(--text-base);
+  color: var(--ink-soft);
+}
+.site-footer a {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
 }
 
 /* ─── Mobile layout ──────────────────────────────────────────────────────── */
@@ -1233,8 +1624,8 @@ button.brand-title-option:hover {
   }
 
   .app {
-    padding-left: 10px;
-    padding-right: 10px;
+    padding-left: var(--space-2-5);
+    padding-right: var(--space-2-5);
   }
 
   /* Two-row brand header on mobile */
@@ -1244,8 +1635,8 @@ button.brand-title-option:hover {
     grid-template-areas:
       "logo badge"
       "info info";
-    gap: 2px 0;
-    padding-bottom: 12px;
+    gap: var(--space-0-5) 0;
+    padding-bottom: var(--space-3);
   }
   .brand-logo    { grid-area: logo; align-self: center; }
   .brand-info    { grid-area: info; }
@@ -1262,7 +1653,7 @@ button.brand-title-option:hover {
        scrolling; beyond that the wrap scrolls sideways. */
     --stage-col-min: 68px;
     min-width: calc(16px + var(--stage-count, 5) * var(--stage-col-min));
-    column-gap: 2px;
+    column-gap: var(--space-0-5);
   }
 
   .schedule-grid::after {
@@ -1276,7 +1667,7 @@ button.brand-title-option:hover {
       repeat(var(--flow-count, 0), minmax(0, 1fr));
     --stage-col-min: 68px;
     min-width: calc(4px + (var(--stage-count, 5) + var(--flow-count, 0)) * var(--stage-col-min));
-    column-gap: 2px;
+    column-gap: var(--space-0-5);
   }
 
   /* .day-header-bar-row lives outside .schedule-grid/.lineup-grid (see the
@@ -1286,7 +1677,7 @@ button.brand-title-option:hover {
   .day-header-bar-row--timed {
     grid-template-columns: 16px repeat(var(--stage-count, 5), minmax(0, 1fr));
     min-width: calc(16px + var(--stage-count, 5) * 68px);
-    column-gap: 2px;
+    column-gap: var(--space-0-5);
   }
   .day-header-bar-row--lineup {
     grid-template-columns:
@@ -1294,25 +1685,25 @@ button.brand-title-option:hover {
       repeat(var(--stage-count, 5), minmax(0, 1fr))
       repeat(var(--flow-count, 0), minmax(0, 1fr));
     min-width: calc(4px + (var(--stage-count, 5) + var(--flow-count, 0)) * 68px);
-    column-gap: 2px;
+    column-gap: var(--space-0-5);
   }
 
   .lineup-flow {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 6px;
+    gap: var(--space-1-5);
     max-width: calc(100px * 7 + 6px * 6);
   }
 
   /* Tighter gap so the row's natural width comes closer to fitting a phone
      screen without scrolling; .legend-wrap picks up the slack below that. */
   .legend {
-    gap: 12px;
+    gap: var(--space-3);
   }
 
   .time-label {
     overflow: hidden;
-    padding-right: 2px;
-    font-size: 0.52rem;
+    padding-right: var(--space-0-5);
+    font-size: var(--text-3xs);
     pointer-events: none;
   }
 
@@ -1322,27 +1713,62 @@ button.brand-title-option:hover {
   }
 
   .stage-header {
-    font-size: 0.52rem;
+    font-size: var(--text-3xs);
     letter-spacing: 0.04em;
-    padding: 0 2px;
+    padding: 0 var(--space-0-5);
   }
 
   .show-block {
     padding: 3px 4px;
-    border-radius: 2px;
+    border-radius: var(--radius-xs);
     margin: 1px 1px;
   }
   .show-block .artist-name {
-    font-size: 0.58rem;
+    font-size: var(--text-2xs);
   }
   .show-block .show-time {
-    font-size: 0.52rem;
+    font-size: var(--text-3xs);
   }
 
   .day-heading .day-name {
-    font-size: 1.15rem;
+    font-size: var(--text-xl);
   }
   .day-heading .day-date {
-    font-size: 1.1rem;
+    font-size: var(--text-xl);
   }
+}
+
+/* ─── Guest sign-up (userSets events, e.g. cocktails at a party) ─────── */
+.user-set-hint {
+  margin: 0;
+  font-size: var(--text-md);
+  color: var(--ink-soft);
+}
+.user-set-form {
+  display: flex;
+  gap: var(--space-2);
+}
+.user-set-form input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+.user-set-message {
+  margin: 0;
+  font-size: var(--text-md);
+}
+.user-set-message.is-ok { color: var(--ink); }
+.user-set-message.is-error { color: var(--danger); }
+.user-set-mine {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+.user-set-mine li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--text-base);
 }

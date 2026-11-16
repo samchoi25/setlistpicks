@@ -101,6 +101,8 @@ ${dayGroups}
 }
 
 export function renderJsonLd(festival) {
+  // Not a public event; nothing for search engines to describe.
+  if (festival.unlisted) return '';
   const days = festival.DAYS;
   const pad = (n) => String(n).padStart(2, '0');
   const hhmm = (min) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
@@ -160,11 +162,18 @@ function escHtml(str) {
 
 /* ─── Page assembly ──────────────────────────────────────────────────────── */
 
+// An unlisted event (a private party — see shared/festivals/lucky-13.js) is
+// noindex and has no billed lineup, so its page carries only what a link
+// preview in a group chat needs: the name and what you do there.
+const partyBlurb = (festival) => `Vote on the ${festival.entryNoun ?? 'entrie'}s — or add your own.`;
+
 export function pageTitle(festival) {
+  if (festival.unlisted) return festival.name;
   return `${festival.name} Setlist Picker | ${festival.headliners.join(', ')}`;
 }
 
 export function pageDescription(festival) {
+  if (festival.unlisted) return `${festival.name}: ${partyBlurb(festival)}`;
   const actCount = festival.SCHEDULE.reduce((n, s) => n + s.artists.length, 0);
   const named = [...festival.headliners, ...(festival.notableActs ?? [])];
   const rest = actCount - named.length;
@@ -210,7 +219,7 @@ export function renderPage(template, festival) {
     .replaceAll('{{THEME_COLOR}}', escHtml(themeColor(festival)))
     .replace('{{THEME_STYLE}}', renderThemeStyle(festival))
     .replace('{{JSON_LD}}', renderJsonLd(festival))
-    .replace('{{SEO_BODY}}', renderLineupHtml(festival));
+    .replace('{{SEO_BODY}}', festival.unlisted ? '' : renderLineupHtml(festival));
 }
 
 export function renderSitemap(festivals) {

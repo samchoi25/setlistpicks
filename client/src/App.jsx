@@ -9,7 +9,9 @@ import { ensureSvgDefs } from './svgDefs.js';
 import GroupView from './views/GroupView.jsx';
 import ReadOnlyView from './views/ReadOnlyView.jsx';
 import FestivalSwitcher from './components/FestivalSwitcher.jsx';
+import Button from './components/Button.jsx';
 import { FestivalProvider } from './festival-context.jsx';
+import { useFestivalWithUserSets } from './user-sets.js';
 import { getFestival, DEFAULT_FESTIVAL_SLUG } from '../../shared/festivals/index.js';
 import { hasFestivalEnded } from '../../shared/festival.js';
 import { parsePath, groupPath, festivalPath } from '../../shared/routes.js';
@@ -141,6 +143,9 @@ function AppRoutes() {
     getFestival(groupState?.groupMeta?.festivalSlug)
     ?? getFestival(route.canonicalSlug)
     ?? getFestival(DEFAULT_FESTIVAL_SLUG);
+  // Adds guest-entered sets for a userSets event; any other festival is
+  // returned as is.
+  const festivalWithSets = useFestivalWithUserSets(festival);
 
   /*
    * `/` sends you back to the group you were last in, whichever festival it
@@ -233,13 +238,13 @@ function AppRoutes() {
       if (error.readOnly) return <ReadOnlyView />;
       return shell(
         <div className="card stack">
-          <p style={{ margin: 0 }}>{error.msg}</p>
+          <p className="card-message">{error.msg}</p>
           {error.canRetry && (
-            <button className="btn" onClick={() => {
+            <Button onClick={() => {
               clearActiveGroup(festival.slug);
               setError(null);
               navigate(festivalPath(festival.slug));
-            }}>Start over</button>
+            }}>Start over</Button>
           )}
         </div>
       );
@@ -247,7 +252,7 @@ function AppRoutes() {
 
     if (loading || route.kind === 'home' || route.kind === 'festival') {
       return shell(
-        <div className="card center" style={{ padding: '40px 20px', color: 'var(--ink-soft)', fontSize: '0.9rem' }}>
+        <div className="card center loading-card">
           Setting up your crew…
         </div>
       );
@@ -275,7 +280,7 @@ function AppRoutes() {
   // Keyed by slug so switching festivals remounts the tree rather than
   // reusing grid state built for a different lineup.
   return (
-    <FestivalProvider key={festival.slug} festival={festival}>
+    <FestivalProvider key={festival.slug} festival={festivalWithSets}>
       {content}
     </FestivalProvider>
   );

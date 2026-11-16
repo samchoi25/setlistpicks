@@ -71,4 +71,9 @@ export const api = {
     req('PATCH', `/api/groups/${id}/members/${encKey(memberKey)}`, { displayName }),
   removeMember: (id, memberKey) =>
     req('DELETE', `/api/groups/${id}/members/${encKey(memberKey)}`),
+  // Guest-entered sets (a userSets event, e.g. cocktails at a party).
+  addUserSet: (id, memberKey, artist) =>
+    req('POST', `/api/groups/${id}/user-sets`, { memberKey, artist }),
+  removeUserSet: (id, memberKey, setId) =>
+    req('DELETE', `/api/groups/${id}/user-sets/${encodeURIComponent(setId)}`, { memberKey }),
 };

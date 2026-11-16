@@ -16,6 +16,10 @@ import {
   updateGroupName,
   updateMemberDisplayName,
   removeMember,
+  listUserSets,
+  addUserSet,
+  removeUserSet,
+  getVisibleVotes,
 } from './groups.js';
 import { recordRequestVisit } from './visits.js';
 import { adminRouter } from './admin.js';
@@ -53,6 +57,10 @@ function leaveRoom(groupId, ws) {
   if (room.size === 0) rooms.delete(groupId);
 }
 
+// Group-wide votes always go out through getVisibleVotes, which blanks them
+// for a secretVotes event (see groups.js).
+const visibleVotes = getVisibleVotes;
+
 function broadcastVotes(groupId) {
   const room = rooms.get(groupId);
   if (!room || room.size === 0) return;
@@ -60,7 +68,7 @@ function broadcastVotes(groupId) {
   const payload = JSON.stringify({
     type: 'votes',
     groupName: meta?.name,
-    ...getAllVotes(groupId),
+    ...visibleVotes(groupId),
   });
   for (const ws of room) {
     if (ws.readyState === 1 /* OPEN */) ws.send(payload);
@@ -85,7 +93,7 @@ wss.on('connection', (ws, req) => {
   // Send current votes immediately on connect so new joiners are in sync.
   try {
     const meta = getGroupMeta(groupId);
-    if (meta) ws.send(JSON.stringify({ type: 'votes', ...getAllVotes(groupId) }));
+    if (meta) ws.send(JSON.stringify({ type: 'votes', ...visibleVotes(groupId) }));
   } catch { /* ignore */ }
 
   ws.on('close', () => leaveRoom(groupId, ws));
@@ -163,7 +171,7 @@ app.delete('/api/groups/:groupId/members/:memberKey', (req, res) => {
 app.get('/api/groups/:groupId/votes', (req, res) => {
   const meta = getGroupMeta(req.params.groupId);
   if (!meta) return res.status(404).json({ error: 'group_not_found' });
-  res.json(getAllVotes(req.params.groupId));
+  res.json(visibleVotes(req.params.groupId));
 });
 
 app.get('/api/groups/:groupId/votes/:memberKey', (req, res) => {
@@ -178,6 +186,36 @@ app.post('/api/groups/:groupId/votes/:memberKey', (req, res) => {
   if (result.error === 'group_not_found') return res.status(404).json(result);
   if (result.error) return res.status(400).json(result);
   // Push live vote update to everyone in the group
+  broadcastVotes(req.params.groupId);
+  res.json(result);
+});
+
+// ─── Guest-entered sets (userSets events, e.g. cocktails at a party) ─────────
+// The list is public and carries no votes; adding needs a member of a group
+// on that festival, and only the guest who entered a set can withdraw it.
+app.get('/api/festivals/:slug/user-sets', (req, res) => {
+  const festival = getFestival(req.params.slug);
+  if (!festival?.userSets) return res.status(404).json({ error: 'unknown_festival' });
+  res.json({ sets: listUserSets(festival.slug) });
+});
+
+app.post('/api/groups/:groupId/user-sets', (req, res) => {
+  const result = addUserSet(req.params.groupId, req.body?.memberKey, req.body?.artist);
+  if (result.error === 'group_not_found') return res.status(404).json(result);
+  if (result.error) return res.status(400).json(result);
+  res.json(result);
+});
+
+app.delete('/api/groups/:groupId/user-sets/:setId', (req, res) => {
+  const slug = getGroupFestivalSlug(req.params.groupId);
+  if (!slug) return res.status(404).json({ error: 'group_not_found' });
+  const result = removeUserSet(slug, req.params.setId, {
+    groupId: req.params.groupId, memberKey: req.body?.memberKey,
+  });
+  if (result.error === 'set_not_found') return res.status(404).json(result);
+  if (result.error === 'not_yours') return res.status(403).json(result);
+  if (result.error) return res.status(400).json(result);
+  // Votes on it are gone; push the change to anyone listening.
   broadcastVotes(req.params.groupId);
   res.json(result);
 });
@@ -263,7 +301,10 @@ if (fs.existsSync(distDir)) {
       return res.send(pages.get(DEFAULT_FESTIVAL_SLUG).festivalHtml);
     }
     const page = pages.get(parsed.canonicalSlug);
-    if (parsed.kind === 'festival') return res.send(page.festivalHtml);
+    // An unlisted event (a private party) is never indexed, even its own page.
+    if (parsed.kind === 'festival') {
+      return res.send(getFestival(parsed.canonicalSlug)?.unlisted ? page.groupHtml : page.festivalHtml);
+    }
     if (parsed.kind === 'group') return res.send(page.groupHtml);
     // A legacy code whose group is gone, or an unrecognised path: the SPA
     // handles it, and it should not be indexed under any festival.

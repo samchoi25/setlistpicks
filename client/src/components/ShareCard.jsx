@@ -1,12 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { groupPath } from '../../../shared/routes.js';
 import { useFestival } from '../festival-context.jsx';
+import Button from './Button.jsx';
 
 export default function ShareCard({ groupId, memberKey, mutedMembers, memberVoteCounts = {}, onMemberClick }) {
   // Share the canonical festival path. A bare code still resolves — the server
   // 301s it — but handing people a URL that immediately redirects is worse
   // than handing them the real one.
-  const { slug } = useFestival();
+  const { slug, userSets } = useFestival();
   const path = groupPath(slug, groupId);
   const url = `${location.origin}${path}`;
   const displayUrl = `${location.host}${path}`;
@@ -20,65 +21,26 @@ export default function ShareCard({ groupId, memberKey, mutedMembers, memberVote
     timerRef.current = setTimeout(() => setCopied(false), 1500);
   }
 
-  const linkStyle = {
-    background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-    fontWeight: 600, color: 'var(--ink)',
-    textDecoration: 'underline', textDecorationStyle: 'solid',
-    textUnderlineOffset: '2px', fontSize: 'inherit', fontFamily: 'inherit',
-  };
-
   return (
     <div className="card stack share-card">
-      <div style={{ fontWeight: 700, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-        Invite your crew
-      </div>
+      <div className="card-title">{userSets ? 'Invite guests' : 'Invite your crew'}</div>
       <div className="share-row">
-        <div onClick={copy} style={{
-          flex: 1, fontSize: '0.82rem', fontFamily: 'inherit',
-          padding: 0, paddingLeft: '10px', paddingRight: '10px',
-          height: '42px', display: 'flex', alignItems: 'center',
-          background: 'var(--paper)', border: '1px solid color-mix(in srgb, var(--ink) 35%, transparent)',
-          cursor: 'pointer', userSelect: 'none',
-          overflow: 'hidden', whiteSpace: 'nowrap', color: 'var(--ink)',
-        }}>
-          {displayUrl}
-        </div>
-        <button
-          className="btn secondary"
-          onClick={copy}
-          style={{
-            paddingTop: 0, paddingBottom: 0, height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            ...(copied ? { background: 'var(--btn-primary)', color: '#fff', borderColor: 'var(--btn-primary)' } : {}),
-          }}
-        >
+        <div className="share-url" onClick={copy}>{displayUrl}</div>
+        <Button variant="secondary" className={copied ? 'is-confirmed' : ''} onClick={copy}>
           {copied ? 'Copied!' : 'Copy Link'}
-        </button>
+        </Button>
       </div>
       {mutedMembers.length > 0 && (
-        <div style={{ fontSize: '0.88rem', lineHeight: 1.6, display: 'flex', flexWrap: 'wrap', gap: '8px 12px' }}>
+        <div className="share-members">
           {mutedMembers.filter((m) => memberVoteCounts[m.key] > 0 || m.key === memberKey).map((m) => (
-            <span key={m.key} style={{ display: 'inline-flex', alignItems: 'center' }}>
-              <button style={linkStyle} onClick={() => onMemberClick?.(m)}>
+            <span key={m.key} className="share-member">
+              <button className="link-button" onClick={() => onMemberClick?.(m)}>
                 {m.displayName}
               </button>
               {memberVoteCounts[m.key] > 0 && (
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--ink-soft)', color: '#fff',
-                  borderRadius: '999px', fontWeight: 700,
-                  fontSize: '0.62rem', lineHeight: 1,
-                  minWidth: '1.35em', height: '1.35em',
-                  padding: '0 0.3em',
-                  marginLeft: '4px',
-                  verticalAlign: 'middle',
-                  position: 'relative', top: '-1px',
-                }}>
-                  {memberVoteCounts[m.key]}
-                </span>
+                <span className="count-bubble">{memberVoteCounts[m.key]}</span>
               )}
-              {m.key === memberKey && (
-                <span style={{ color: 'var(--ink-soft)', fontWeight: 400, fontSize: '0.7em', marginLeft: 3, position: 'relative', top: '-2px' }}>(you)</span>
-              )}
+              {m.key === memberKey && <span className="share-member-you">(you)</span>}
             </span>
           ))}
         </div>

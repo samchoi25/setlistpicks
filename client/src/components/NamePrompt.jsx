@@ -3,6 +3,8 @@ import { api } from '../api.js';
 import { setIdentity } from '../storage.js';
 import { useFestival } from '../festival-context.jsx';
 import { toast } from '../toast.js';
+import Modal from './Modal.jsx';
+import Button from './Button.jsx';
 
 const normalize = (s) => String(s || '').trim().toLowerCase();
 
@@ -55,98 +57,81 @@ export default function NamePrompt({ groupId, member, memberDisplayName, groupNa
   function submit() { dismiss(name.trim() || autoName); }
 
   return (
-    <div className="name-prompt-backdrop"
-      onClick={(e) => { if (e.target === e.currentTarget) dismiss(null); }}>
-      <div className="name-prompt-card">
-        <div style={{ fontWeight: 800, fontSize: '1.3rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Plan {festival.shortName}
-        </div>
-        <ul style={{ margin: '4px 0 0', paddingLeft: '18px', display: 'grid', gap: '4px', fontSize: '0.88rem', color: 'var(--ink-soft)' }}>
+    <Modal onClose={() => dismiss(null)} label={`Plan ${festival.shortName}`} className="modal-card" backdropClassName="is-frosted">
+      <div className="modal-title">{festival.secretVotes ? festival.name : `Plan ${festival.shortName}`}</div>
+      {festival.secretVotes ? (
+        // A secret party vote (see shared/festivals/lucky-13.js): nobody sees
+        // the group's picks, so don't promise that.
+        <ul className="modal-list">
+          <li>Rate every {festival.entryNoun ?? 'entry'} 👍 or 🔥</li>
+          <li>Bringing one? Add it to the list</li>
+          <li>Votes are secret — only the hosts see the count</li>
+        </ul>
+      ) : (
+        <ul className="modal-list">
           <li>Save the shows you want to see</li>
           <li>Share a link with your crew</li>
           <li>See what the group decides on</li>
         </ul>
+      )}
 
-        {/* Show existing members when joining an existing group so they know
-            to type their name to recover their session */}
-        {groupName && (() => {
-          const others = mutedMembers.filter(m => m.key !== member.key);
-          if (!others.length) return null;
-          return (
-            <div style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', lineHeight: 1.6 }}>
-              <span style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.72rem' }}>
-                Already in this group:
-              </span>{' '}
-              {others.map((m, i) => (
-                <span key={m.key}>
-                  {i > 0 && <span style={{ color: 'var(--ink-dim)' }}>, </span>}
-                  <button onClick={() => setName(m.displayName)} style={{
-                    background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                    fontWeight: 700, color: 'var(--ink)', fontSize: 'inherit',
-                    textDecoration: 'underline', textDecorationStyle: 'dotted',
-                    textUnderlineOffset: '2px',
-                  }}>
-                    {m.displayName}
-                  </button>
-                </span>
-              ))}
-              <div style={{ marginTop: 3, fontSize: '0.75rem', fontStyle: 'italic' }}>
-                Tap a name to rejoin as them.
-              </div>
-            </div>
-          );
-        })()}
-
-        <div style={{ fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: groupName ? 12 : 0 }}>
-          What&rsquo;s your name?
-        </div>
-        <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--ink-soft)' }}>
-          Your group will see this next to your picks.
-        </p>
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder="Name"
-          maxLength={64}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && submit()}
-          style={{ fontSize: '16px' }}
-        />
-
-        {/* Per-keystroke collision hint */}
-        {isRecovery && (
-          <div style={{
-            fontSize: '0.82rem', fontWeight: 600,
-            color: 'var(--ink)', lineHeight: 1.4,
-            background: 'color-mix(in srgb, var(--ink) 8%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--ink) 20%, transparent)',
-            borderRadius: '4px', padding: '8px 12px',
-          }}>
-            <strong>{existingMatch.displayName}</strong> is already in this group
-            &mdash; you&rsquo;ll recover their picks on this device.
+      {/* Show existing members when joining an existing group so they know
+          to type their name to recover their session */}
+      {groupName && (() => {
+        const others = mutedMembers.filter(m => m.key !== member.key);
+        if (!others.length) return null;
+        return (
+          <div className="name-prompt-members">
+            <span className="name-prompt-members-label">Already in this group:</span>{' '}
+            {others.map((m, i) => (
+              <span key={m.key}>
+                {i > 0 && <span className="sep">, </span>}
+                <button className="link-button dotted" onClick={() => setName(m.displayName)}>
+                  {m.displayName}
+                </button>
+              </span>
+            ))}
+            <div className="name-prompt-members-hint">Tap a name to rejoin as them.</div>
           </div>
-        )}
-        {isSelf && trimmed && (
-          <div style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', fontStyle: 'italic' }}>
-            That&rsquo;s your current name.
-          </div>
-        )}
+        );
+      })()}
 
-        <button className="btn" onClick={submit}>
-          {isRecovery ? `Rejoin as ${existingMatch.displayName}` : "Let\u2019s go"}
-        </button>
-        <div style={{ textAlign: 'center' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ink-soft)' }}>
-            <button onClick={() => dismiss(null)} style={{
-              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-              fontSize: 'inherit', fontWeight: 'inherit', color: 'inherit',
-              textDecoration: 'underline', textDecorationStyle: 'solid', textUnderlineOffset: '2px',
-            }}>Skip</button>
-            {' \u2014 use a random name'}
-          </span>
-        </div>
+      <div className={`modal-subtitle${groupName ? ' is-spaced' : ''}`}>
+        What&rsquo;s your name?
       </div>
-    </div>
+      <p className="modal-lede">
+        {festival.secretVotes
+          ? 'Type the same name on another phone to pick up where you left off.'
+          : 'Your group will see this next to your picks.'}
+      </p>
+      <input
+        ref={inputRef}
+        type="text"
+        placeholder="Name"
+        maxLength={64}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && submit()}
+      />
+
+      {/* Per-keystroke collision hint */}
+      {isRecovery && (
+        <div className="callout">
+          <strong>{existingMatch.displayName}</strong> is already in this group
+          &mdash; you&rsquo;ll recover their picks on this device.
+        </div>
+      )}
+      {isSelf && trimmed && (
+        <div className="name-prompt-note">That&rsquo;s your current name.</div>
+      )}
+
+      <Button onClick={submit}>
+        {isRecovery ? `Rejoin as ${existingMatch.displayName}` : "Let\u2019s go"}
+      </Button>
+      <div className="name-prompt-skip">
+        <button className="link-button" onClick={() => dismiss(null)}>Skip</button>
+        {' \u2014 use a random name'}
+      </div>
+    </Modal>
   );
 }

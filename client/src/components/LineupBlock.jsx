@@ -1,4 +1,5 @@
 import React from 'react';
+import { stageBlockInk } from '../../../shared/theme.js';
 import { useVoteBlock, WashSvg, GroupVotesEl, ArtistNames, scoreClass } from './blockShared.jsx';
 
 // An act with no set time yet — used for both untimed layouts (see
@@ -18,7 +19,7 @@ const LineupBlock = React.memo(function LineupBlock({
     useVoteBlock({ id: s.id, artist: s.artist, artists: s.artists, myVote, groupId, memberKey, memberDisplayName, onVoteChange, onLongPress, onNotMember });
 
   const style = stage
-    ? { gridColumn: String(stage.col), gridRow: String(s.order + 2), background: `var(${stage.color})` }
+    ? { gridColumn: String(stage.col), gridRow: String(s.order + 2), background: `var(${stage.color})`, '--block-fg': stageBlockInk(stage) }
     : (flowColumn != null ? { gridColumn: String(flowColumn), gridRow: String(flowRow) } : undefined);
 
   return (

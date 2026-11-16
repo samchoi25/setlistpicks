@@ -7,6 +7,7 @@ import { useFestival } from '../festival-context.jsx';
 import { hasFestivalEnded } from '../../../shared/festival.js';
 import FestivalSwitcher from './FestivalSwitcher.jsx';
 import GroupSwitcher from './GroupSwitcher.jsx';
+import Button from './Button.jsx';
 
 function initials(name) {
   return name.split(/\s+/).filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
@@ -14,23 +15,11 @@ function initials(name) {
 
 function ChevronIcon() {
   return (
-    <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"
-      style={{ width: 10, height: 10, opacity: 0.75, flexShrink: 0 }}>
+    <svg className="profile-chevron" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
       <path d="M2 4l4 4 4-4z" />
     </svg>
   );
 }
-
-const labelStyle = {
-  fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.06em',
-  textTransform: 'uppercase', color: 'var(--ink-soft)',
-};
-const linkStyle = {
-  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-  fontSize: '0.75rem', color: 'var(--ink-soft)',
-  textDecoration: 'underline', textDecorationStyle: 'solid', textUnderlineOffset: '2px',
-};
-const dimLinkStyle = { ...linkStyle, color: 'var(--ink-dim)' };
 
 export default function Header({
   groupId, member, groupName, setGroupName,
@@ -154,34 +143,23 @@ export default function Header({
     const inactive = voteCount === 0;
 
     const avatar = (
-      <span className="chip-avatar" style={{
-        ...(isYou ? { background: 'var(--btn-primary)', color: '#fff' } : {}),
-        ...(inactive && !isYou ? { opacity: 0.45 } : {}),
-      }}>
+      <span className={`chip-avatar${isYou ? ' is-you' : ''}${inactive && !isYou ? ' is-inactive' : ''}`}>
         {initials(m.displayName)}
       </span>
     );
 
     const picksBadge = voteCount > 0 ? (
-      <span style={{
-        fontSize: '0.72rem', fontWeight: 700, color: 'var(--ink-soft)',
-        background: 'rgba(0,0,0,0.07)', borderRadius: '999px',
-        padding: '1px 7px', whiteSpace: 'nowrap', flexShrink: 0,
-      }}>
+      <span className="member-row-picks">
         {voteCount} pick{voteCount !== 1 ? 's' : ''}
       </span>
     ) : (
-      <span style={{ fontSize: '0.72rem', color: 'var(--ink-dim)', fontStyle: 'italic', flexShrink: 0 }}>
+      <span className="member-row-picks is-empty">
         no picks yet
       </span>
     );
 
     const nameEl = (
-      <span style={{
-        flex: 1, fontSize: '0.82rem', fontWeight: 600, minWidth: 0,
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        ...(inactive && !isYou ? { opacity: 0.5 } : {}),
-      }}>
+      <span className={`member-row-name${inactive && !isYou ? ' is-inactive' : ''}`}>
         {m.displayName}{isYou && <span className="chip-you"> (you)</span>}
       </span>
     );
@@ -189,22 +167,22 @@ export default function Header({
     // ── Rename mode ───────────────────────────────────────────────────────────
     if (renamingKey === m.key) {
       return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="member-row">
           {avatar}
           <input
             type="text"
+            className="is-tight"
             value={renameInput}
             maxLength={64}
             autoFocus
-            style={{ flex: 1, fontSize: '16px', padding: '4px 8px' }}
             onChange={(e) => setRenameInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') doRenameMember(m.key, renameInput);
               if (e.key === 'Escape') setRenamingKey(null);
             }}
           />
-          <button className="btn small" onClick={() => doRenameMember(m.key, renameInput)}>Save</button>
-          <button style={dimLinkStyle} onClick={() => setRenamingKey(null)}>cancel</button>
+          <Button size="small" onClick={() => doRenameMember(m.key, renameInput)}>Save</Button>
+          <button className="link-button dim" onClick={() => setRenamingKey(null)}>cancel</button>
         </div>
       );
     }
@@ -213,37 +191,37 @@ export default function Header({
     if (removingKey === m.key) {
       if (isYou) {
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 12, background: 'rgba(180,40,40,0.05)', border: '1px solid rgba(180,40,40,0.2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>{avatar}{nameEl}</div>
-            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#b42828' }}>
+          <div className="callout danger">
+            <div className="member-row">{avatar}{nameEl}</div>
+            <div className="callout-title">
               ⚠️ Caution&mdash;you&rsquo;re removing yourself!
             </div>
-            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--ink-soft)', lineHeight: 1.55 }}>
+            <p className="callout-body">
               You&rsquo;ll leave the group and your picks will be removed. If you&rsquo;re the last one here, the group itself goes with them.
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
-              <button className="btn danger small" onClick={() => doLeave()}>Leave group</button>
-              <button style={dimLinkStyle} onClick={() => setRemovingKey(null)}>Never mind</button>
+            <div className="member-row-actions">
+              <Button variant="danger" size="small" onClick={() => doLeave()}>Leave group</Button>
+              <button className="link-button dim" onClick={() => setRemovingKey(null)}>Never mind</button>
             </div>
           </div>
         );
       }
       return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="member-row">
           {avatar}{nameEl}
-          <button className="btn danger small" onClick={() => doRemoveMember(m.key)}>Remove</button>
-          <button style={dimLinkStyle} onClick={() => setRemovingKey(null)}>cancel</button>
+          <Button variant="danger" size="small" onClick={() => doRemoveMember(m.key)}>Remove</Button>
+          <button className="link-button dim" onClick={() => setRemovingKey(null)}>cancel</button>
         </div>
       );
     }
 
     // ── Default row ───────────────────────────────────────────────────────────
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className="member-row">
         {avatar}{nameEl}
         {picksBadge}
-        <button style={linkStyle} onClick={() => { setRenamingKey(m.key); setRenameInput(m.displayName); setRemovingKey(null); }}>rename</button>
-        <button style={linkStyle} onClick={() => { setRemovingKey(m.key); setRenamingKey(null); }}>remove</button>
+        <button className="link-button soft" onClick={() => { setRenamingKey(m.key); setRenameInput(m.displayName); setRemovingKey(null); }}>rename</button>
+        <button className="link-button soft" onClick={() => { setRemovingKey(m.key); setRenamingKey(null); }}>remove</button>
       </div>
     );
   }
@@ -257,25 +235,21 @@ export default function Header({
   const brandRow = (
     <div className="brand">
       <FestivalSwitcher />
-      <div className="brand-info" style={{ flex: 1, minWidth: 0 }}>
+      <div className="brand-info">
         <GroupSwitcher groupId={groupId} groupName={displayGroupName} disabled={editing} />
-        <div className="brand-sub" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div className="brand-sub">
           {memberCount} {memberCount === 1 ? 'member' : 'members'}
           {!editing && online && !ended && (
             <>
-              <span style={{ color: 'var(--ink-dim)', userSelect: 'none' }}>&middot;</span>
-              <button onClick={openEdit} style={{
-                background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                fontSize: 'inherit', fontWeight: 600, color: 'var(--ink-dim)',
-                textDecoration: 'underline', textDecorationStyle: 'dotted', textUnderlineOffset: '2px',
-              }}>edit</button>
+              <span className="brand-sub-sep">&middot;</span>
+              <button className="link-button dotted" onClick={openEdit}>edit</button>
             </>
           )}
         </div>
       </div>{/* .brand-info */}
-      <button className="profile-badge" onClick={editing || !online || ended ? undefined : openEdit}
-        title={editing || !online || ended ? undefined : 'Edit your name & crew'}
-        style={editing || !online || ended ? { cursor: 'default' } : {}}>
+      <button className={`profile-badge${editing || !online || ended ? ' is-static' : ''}`}
+        onClick={editing || !online || ended ? undefined : openEdit}
+        title={editing || !online || ended ? undefined : 'Edit your name & crew'}>
         <span className="profile-avatar">{initials(displayMemberName)}</span>
         <span className="profile-name">{displayMemberName}</span>
         {!editing && online && !ended && <ChevronIcon />}
@@ -285,25 +259,23 @@ export default function Header({
 
   if (editing) {
     const membersSection = mutedMembers.length > 0 && (
-      <div style={{ display: 'grid', gap: 8, marginTop: 4, paddingTop: 10, borderTop: '1px solid var(--rule)' }}>
-        <label style={labelStyle}>Members</label>
+      <div className="edit-section">
+        <label className="field-label">Members</label>
         {mutedMembers.map((m) => <MemberRow key={m.key} m={m} />)}
       </div>
     );
 
     return (
-      <div style={{ display: 'grid', gap: 10 }}>
+      <div className="edit-panel">
         {brandRow}
-        <div style={{ display: 'grid', gap: 6 }}>
-          <label style={labelStyle}>Group name</label>
-          <input type="text" value={groupInput} maxLength={64}
+        <div className="edit-fields">
+          <label className="field-label">Group name</label>
+          <input type="text" className="is-compact" value={groupInput} maxLength={64}
             placeholder="Crew name"
-            style={{ fontSize: '16px', padding: '6px 10px' }}
             onChange={(e) => setGroupInput(e.target.value)} />
-          <label style={{ ...labelStyle, marginTop: 2 }}>Your name</label>
-          <input type="text" value={nameInput} maxLength={64}
+          <label className="field-label">Your name</label>
+          <input type="text" className="is-compact" value={nameInput} maxLength={64}
             placeholder="Your name"
-            style={{ fontSize: '16px', padding: '6px 10px' }}
             onChange={(e) => setNameInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && save()} />
           {(() => {
@@ -311,29 +283,23 @@ export default function Header({
               m.displayName.trim().toLowerCase() === nameInput.trim().toLowerCase() && m.key !== member.key
             );
             return editMatch ? (
-              <div style={{
-                fontSize: '0.82rem', fontWeight: 600, lineHeight: 1.4,
-                background: 'color-mix(in srgb, var(--ink) 8%, transparent)',
-                border: '1px solid color-mix(in srgb, var(--ink) 20%, transparent)',
-                borderRadius: '4px', padding: '8px 12px', color: 'var(--ink)',
-              }}>
+              <div className="callout">
                 <strong>{editMatch.displayName}</strong> is already in this group &mdash; saving
                 will recover their picks on this device and drop your current ones.
               </div>
             ) : null;
           })()}
           {membersSection}
-          <div style={{ display: 'flex', gap: 8, marginTop: 6, alignItems: 'center', paddingTop: 10, borderTop: '1px solid var(--rule)' }}>
-            <button className="btn" onClick={save}>{
+          <div className="edit-actions">
+            <Button onClick={save}>{
               mutedMembers.find(m => m.displayName.trim().toLowerCase() === nameInput.trim().toLowerCase() && m.key !== member.key)
                 ? 'Recover Account' : 'Save'
-            }</button>
-            <button className="btn ghost" onClick={closeEdit}>Cancel</button>
+            }</Button>
+            <Button variant="ghost" onClick={closeEdit}>Cancel</Button>
             {removingKey !== member.key && (
-              <button className="btn leave" style={{ marginLeft: 'auto' }}
-                onClick={() => setRemovingKey(member.key)}>
+              <Button variant="leave" onClick={() => setRemovingKey(member.key)}>
                 Leave Group
-              </button>
+              </Button>
             )}
           </div>
         </div>

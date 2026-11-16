@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { computeWashData } from '../svgDefs.js';
+import { useFestival } from '../festival-context.jsx';
 
 function WashSvg({ setId, rotation, filterRef, p1, p2, returnOpacity }) {
   return (
@@ -48,6 +49,8 @@ function MarkCheck() {
 }
 
 export default function Legend() {
+  // A secret vote shows nobody who's in, so there's nothing to long-press for.
+  const { secretVotes } = useFestival();
   return (
     <div className="legend-wrap">
       <div className="legend">
@@ -63,10 +66,12 @@ export default function Legend() {
           🔥 Must See
         </LegendPill>
 
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.85rem', fontWeight: 600, color: 'var(--ink-soft)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
-          <InfoIcon />
-          Long press &#x2192; see who&#x2019;s in
-        </span>
+        {!secretVotes && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.85rem', fontWeight: 600, color: 'var(--ink-soft)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
+            <InfoIcon />
+            Long press &#x2192; see who&#x2019;s in
+          </span>
+        )}
       </div>
     </div>
   );

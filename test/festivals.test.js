@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  listFestivals, getFestival, isFestivalSlug, isCanonicalSlug,
+  listFestivals, listPublicFestivals, getFestival, isFestivalSlug, isCanonicalSlug,
   FESTIVAL_ALIASES, RESERVED_SLUGS, DEFAULT_FESTIVAL_SLUG, LEGACY_FESTIVAL_SLUG, GROUP_CODE_RE,
   WEBSOCKETS_ENABLED_DEFAULT,
 } from '../shared/festivals/index.js';
@@ -63,12 +63,14 @@ test('the default festival exists', () => {
 test('the default festival is the next one to open that has not ended', () => {
   const now = Date.now();
   const def = getFestival(DEFAULT_FESTIVAL_SLUG);
-  const live = listFestivals().filter((f) => +festivalEndsAt(f) >= now);
+  // Unlisted events (private parties) are never the default.
+  const live = listPublicFestivals().filter((f) => +festivalEndsAt(f) >= now);
+  assert.ok(!def.unlisted, 'default is not an unlisted event');
 
   if (live.length === 0) {
     // Whole calendar in the past: fall back to the one that ended last rather
     // than leaving `/` with no festival to show.
-    const last = listFestivals()
+    const last = listPublicFestivals()
       .sort((a, b) => +festivalEndsAt(a) - +festivalEndsAt(b))
       .pop();
     assert.equal(DEFAULT_FESTIVAL_SLUG, last.slug);
@@ -106,7 +108,8 @@ test('lookups reject unknown and malformed slugs', () => {
 });
 
 test('each festival carries the metadata the SEO pages need', () => {
-  for (const f of listFestivals()) {
+  // Unlisted events are noindex and render no lineup or schema.
+  for (const f of listPublicFestivals()) {
     for (const key of ['name', 'shortName', 'venue', 'dateRange']) {
       assert.equal(typeof f[key], 'string', `${f.slug}.${key}`);
       assert.ok(f[key].length > 0, `${f.slug}.${key} is empty`);

@@ -16,7 +16,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { listFestivals, getFestival, DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
+import { listFestivals, listPublicFestivals, getFestival, DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
 import { renderPage, renderSitemap, PAGE_TOKENS } from './seo-prerender.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -50,7 +50,7 @@ export function buildPages({ dist = DIST, log = console.log } = {}) {
   writeFileSync(templatePath, fallback);
   written.push('index.html');
 
-  writeFileSync(path.join(dist, 'sitemap.xml'), renderSitemap(listFestivals()));
+  writeFileSync(path.join(dist, 'sitemap.xml'), renderSitemap(listPublicFestivals()));
   written.push('sitemap.xml');
 
   log(`[build-pages] ${written.join(', ')}`);

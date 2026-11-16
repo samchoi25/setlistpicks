@@ -3,6 +3,7 @@ import { ShowBlock } from './ShowBlock.jsx';
 import { LineupBlock } from './LineupBlock.jsx';
 import { watchWordFit } from '../fitWords.js';
 import { useFestival } from '../festival-context.jsx';
+import { stageHeaderColor } from '../../../shared/theme.js';
 
 function timeAxisLabel(slotIndex, { GRID_START_MIN, SLOT_MINS, TOTAL_SLOTS }) {
   const totalMin = GRID_START_MIN + slotIndex * SLOT_MINS;
@@ -58,12 +59,12 @@ function HeaderBar({ variant, stages, flowColumns, colGap, headerRowRef }) {
         style={{ '--stage-count': stages.length, '--flow-count': flowColumns, '--col-gap': colGap }}
       >
         {stages.map((stage) => (
-          // headerColor, when a festival's theme sets one: the same token has to
-          // be a block fill with text on top of it AND this label as text on
-          // --bg, and a pale poster colour cannot do both. Falls back to the
-          // stage's own colour, which is what every unthemed festival uses.
+          // The same colour has to be a block fill with text on top of it AND
+          // this label as text on --bg, and a pale poster colour cannot do
+          // both — so the label reads the stage's -header token (or a
+          // festival's own headerColor). See stageHeaderColor.
           <div key={stage.id} className="stage-header" data-stage={stage.id}
-            style={{ gridColumn: stage.col, color: `var(${stage.headerColor ?? stage.color})` }}>
+            style={{ gridColumn: stage.col, color: stageHeaderColor(stage) }}>
             {stage.name}
           </div>
         ))}
@@ -297,18 +298,8 @@ export default function ScheduleGrid({
           onNotMember={onNotMember}
         />
       ))}
-      <footer style={{
-        marginTop: '100px',
-        paddingBottom: '40px',
-        textAlign: 'center',
-        fontSize: '0.85rem',
-        color: 'var(--ink-soft)',
-      }}>
-        <a href="https://stuffbydan.com" target="_blank" rel="noopener noreferrer" style={{
-          color: 'inherit',
-          textDecoration: 'none',
-          fontWeight: 600,
-        }}>
+      <footer className="site-footer">
+        <a href="https://stuffbydan.com" target="_blank" rel="noopener noreferrer">
           Made with ♥ in San Francisco
         </a>
         {/* <div style={{

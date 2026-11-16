@@ -8,7 +8,7 @@
  * initials work ("acl", "hsb"), and a multi-word query matches when every word
  * hits somewhere — name, short name, slug, alias, venue or city.
  */
-import { listFestivals, FESTIVAL_ALIASES } from './festivals/index.js';
+import { listPublicFestivals, FESTIVAL_ALIASES } from './festivals/index.js';
 import { festivalStartsAt, hasFestivalEnded } from './festival.js';
 
 // Lowercase, strip accents, treat `&` as "and", and collapse everything that
@@ -120,7 +120,7 @@ function score(entry, query, tokens) {
 export function suggestFestivals(rawQuery, {
   limit = 8,
   includeEnded = true,
-  festivals = listFestivals(),
+  festivals = listPublicFestivals(),
   now = new Date(),
 } = {}) {
   const query = normalize(rawQuery);
