@@ -67,6 +67,16 @@ export function festivalStartsAt(festival) {
   return new Date(`${festival.year}-${month}-${dayPad}T00:00:00${festival.utcOffset}`);
 }
 
+// What a tap on a set changes its vote to: Skip → Want → Must See → Skip.
+// A maxPicks event (see shared/festivals/lucky-13.js) is a plain yes/no
+// instead — vote ↔ no vote.
+export function nextScore(cur, { maxPicks } = {}) {
+  if (maxPicks) return cur > 0 ? 0 : 1;
+  if (cur === 3) return 0;
+  if (cur === 1) return 3;
+  return 1;
+}
+
 export function hasFestivalEnded(festival, now = new Date()) {
   return now.getTime() > festivalEndsAt(festival).getTime();
 }

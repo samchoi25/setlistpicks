@@ -82,6 +82,9 @@ function validate(def) {
       throw new Error(`${slug}: ${flag} must be a boolean`);
     }
   }
+  if (def.maxPicks !== undefined && !(Number.isInteger(def.maxPicks) && def.maxPicks > 0)) {
+    throw new Error(`${slug}: maxPicks must be a positive integer`);
+  }
   if (!Array.isArray(def.groupNames) || def.groupNames.length === 0) {
     throw new Error(`${slug}: groupNames must be a non-empty array`);
   }

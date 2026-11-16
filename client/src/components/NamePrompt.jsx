@@ -63,7 +63,9 @@ export default function NamePrompt({ groupId, member, memberDisplayName, groupNa
         // A secret party vote (see shared/festivals/lucky-13.js): nobody sees
         // the group's picks, so don't promise that.
         <ul className="modal-list">
-          <li>Rate every {festival.entryNoun ?? 'entry'} 👍 or 🔥</li>
+          {festival.maxPicks
+            ? <li>Vote for up to {festival.maxPicks} {festival.entryNoun ?? 'entrie'}s</li>
+            : <li>Rate every {festival.entryNoun ?? 'entry'} 👍 or 🔥</li>}
           <li>Bringing one? Add it to the list</li>
           <li>Votes are secret — only the hosts see the count</li>
         </ul>

@@ -781,10 +781,13 @@ router.get('/:secret/tally/:slug', requireSecret, (req, res) => {
   const festival = withUserSets(base, listUserSets(base.slug));
   const { counts, voters } = festivalTally(base.slug);
   const noun = base.entryNoun ?? 'set';
+  // A maxPicks event votes yes/no, so its standings are a plain vote count;
+  // otherwise 🔥 = 3 and 👍 = 1, the app's usual weighting.
+  const plain = Boolean(base.maxPicks);
 
   const rows = festival.SCHEDULE.map((s) => {
     const c = counts[s.id] ?? { must: 0, want: 0 };
-    return { set: s, ...c, score: c.must * 3 + c.want };
+    return { set: s, ...c, score: plain ? c.must + c.want : c.must * 3 + c.want };
   }).sort((a, b) => b.score - a.score || b.must - a.must || a.set.artist.localeCompare(b.set.artist));
 
   // Shared rank for ties, so a dead heat reads as one.
@@ -806,17 +809,17 @@ router.get('/:secret/tally/:slug', requireSecret, (req, res) => {
       <div class="stat"><div class="stat-value">${voters}</div><div class="stat-label">Guests voting</div></div>
     </div>
     <section>
-      <h2>Standings <span class="muted" style="font-size:12px;font-weight:400">· 🔥 = 3 pts, 👍 = 1 pt · refreshes every 10 s · ${esc(fmt(Date.now()))}</span></h2>
+      <h2>Standings <span class="muted" style="font-size:12px;font-weight:400">· ${plain ? `up to ${base.maxPicks} votes per guest` : '🔥 = 3 pts, 👍 = 1 pt'} · refreshes every 10 s · ${esc(fmt(Date.now()))}</span></h2>
       ${rows.length ? `<div class="table-wrap"><table>
-        <thead><tr><th>#</th><th>${esc(noun[0].toUpperCase() + noun.slice(1))}</th><th>By</th><th>🔥</th><th>👍</th><th>Score</th><th></th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>${esc(noun[0].toUpperCase() + noun.slice(1))}</th><th>By</th>${plain ? '<th>Votes</th>' : '<th>🔥</th><th>👍</th><th>Score</th>'}<th></th><th></th></tr></thead>
         <tbody>
           ${rows.map((r) => `
             <tr>
               <td>${r.rank}</td>
               <td><strong>${esc(r.set.artist)}</strong></td>
               <td class="muted">${esc(r.set.submittedBy ?? '')}</td>
-              <td>${r.must}</td>
-              <td>${r.want}</td>
+              ${plain ? '' : `<td>${r.must}</td>
+              <td>${r.want}</td>`}
               <td><strong>${r.score}</strong></td>
               <td style="width:30%"><div style="height:8px;border-radius:4px;background:#60a5fa;width:${Math.round((r.score / top) * 100)}%"></div></td>
               <td>${r.set.submittedBy !== undefined ? `<form class="inline" method="POST" action="/admin/${esc(secret)}/delete-user-set"

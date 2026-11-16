@@ -13,6 +13,8 @@
 //   unlisted     — never the default page, never in search, the switcher or
 //                  the sitemap, and its pages are noindex.
 //   entryNoun    — what one set is called in copy ("Add a cocktail").
+//   maxPicks     — voting is a plain yes/no per cocktail (no Want/Must See),
+//                  and each guest can vote for at most this many.
 //
 // The date is deliberately far out so voting never closes early; set the
 // real party date here once it's known (voting closes when that day ends).
@@ -41,6 +43,7 @@ export default {
   secretVotes: true,
   unlisted: true,
   entryNoun: 'cocktail',
+  maxPicks: 3,
   groupNames: [
     'Lucky Thirteen', 'Shaken Not Stirred', 'Top Shelf', 'Last Call',
     'Bitters End', 'Happy Hour Heroes', 'Twist of Lime', 'On the Rocks',

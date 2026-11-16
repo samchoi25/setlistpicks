@@ -27,9 +27,15 @@ function ordinalSuffix(n) {
 // Every act block, whichever grid it renders in, needs the same per-set vote
 // data plus the handful of callbacks passed straight down from GroupView.
 // Bundled into one helper so each grid body just spreads `voteProps(s)`.
-function makeVoteProps({ myVotes, perArtistRaw, memberKey, memberDisplayName, groupId, onVoteChange, onLongPress, onNotMember }) {
+function makeVoteProps({ myVotes, perArtistRaw, memberKey, memberDisplayName, groupId, onVoteChange, onLongPress, onNotMember, maxPicks }) {
+  // A maxPicks event (see shared/festivals/lucky-13.js) caps how many sets a
+  // guest can vote for; at the cap, an unvoted block refuses a new vote.
+  const atPickLimit = maxPicks
+    ? Object.values(myVotes).filter((v) => v > 0).length >= maxPicks
+    : false;
   return (s) => ({
     myVote: myVotes[s.id] || 0,
+    atPickLimit,
     groupVotes: perArtistRaw[s.id] || [],
     memberKey, memberDisplayName, groupId, onVoteChange, onLongPress, onNotMember,
   });
@@ -178,6 +184,7 @@ function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, gro
 
   const voteProps = makeVoteProps({
     myVotes, perArtistRaw, memberKey, memberDisplayName, groupId, onVoteChange, onLongPress, onNotMember,
+    maxPicks: festival.maxPicks,
   });
 
   const staged = mode === 'untimed' ? daySets.filter((s) => s.stageId) : [];

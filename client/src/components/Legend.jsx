@@ -50,7 +50,26 @@ function MarkCheck() {
 
 export default function Legend() {
   // A secret vote shows nobody who's in, so there's nothing to long-press for.
-  const { secretVotes } = useFestival();
+  const { secretVotes, maxPicks, entryNounPlural, entryNoun } = useFestival();
+
+  // A maxPicks event (see shared/festivals/lucky-13.js) votes yes/no, so the
+  // three-way Skip / Want / Must See key would describe states it doesn't have.
+  if (maxPicks) {
+    const plural = entryNounPlural ?? `${entryNoun ?? 'pick'}s`;
+    return (
+      <div className="legend-wrap">
+        <div className="legend">
+          <span style={{ marginRight: 4 }}>Tap to vote:</span>
+          <LegendPill variant="want" washId="legend-want">
+            <MarkCheck />
+            Voted
+          </LegendPill>
+          <span>· up to {maxPicks} {plural}</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="legend-wrap">
       <div className="legend">

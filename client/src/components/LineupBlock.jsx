@@ -13,10 +13,10 @@ import { useVoteBlock, WashSvg, GroupVotesEl, ArtistNames, scoreClass } from './
 //    day with no stages announced at all.
 const LineupBlock = React.memo(function LineupBlock({
   s, stage, flowColumn, flowRow, myVote, groupVotes, memberKey, memberDisplayName,
-  groupId, onVoteChange, onLongPress, onNotMember,
+  groupId, onVoteChange, onLongPress, onNotMember, atPickLimit,
 }) {
   const { washDataRef, online, ended, handleClick, startLongPress, cancelLongPress, handlePointerUp, longPressFired } =
-    useVoteBlock({ id: s.id, artist: s.artist, artists: s.artists, myVote, groupId, memberKey, memberDisplayName, onVoteChange, onLongPress, onNotMember });
+    useVoteBlock({ id: s.id, artist: s.artist, artists: s.artists, myVote, groupId, memberKey, memberDisplayName, onVoteChange, onLongPress, onNotMember, atPickLimit });
 
   const style = stage
     ? { gridColumn: String(stage.col), gridRow: String(s.order + 2), background: `var(${stage.color})`, '--block-fg': stageBlockInk(stage) }
@@ -49,6 +49,7 @@ const LineupBlock = React.memo(function LineupBlock({
   );
 }, (prev, next) => (
   prev.myVote        === next.myVote &&
+  prev.atPickLimit   === next.atPickLimit &&
   prev.groupVotes    === next.groupVotes &&
   prev.memberDisplayName === next.memberDisplayName &&
   prev.onNotMember   === next.onNotMember &&

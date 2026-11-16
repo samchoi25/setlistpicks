@@ -4,7 +4,7 @@ import { api } from '../api.js';
 import { toast } from '../toast.js';
 import { useOnline } from '../net-status.js';
 import { useFestival } from '../festival-context.jsx';
-import { hasFestivalEnded } from '../../../shared/festival.js';
+import { hasFestivalEnded, nextScore } from '../../../shared/festival.js';
 import { getCachedJson, putJson, applyVotePatch, applyPerArtistPatch } from '../offline-cache.js';
 
 export function scoreClass(score) {
@@ -13,11 +13,7 @@ export function scoreClass(score) {
   return 'vote-0';
 }
 
-export function nextScore(cur) {
-  if (cur === 3) return 0;
-  if (cur === 1) return 3;
-  return 1;
-}
+export { nextScore };
 
 export function WashSvg({ data }) {
   const { filterRef, rotation, returnOpacity, p1, p2 } = data;
@@ -67,7 +63,7 @@ export function GroupVotesEl({ votes, myVote, memberKey, memberDisplayName }) {
 // (ShowBlock's time-positioned version and LineupBlock's untimed one). Both
 // only differ in how they're laid out on the grid, not in how a tap or a
 // long-press behaves, so that logic lives here once.
-export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, memberDisplayName, onVoteChange, onLongPress, onNotMember }) {
+export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, memberDisplayName, onVoteChange, onLongPress, onNotMember, atPickLimit = false }) {
   // Stable wash data — created once per block instance (useRef)
   const washDataRef = useRef(null);
   if (!washDataRef.current) washDataRef.current = computeWashData(id);
@@ -89,8 +85,12 @@ export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, 
     // Clearing the ref here causes it to be recomputed on the very next render
     // (which is triggered by myVote changing). WS-only re-renders never clear
     // it, so peers' votes never disturb your brushstroke.
+    const next = nextScore(myVote, festival);
+    if (next > 0 && atPickLimit) {
+      toast(`You can vote for up to ${festival.maxPicks} — tap one of yours to free a vote.`);
+      return;
+    }
     washDataRef.current = null;
-    const next = nextScore(myVote);
     onVoteChange(id, next); // optimistic
     setSaving(true);
     try {
@@ -115,13 +115,15 @@ export function useVoteBlock({ id, artist, artists, myVote, groupId, memberKey, 
         onNotMember?.();
       } else if (e.data?.error === 'festival_ended') {
         toast('Voting is closed — this festival has ended.');
+      } else if (e.data?.error === 'too_many_picks') {
+        toast(`You can vote for up to ${festival.maxPicks} — tap one of yours to free a vote.`);
       } else {
         toast(`Save failed: ${e.message}`);
       }
     } finally {
       setSaving(false);
     }
-  }, [myVote, saving, online, id, groupId, memberKey, memberDisplayName, onVoteChange, onNotMember]);
+  }, [myVote, saving, online, id, groupId, memberKey, memberDisplayName, onVoteChange, onNotMember, atPickLimit, festival]);
 
   // Long-press
   const longPressTimer = useRef(null);

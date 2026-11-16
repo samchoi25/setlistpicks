@@ -77,6 +77,7 @@ export function createStore(db) {
     `),
     deleteVote:   db.prepare('DELETE FROM votes WHERE group_id = ? AND member_key = ? AND artist_id = ?'),
     getMyVotes:   db.prepare('SELECT artist_id, score FROM votes WHERE group_id = ? AND member_key = ?'),
+    countMyVotes: db.prepare('SELECT COUNT(*) AS cnt FROM votes WHERE group_id = ? AND member_key = ? AND artist_id != ?'),
     getAllVotes:  db.prepare('SELECT member_key, artist_id, score FROM votes WHERE group_id = ?'),
 
     listUserSets:      db.prepare('SELECT id, artist, submitted_by, group_id, member_key, created_at FROM user_sets WHERE festival_slug = ? ORDER BY id'),
@@ -214,9 +215,20 @@ export function createStore(db) {
     }
     const numeric = Number(score);
     if (!VALID_SCORES.has(numeric)) return { error: 'invalid_score' };
+    // A maxPicks event (see shared/festivals/lucky-13.js) votes yes/no only:
+    // 1 is a vote, 0 clears it, and there's no Must See.
+    const maxPicks = groupFestival?.maxPicks;
+    if (maxPicks && numeric === 3) return { error: 'invalid_score' };
 
     const mem = stmts.getMember.get(groupId, memberKey);
     if (!mem) return { error: 'not_a_member' };
+
+    // …and caps how many each guest can vote for. Re-voting the same one, or
+    // clearing a vote, never counts against the cap.
+    if (maxPicks && numeric > 0
+        && stmts.countMyVotes.get(groupId, memberKey, artistId).cnt >= maxPicks) {
+      return { error: 'too_many_picks' };
+    }
 
     if (numeric === 0) {
       stmts.deleteVote.run(groupId, memberKey, artistId);

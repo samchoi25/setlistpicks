@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { openDb } from '../server/db.js';
 import { createStore } from '../server/groups.js';
 import { getFestival, listFestivals } from '../shared/festivals/index.js';
-import { withUserSets, userSetId, userSetRowId, hasFestivalEnded } from '../shared/festival.js';
+import { withUserSets, userSetId, userSetRowId, hasFestivalEnded, nextScore } from '../shared/festival.js';
 import { parsePath } from '../shared/routes.js';
 import { pageTitle, renderJsonLd } from '../scripts/seo-prerender.js';
 
@@ -120,22 +120,48 @@ test('removing your cocktail frees your one slot', () => {
   assert.ok(store.addUserSet(group.id, sam.key, 'Mojito').set);
 });
 
-test('guests vote on cocktails with the ordinary scores', () => {
+test('voting on a cocktail is yes/no: 1 votes, 0 clears, Must See is refused', () => {
   const { store } = fresh();
   const { group, members: [sam, sara] } = party(store, 'Sam', 'Sara');
   const { set } = store.addUserSet(group.id, sam.key, 'Negroni');
   const id = setIdFor(set);
-  assert.deepEqual(store.setVote(group.id, sara.key, id, 3), { ok: true });
-  assert.deepEqual(store.getMyVotes(group.id, sara.key), { [id]: 3 });
+  assert.deepEqual(store.setVote(group.id, sara.key, id, 3), { error: 'invalid_score' });
+  assert.deepEqual(store.setVote(group.id, sara.key, id, 1), { ok: true });
+  assert.deepEqual(store.getMyVotes(group.id, sara.key), { [id]: 1 });
+  assert.deepEqual(store.setVote(group.id, sara.key, id, 0), { ok: true });
+  assert.deepEqual(store.getMyVotes(group.id, sara.key), {});
   // A user-set id for a row that doesn't exist is still refused.
-  assert.deepEqual(store.setVote(group.id, sara.key, `${SLUG}:party-user-999`, 3), { error: 'invalid_artist' });
+  assert.deepEqual(store.setVote(group.id, sara.key, `${SLUG}:party-user-999`, 1), { error: 'invalid_artist' });
+});
+
+test('a guest can vote for at most three cocktails', () => {
+  const { store } = fresh();
+  const names = ['Sam', 'Sara', 'Alex', 'Jo', 'Max'];
+  const { group, members } = party(store, ...names);
+  const ids = members.slice(0, 4).map((m, i) => setIdFor(store.addUserSet(group.id, m.key, `Drink ${i}`).set));
+  const voter = members[4];
+  for (const id of ids.slice(0, 3)) assert.deepEqual(store.setVote(group.id, voter.key, id, 1), { ok: true });
+  assert.deepEqual(store.setVote(group.id, voter.key, ids[3], 1), { error: 'too_many_picks' });
+  // Re-voting one you already have isn't a fourth vote.
+  assert.deepEqual(store.setVote(group.id, voter.key, ids[0], 1), { ok: true });
+  // Clearing one frees a vote.
+  store.setVote(group.id, voter.key, ids[0], 0);
+  assert.deepEqual(store.setVote(group.id, voter.key, ids[3], 1), { ok: true });
+});
+
+test('the yes/no toggle applies only to a maxPicks event', () => {
+  assert.equal(nextScore(0, lucky), 1);
+  assert.equal(nextScore(1, lucky), 0);
+  const festival = listFestivals().find((f) => !f.maxPicks);
+  assert.deepEqual([0, 1, 3].map((s) => nextScore(s, festival)), [1, 3, 0]);
+  assert.equal(listFestivals().filter((f) => f.maxPicks).map((f) => f.slug).join(), SLUG);
 });
 
 test('guests never see anyone else’s picks', () => {
   const { store } = fresh();
   const { group, members: [sam, sara] } = party(store, 'Sam', 'Sara');
   const { set } = store.addUserSet(group.id, sam.key, 'Negroni');
-  store.setVote(group.id, sara.key, setIdFor(set), 3);
+  store.setVote(group.id, sara.key, setIdFor(set), 1);
   const visible = store.getVisibleVotes(group.id);
   assert.deepEqual(visible.perArtist, {});
   assert.equal(visible.members.length, 2);
@@ -143,17 +169,17 @@ test('guests never see anyone else’s picks', () => {
   assert.equal(Object.keys(store.getAllVotes(group.id).perArtist).length, 1);
 });
 
-test('the admin tally counts 🔥 and 👍 per cocktail and distinct voters', () => {
+test('the admin tally counts votes per cocktail and distinct voters', () => {
   const { store } = fresh();
   const { group, members: [sam, sara, alex] } = party(store, 'Sam', 'Sara', 'Alex');
   const negroni = setIdFor(store.addUserSet(group.id, sam.key, 'Negroni').set);
   const mojito = setIdFor(store.addUserSet(group.id, sara.key, 'Mojito').set);
-  store.setVote(group.id, sara.key, negroni, 3);
+  store.setVote(group.id, sara.key, negroni, 1);
   store.setVote(group.id, alex.key, negroni, 1);
-  store.setVote(group.id, alex.key, mojito, 3);
+  store.setVote(group.id, alex.key, mojito, 1);
   const { counts, voters } = store.festivalTally(SLUG);
-  assert.deepEqual(counts[negroni], { must: 1, want: 1 });
-  assert.deepEqual(counts[mojito], { must: 1, want: 0 });
+  assert.deepEqual(counts[negroni], { must: 0, want: 2 });
+  assert.deepEqual(counts[mojito], { must: 0, want: 1 });
   assert.equal(voters, 2);
 });
 
@@ -161,7 +187,7 @@ test('only the guest who entered a cocktail (or an admin) can remove it, and its
   const { store } = fresh();
   const { group, members: [sam, sara] } = party(store, 'Sam', 'Sara');
   const { set } = store.addUserSet(group.id, sam.key, 'Negroni');
-  store.setVote(group.id, sara.key, setIdFor(set), 3);
+  store.setVote(group.id, sara.key, setIdFor(set), 1);
 
   assert.deepEqual(
     store.removeUserSet(SLUG, set.id, { groupId: group.id, memberKey: sara.key }),
