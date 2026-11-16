@@ -79,7 +79,9 @@ export default function ArtistPopup({ artistId, artistName, artists, votes, memb
         </div>
       )}
       {!musts.length && !wants.length && (
-        <div className="picks-empty">No group picks yet</div>
+        // A secretVotes event (see shared/festivals/lucky-13.js) never shows
+        // the group's picks, so "none yet" would mislead.
+        <div className="picks-empty">{festival.secretVotes ? 'Votes are secret' : 'No group picks yet'}</div>
       )}
     </Modal>
   );
