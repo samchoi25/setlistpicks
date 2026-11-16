@@ -52,8 +52,13 @@ export default function FestivalSwitcher() {
   }, [open]);
 
   // Nothing else live to switch to — the plain wordmark, no dropdown affordance.
+  // An event with its own logo (Lucky 13) shows that image instead.
   if (options.length <= 1) {
-    return <div className="brand-logo">{festival.shortName}</div>;
+    return (
+      <div className="brand-logo">
+        {festival.logo ? <img className="brand-logo-img" src={festival.logo} alt={festival.shortName} /> : festival.shortName}
+      </div>
+    );
   }
 
   return (

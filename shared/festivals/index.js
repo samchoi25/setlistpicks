@@ -82,6 +82,9 @@ function validate(def) {
       throw new Error(`${slug}: ${flag} must be a boolean`);
     }
   }
+  if (def.logo !== undefined && !(typeof def.logo === 'string' && /^\/[\w./-]+\.(png|svg|webp|jpg)$/.test(def.logo))) {
+    throw new Error(`${slug}: logo must be a site path to an image, like /logos/${slug}.png`);
+  }
   if (def.maxPicks !== undefined && !(Number.isInteger(def.maxPicks) && def.maxPicks > 0)) {
     throw new Error(`${slug}: maxPicks must be a positive integer`);
   }

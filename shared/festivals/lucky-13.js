@@ -19,6 +19,8 @@
 //                  popup; everyone sees the photos there. They're deleted
 //                  from the server within a few hours of the event's date
 //                  ending (server/photos.js), so set the real date below.
+//   logo         — image shown top-left in place of the "Lucky 13" wordmark
+//                  (client/public/logos/lucky-13.png, served from /logos/).
 //   snow         — gently falling CSS snow over the page (.is-snowing).
 //   memberNameWords — holiday words for the placeholder name a new guest
 //                  gets before typing their own ("Jolly Snowflake 42").
@@ -52,6 +54,7 @@ export default {
   entryNoun: 'cocktail',
   maxPicks: 3,
   snow: true,
+  logo: '/logos/lucky-13.png',
   photos: true,
   memberNameWords: {
     adjectives: [

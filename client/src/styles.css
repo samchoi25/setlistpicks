@@ -245,7 +245,7 @@ input[type="text"]::placeholder {
   display: flex;
   align-items: center;
   gap: var(--space-5);
-  padding: var(--space-3) var(--space-1) var(--space-5);
+  padding: 0;
 }
 .brand-logo {
   font-family: var(--font-display);
@@ -267,6 +267,16 @@ input[type="text"]::placeholder {
   align-items: center;
   gap: 5px;
   font: inherit;
+}
+.brand-logo-img {
+  display: block;
+  width: 72px;
+  height: auto;
+}
+@media (max-width: 640px) {
+  .brand-logo-img {
+    width: 56px;
+  }
 }
 .brand-logo-wrap {
   position: relative;
@@ -455,9 +465,13 @@ button.brand-title-option:hover {
 
 /* ─── Toolbar ────────────────────────────────────────────────────────── */
 .toolbar {
-  padding: 8px 0 14px;
+  padding: 8px 0 7px;
   display: grid;
   gap: var(--space-2-5);
+}
+/* Half the card's usual top margin right under the toolbar: 7px + 6px. */
+.toolbar + .card {
+  margin-top: var(--space-1-5);
 }
 
 /* ─── Offline banner ─────────────────────────────────────────────────── */
@@ -1688,7 +1702,6 @@ input[type="text"].is-tight {
       "logo share badge"
       "info info info";
     gap: var(--space-0-5) 0;
-    padding-bottom: var(--space-3);
   }
   .brand-logo    { grid-area: logo; align-self: center; }
   .brand-info    { grid-area: info; }
