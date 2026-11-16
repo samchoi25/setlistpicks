@@ -95,6 +95,25 @@ const SCHEMA = `
   );
 
   CREATE INDEX IF NOT EXISTS idx_user_sets_festival ON user_sets(festival_slug);
+
+  /*
+   * Photos guests attach to a set (a festival with photos: true — Lucky 13's
+   * cocktails). The image itself is a file in PHOTO_DIR named by id; this row
+   * says which set it belongs to and who took it.
+   */
+  CREATE TABLE IF NOT EXISTS set_photos (
+    id            TEXT    PRIMARY KEY,
+    festival_slug TEXT    NOT NULL,
+    set_id        TEXT    NOT NULL,
+    group_id      TEXT,
+    member_key    TEXT,
+    uploaded_by   TEXT    NOT NULL,
+    mime          TEXT    NOT NULL,
+    bytes         INTEGER NOT NULL,
+    created_at    INTEGER NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_set_photos_set ON set_photos(festival_slug, set_id);
 `;
 
 // Indexes over columns the MIGRATIONS below add — they cannot live in SCHEMA,
@@ -125,6 +144,12 @@ export const MIGRATIONS = [
  * Takes a path so tests can use ':memory:' — the module used to resolve
  * DB_PATH at import time, which made isolation impossible.
  */
+// Uploaded photos live beside the database — on Fly that's the persistent
+// /data volume, so they survive deploys the same way the votes do.
+export const PHOTO_DIR = process.env.PHOTO_DIR
+  ? path.resolve(process.env.PHOTO_DIR)
+  : path.join(path.dirname(DEFAULT_DB_PATH), 'photos');
+
 export function openDb(dbPath = DEFAULT_DB_PATH) {
   if (dbPath !== ':memory:') {
     fs.mkdirSync(path.dirname(dbPath), { recursive: true });

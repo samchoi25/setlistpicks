@@ -77,7 +77,7 @@ function validate(def) {
   if (def.websocketsEnabled !== undefined && typeof def.websocketsEnabled !== 'boolean') {
     throw new Error(`${slug}: websocketsEnabled must be a boolean`);
   }
-  for (const flag of ['userSets', 'secretVotes', 'unlisted', 'snow']) {
+  for (const flag of ['userSets', 'secretVotes', 'unlisted', 'snow', 'photos']) {
     if (def[flag] !== undefined && typeof def[flag] !== 'boolean') {
       throw new Error(`${slug}: ${flag} must be a boolean`);
     }

@@ -158,6 +158,7 @@
   --z-dropdown: 10;
   --z-snow: 100;       /* falling snow (.is-snowing): over the page, under dialogs */
   --z-modal: 150;
+  --z-lightbox: 160;   /* a photo opened full size from inside a modal */
   --z-toast: 200;      /* above modals, so a modal's own errors are visible */
 
   /* Height of one 5-minute slot. Sized so the shortest set in the lineup
@@ -1212,6 +1213,10 @@ input[type="text"].is-tight {
 
 /* ─── Crew picks popup (inside .modal-popover) ───────────────────── */
 .picks-artist {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
   font-weight: 800;
   font-size: var(--text-lg);
   text-transform: uppercase;
@@ -1893,3 +1898,206 @@ input[type="text"].is-tight {
     display: none;
   }
 }
+
+/* ─── Set photos (long-press popup, photos: true events — SetPhotos.jsx) ── */
+.photo-camera-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--ink) 40%, transparent);
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+}
+.photo-camera-btn:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  border-color: var(--ink);
+}
+.photo-camera-btn svg {
+  width: 18px;
+  height: 18px;
+}
+.photo-camera-btn.is-busy {
+  opacity: 0.5;
+  cursor: progress;
+}
+.photo-input {
+  display: none;
+}
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-1-5);
+  margin-bottom: var(--space-3);
+}
+.photo-item {
+  margin: 0;
+  min-width: 0;
+}
+.photo-by {
+  margin-top: var(--space-1);
+  font-size: var(--text-2xs);
+  line-height: 1.25;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+  /* Wrap to a second line (names like "Mistletoed Candy Cane 62" run long
+     in a three-across grid), and only then trim. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.photo-thumb {
+  display: block;
+  width: 100%;
+  padding: 0;
+  cursor: zoom-in;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--radius-xs);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+.photo-item.is-mine .photo-thumb {
+  position: relative;
+  cursor: pointer;
+}
+/* Delete / Retake over your own photo: shown on hover, on keyboard focus
+   (focus-visible, so a tap's focus doesn't pin it open), or after a tap
+   (.is-revealed) where there's no hover. */
+.photo-actions {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: color-mix(in srgb, var(--ink) 70%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+.photo-item.is-revealed .photo-actions,
+.photo-item.is-mine .photo-thumb:focus-visible .photo-actions,
+.photo-actions:has(:focus-visible) {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (hover: hover) {
+  .photo-item.is-mine .photo-thumb:hover .photo-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+.photo-actions button {
+  padding: 3px 0;
+  border-radius: var(--radius-xs);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.photo-actions button.is-danger {
+  background: var(--danger);
+  color: var(--on-color);
+}
+.photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.camera-view {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.camera-frame {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: var(--radius-xs);
+  background: var(--ink);
+}
+.camera-frame video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* The front camera shows a mirror image, the way people expect a selfie view
+   to look; the photo itself is saved unmirrored. */
+.camera-frame video.is-mirrored {
+  transform: scaleX(-1);
+}
+.camera-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--paper);
+  font-size: var(--text-md);
+}
+.camera-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.camera-actions .link-button {
+  margin-left: auto;
+  font-size: var(--text-md);
+  color: var(--ink-soft);
+}
+
+/* A photo opened full size (PhotoLightbox in SetPhotos.jsx). */
+.photo-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-lightbox);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+  background: color-mix(in srgb, var(--ink) 88%, transparent);
+  cursor: zoom-out;
+}
+.photo-lightbox-figure {
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  max-width: 100%;
+}
+.photo-lightbox-figure img {
+  max-width: min(92vw, 1100px);
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: var(--radius-xs);
+  box-shadow: var(--shadow-lg);
+}
+.photo-lightbox-figure figcaption {
+  color: var(--paper);
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+.photo-lightbox-close {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-4);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  color: var(--paper);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Modal from './Modal.jsx';
 import { useFestival } from '../festival-context.jsx';
+import { CameraButton, CameraView, PhotoGrid, usePhotos, deleteMyPhoto } from './SetPhotos.jsx';
 
 function initials(name) {
   return name.split(/\s+/).filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
@@ -49,15 +50,40 @@ function ListenLinks({ name, links, showName }) {
   );
 }
 
-export default function ArtistPopup({ artistId, artistName, artists, votes, memberKey, onClose }) {
+export default function ArtistPopup({ artistId, artistName, artists, votes, memberKey, groupId, onClose }) {
   const festival = useFestival();
+  // Photos only exist for a photos: true event; elsewhere the hook fetches
+  // nothing (it still runs, since hooks can't be conditional).
+  const { photos, reload } = usePhotos(artistId, { groupId, memberKey });
+  const [cameraOpen, setCameraOpen] = useState(false);
   const musts = votes.filter((v) => v.score === 3);
   const wants = votes.filter((v) => v.score === 1);
   const names = artists?.length ? artists : [artistName];
 
   return (
     <Modal onClose={onClose} label={artistName} className="modal-popover" backdropClassName="is-centered">
-      <div className="picks-artist">{artistName}</div>
+      <div className="picks-artist">
+        <span>{artistName}</span>
+        {festival.photos && groupId && !cameraOpen && (
+          <CameraButton setId={artistId} groupId={groupId} memberKey={memberKey}
+            hasPhoto={photos.some((p) => p.mine)}
+            onUploaded={reload} onOpenCamera={() => setCameraOpen(true)} />
+        )}
+      </div>
+      {festival.photos && cameraOpen && (
+        <CameraView setId={artistId} groupId={groupId} memberKey={memberKey}
+          onDone={() => { setCameraOpen(false); reload(); }}
+          onCancel={() => setCameraOpen(false)} />
+      )}
+      {festival.photos && !cameraOpen && (
+        <PhotoGrid
+          photos={photos}
+          onRetake={() => setCameraOpen(true)}
+          onDelete={async () => {
+            if (await deleteMyPhoto({ groupId, setId: artistId, memberKey })) reload();
+          }}
+        />
+      )}
       {names.map((name) => (
         <ListenLinks key={name} name={name} links={festival.artistLinks?.[name]} showName={names.length > 1} />
       ))}

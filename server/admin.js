@@ -1,7 +1,8 @@
 import express from 'express';
 import { db, deleteGroupCascade } from './db.js';
 import { festivalTally, listUserSets, removeUserSet } from './groups.js';
-import { withUserSets } from '../shared/festival.js';
+import { withUserSets, userSetId } from '../shared/festival.js';
+import { photoStore } from './photos.js';
 import { listFestivals, getFestival } from '../shared/festivals/index.js';
 import { VISIT_SOURCES } from '../shared/traffic.js';
 
@@ -840,7 +841,11 @@ router.post('/:secret/delete-user-set', requireSecret, parseForm, (req, res) => 
   const { secret } = req.params;
   const { slug, setId, redirect } = req.body ?? {};
   if (slug && setId) {
-    try { removeUserSet(slug, setId, { asAdmin: true }); } catch (e) { console.error('[admin] delete-user-set error', e); }
+    try {
+      const result = removeUserSet(slug, setId, { asAdmin: true });
+      const f = getFestival(slug);
+      if (result.ok && f) photoStore.removePhotosForSet(f.slug, userSetId(f.slug, f.days[0].id, setId));
+    } catch (e) { console.error('[admin] delete-user-set error', e); }
   }
   res.redirect(redirect || `/admin/${secret}`);
 });

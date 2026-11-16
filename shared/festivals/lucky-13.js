@@ -15,6 +15,10 @@
 //   entryNoun    — what one set is called in copy ("Add a cocktail").
 //   maxPicks     — voting is a plain yes/no per cocktail (no Want/Must See),
 //                  and each guest can vote for at most this many.
+//   photos       — guests can snap a photo of a cocktail from its long-press
+//                  popup; everyone sees the photos there. They're deleted
+//                  from the server within a few hours of the event's date
+//                  ending (server/photos.js), so set the real date below.
 //   snow         — gently falling CSS snow over the page (.is-snowing).
 //   memberNameWords — holiday words for the placeholder name a new guest
 //                  gets before typing their own ("Jolly Snowflake 42").
@@ -48,6 +52,7 @@ export default {
   entryNoun: 'cocktail',
   maxPicks: 3,
   snow: true,
+  photos: true,
   memberNameWords: {
     adjectives: [
       'Jolly', 'Merry', 'Festive', 'Frosty', 'Snowy', 'Twinkly', 'Cozy', 'Sparkly',

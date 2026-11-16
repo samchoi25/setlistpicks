@@ -22,6 +22,8 @@ import {
   getVisibleVotes,
 } from './groups.js';
 import { recordRequestVisit } from './visits.js';
+import { photoStore, MAX_PHOTO_BYTES } from './photos.js';
+import { userSetId } from '../shared/festival.js';
 import { adminRouter } from './admin.js';
 import { getFestival, listFestivals, DEFAULT_FESTIVAL_SLUG } from '../shared/festivals/index.js';
 import { parsePath, canonicalRedirect, isGroupPath } from '../shared/routes.js';
@@ -215,9 +217,51 @@ app.delete('/api/groups/:groupId/user-sets/:setId', (req, res) => {
   if (result.error === 'set_not_found') return res.status(404).json(result);
   if (result.error === 'not_yours') return res.status(403).json(result);
   if (result.error) return res.status(400).json(result);
+  const festival = getFestival(slug);
+  photoStore.removePhotosForSet(festival.slug, userSetId(festival.slug, festival.days[0].id, req.params.setId));
   // Votes on it are gone; push the change to anyone listening.
   broadcastVotes(req.params.groupId);
   res.json(result);
+});
+
+// ─── Set photos (photos: true events, e.g. Lucky 13's cocktails) ────────────
+// Upload is the raw image as the request body — the client has already
+// shrunk it — from a member of a group on that festival. The list and the
+// images themselves are public to anyone with the event link, like the sets.
+app.post(
+  '/api/groups/:groupId/sets/:setId/photos',
+  express.raw({ type: () => true, limit: MAX_PHOTO_BYTES }),
+  (req, res) => {
+    const result = photoStore.addPhoto(req.params.groupId, String(req.query.memberKey ?? ''), req.params.setId, req.body);
+    if (result.error === 'group_not_found') return res.status(404).json(result);
+    if (result.error === 'too_large') return res.status(413).json(result);
+    if (result.error) return res.status(400).json(result);
+    res.json({ photo: { ...result.photo, url: `/api/photos/${result.photo.id}` } });
+  },
+);
+
+app.delete('/api/groups/:groupId/sets/:setId/photos', (req, res) => {
+  const result = photoStore.removeMyPhoto(req.params.groupId, String(req.query.memberKey ?? ''), req.params.setId);
+  if (result.error) return res.status(404).json(result);
+  res.json(result);
+});
+
+app.get('/api/festivals/:slug/sets/:setId/photos', (req, res) => {
+  const festival = getFestival(req.params.slug);
+  if (!festival?.photos) return res.status(404).json({ error: 'unknown_festival' });
+  const viewer = { groupId: String(req.query.groupId ?? ''), memberKey: String(req.query.memberKey ?? '') };
+  const photos = photoStore.listPhotos(festival.slug, req.params.setId, viewer)
+    .map((p) => ({ ...p, url: `/api/photos/${p.id}` }));
+  res.json({ photos });
+});
+
+app.get('/api/photos/:id', (req, res) => {
+  const file = photoStore.getPhotoFile(req.params.id);
+  if (!file) return res.status(404).end();
+  // A photo never changes once uploaded; its id is its version.
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.type(file.mime).sendFile(file.path);
 });
 
 // ─── Admin ────────────────────────────────────────────────────────────────────

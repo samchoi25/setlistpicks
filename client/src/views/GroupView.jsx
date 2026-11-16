@@ -317,6 +317,7 @@ export default function GroupView({
           artists={popup.artists}
           votes={popupVotes}
           memberKey={member.key}
+          groupId={groupId}
           onClose={() => setPopup(null)}
         />
 
