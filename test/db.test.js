@@ -1,9 +1,10 @@
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import Database from 'better-sqlite3';
 import { openDb, pruneStaleGroups, deleteEmptyGroups, MIGRATIONS } from '../server/db.js';
 import { createStore } from '../server/groups.js';
 import { getFestival, DEFAULT_FESTIVAL_SLUG, LEGACY_FESTIVAL_SLUG } from '../shared/festivals/index.js';
+import { festivalStartsAt } from '../shared/festival.js';
 
 const festival = getFestival(DEFAULT_FESTIVAL_SLUG);
 const setId = (n = 0) => festival.SCHEDULE[n].id;
@@ -27,9 +28,14 @@ test('a new group is bound to the default festival', () => {
   assert.equal(store.getGroupMeta(group.id).festivalSlug, DEFAULT_FESTIVAL_SLUG);
 });
 
-test('an alias is stored as its canonical slug', () => {
+test('an alias is stored as its canonical slug', (t) => {
   // Otherwise the same festival could be recorded under two names and a
   // vote's festival check would depend on which URL created the group.
+  // createGroup refuses a festival that has ended, so pin the clock to the
+  // day before Portola opens — this test is about aliasing, not the calendar.
+  const opens = festivalStartsAt(getFestival('portola-2026')).getTime();
+  mock.timers.enable({ apis: ['Date'], now: opens - 24 * 60 * 60 * 1000 });
+  t.after(() => mock.timers.reset());
   const { store } = fresh();
   const group = store.createGroup({ groupName: 'Crew', festivalSlug: 'portola' });
   assert.equal(group.festivalSlug, 'portola-2026');
