@@ -7,7 +7,7 @@
  *       Report which acts on the festival's bill have no Spotify / Apple Music
  *       / SoundCloud links yet.
  *
- *   node scripts/artist-links.js <slug> --aeg <dataPath> [--itunes]
+ *   node scripts/artist-links.js <slug> [--aeg <dataPath>] [--musicbrainz] [--itunes]
  *       Also generate entries for the missing acts, printed to stdout as lines
  *       to paste into the festival's `artistLinks` map.
  *
@@ -19,10 +19,20 @@
  *                     page's embed, e.g.
  *                       curl -s https://www.coachella.com/lineup | grep -o 'data-path="[^"]*"'
  *                     There may be several (one per lineup view); try each.
- *                     Gives Spotify and SoundCloud — AEG doesn't publish
- *                     Apple Music.
+ *                     Reliable for Spotify. Its `soundcloudUrl` field has held
+ *                     TikTok links (Coachella 2027) and no Apple Music field
+ *                     is published, so expect Spotify only from here.
  *
- *   --itunes          Apple's public iTunes Search API, for Apple Music links.
+ *   --musicbrainz     For each act that already has a Spotify artist link,
+ *                     asks MusicBrainz which artist that Spotify page belongs
+ *                     to, then takes that artist's SoundCloud and Apple Music
+ *                     links. Keyed on the Spotify ID rather than the name, so
+ *                     no guessing between same-named acts; links here are
+ *                     editor-curated. Rate-limited to one request a second.
+ *
+ *   --itunes          Apple's public iTunes Search API, for Apple Music links
+ *                     MusicBrainz didn't have. Paced at ~20 requests a minute,
+ *                     which is about what Apple tolerates before refusing.
  *                     Accepted only on a single exact-name match, and still
  *                     marked `// check` in the output: a shared name is the
  *                     usual way a wrong link gets in, so every one of these
@@ -42,18 +52,19 @@ const HOSTS = {
 
 function usage(msg) {
   if (msg) console.error(msg);
-  console.error('usage: node scripts/artist-links.js <slug> [--aeg <dataPath>] [--itunes]');
+  console.error('usage: node scripts/artist-links.js <slug> [--aeg <dataPath>] [--musicbrainz] [--itunes]');
   process.exit(2);
 }
 
 const args = process.argv.slice(2);
 const slug = args.shift();
 if (!slug) usage();
-let aegPath; let useItunes = false;
+let aegPath; let useItunes = false; let useMb = false;
 while (args.length) {
   const a = args.shift();
   if (a === '--aeg') aegPath = args.shift() ?? usage('--aeg needs a dataPath');
   else if (a === '--itunes') useItunes = true;
+  else if (a === '--musicbrainz') useMb = true;
   else usage(`unknown argument ${a}`);
 }
 
@@ -67,13 +78,25 @@ function nameKey(name) {
     .replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, '');
 }
 
+// What an artist profile's path looks like on each platform. Anything else —
+// a Spotify /user/ page, a SoundCloud track or set, an Apple album — is not a
+// profile and is dropped.
+const PROFILE_PATHS = {
+  spotify: /^\/artist\/[A-Za-z0-9]{22}$/,
+  appleMusic: /^\/[a-z]{2}\/artist\/(?:[^/]+\/)?\d+$/,
+  soundcloud: /^\/(?!search$|discover$|stream$)[^/]+$/,
+};
+
 function cleanUrl(platform, raw) {
   if (typeof raw !== 'string' || !raw.trim()) return undefined;
   let url;
   try { url = new URL(raw.trim().replace(/^http:/, 'https:')); } catch { return undefined; }
   const host = url.hostname.replace(/^(www|m)\./, '');
   if (host !== HOSTS[platform]) return undefined;
-  return `https://${HOSTS[platform]}${url.pathname.replace(/\/+$/, '')}`;
+  // Spotify's regional links (/intl-ko/artist/...) are the same page.
+  const path = url.pathname.replace(/\/+$/, '').replace(/^\/intl-[a-z]{2}(?:-[a-z]{2})?(?=\/)/i, '');
+  if (!PROFILE_PATHS[platform].test(path)) return undefined;
+  return `https://${HOSTS[platform]}${path}`;
 }
 
 const acts = [...new Set(festival.SCHEDULE.flatMap((s) => s.artists))].sort();
@@ -81,13 +104,20 @@ const have = festival.artistLinks ?? {};
 const missing = acts.filter((a) => !have[a]);
 console.error(`${slug}: ${acts.length - missing.length}/${acts.length} acts have links`);
 
-if (!aegPath && !useItunes) {
+if (!aegPath && !useItunes && !useMb) {
   for (const a of missing) console.error(`  missing  ${a}`);
   process.exit(0);
 }
 
-async function getJson(url) {
-  const res = await fetch(url, { headers: { 'User-Agent': 'setlistpicks-artist-links' } });
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// A generic client name: nothing identifying about who's running this.
+async function getJson(url, { retryAfterMs = 0 } = {}) {
+  const res = await fetch(url, { headers: { 'User-Agent': 'artist-links-script/1.0' } });
+  if ((res.status === 429 || res.status === 403 || res.status === 503) && retryAfterMs) {
+    await sleep(retryAfterMs);
+    return getJson(url);
+  }
   if (!res.ok) throw new Error(`${res.status} ${url}`);
   return res.json();
 }
@@ -99,7 +129,10 @@ if (aegPath) {
   const base = `https://events.aegamp.com/app/${aegPath}`;
   const index = await getJson(`${base}/artists.json`);
   for (const rec of Object.values(index)) {
-    const act = wanted.get(nameKey(rec.title ?? ''));
+    // AEG sometimes bills a show name the poster doesn't ("CHRIS STASSY
+    // presents LINGER AV"), so fall back to the part before "presents".
+    const title = rec.title ?? '';
+    const act = wanted.get(nameKey(title)) ?? wanted.get(nameKey(title.split(/\s+presents\s+/i)[0]));
     if (!act) continue;
     let detail;
     try { detail = await getJson(`${base}/${rec._id}.json`); } catch (e) {
@@ -119,12 +152,40 @@ if (aegPath) {
   }
 }
 
+if (useMb) {
+  const MB = 'https://musicbrainz.org/ws/2';
+  for (const act of missing) {
+    const spotify = found.get(act)?.links.spotify;
+    if (!spotify) continue;
+    try {
+      await sleep(1100);
+      const url = await getJson(`${MB}/url?resource=${encodeURIComponent(spotify)}&inc=artist-rels&fmt=json`, { retryAfterMs: 5000 });
+      const ids = [...new Set((url.relations ?? []).map((r) => r.artist?.id).filter(Boolean))];
+      if (ids.length !== 1) continue;
+      await sleep(1100);
+      const artist = await getJson(`${MB}/artist/${ids[0]}?inc=url-rels&fmt=json`, { retryAfterMs: 5000 });
+      const entry = found.get(act);
+      for (const rel of artist.relations ?? []) {
+        const resource = rel.url?.resource;
+        if (rel.ended || !resource) continue;
+        for (const platform of ['soundcloud', 'appleMusic']) {
+          const clean = cleanUrl(platform, resource);
+          if (clean && !entry.links[platform]) entry.links[platform] = clean;
+        }
+      }
+    } catch (e) {
+      // 404 = MusicBrainz doesn't know this Spotify page; nothing to add.
+      if (!/^404 /.test(e.message)) console.error(`  musicbrainz: ${act}: ${e.message}`);
+    }
+  }
+}
+
 if (useItunes) {
   for (const act of missing) {
     if (found.get(act)?.links.appleMusic) continue;
     const q = new URLSearchParams({ term: act, entity: 'musicArtist', limit: '10', country: 'us' });
     let results = [];
-    try { ({ results } = await getJson(`https://itunes.apple.com/search?${q}`)); } catch (e) {
+    try { ({ results } = await getJson(`https://itunes.apple.com/search?${q}`, { retryAfterMs: 60000 })); } catch (e) {
       console.error(`  itunes: ${act}: ${e.message}`);
     }
     const exact = results.filter((r) => nameKey(r.artistName) === nameKey(act));
@@ -139,7 +200,7 @@ if (useItunes) {
     } else if (exact.length > 1) {
       console.error(`  itunes: ${act}: ${exact.length} artists share this name — look it up by hand`);
     }
-    await new Promise((r) => setTimeout(r, 350)); // stay well inside Apple's rate limit
+    await sleep(3200); // ~20/min; Apple starts refusing well before 1/s
   }
 }
 

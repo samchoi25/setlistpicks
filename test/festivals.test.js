@@ -145,7 +145,7 @@ test('every headliner named in metadata actually appears in the lineup', () => {
  */
 const ARTIST_LINKS_MIN_COVERAGE = 0.75;
 const ARTIST_LINKS_EXEMPT = new Set(['outside-lands-2026', 'daisy-chain-fields-2026']);
-const ARTIST_LINKS_PENDING = new Set(['coachella-2027-week-1', 'coachella-2027-week-2']);
+const ARTIST_LINKS_PENDING = new Set([]);
 
 test('every public festival has artist links for most of its bill', () => {
   for (const f of listPublicFestivals()) {
