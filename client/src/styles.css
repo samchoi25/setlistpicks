@@ -100,6 +100,12 @@
   /* Text set directly on those washes. */
   --want-ink: #5c4000;
   --must-ink: #5c0000;
+  /* Fill of the "like" heart (a maxPicks event — see svgDefs.js mark-heart).
+     Its outline follows the surrounding text colour, so it reads on any
+     ground, the red highlighter included. */
+  --heart: #E8394F;
+  /* Flakes in the .is-snowing effect. */
+  --snow: #FFFFFF;
   --brand-spotify: #1DB954;
   --brand-apple: #FA243C;
   --brand-soundcloud: #FF5500;
@@ -150,6 +156,7 @@
      blocks, time axis and its backdrop locally. ── */
   --z-sticky: 4;       /* stage-header bar; the day heading sits one above */
   --z-dropdown: 10;
+  --z-snow: 100;       /* falling snow (.is-snowing): over the page, under dialogs */
   --z-modal: 150;
   --z-toast: 200;      /* above modals, so a modal's own errors are visible */
 
@@ -864,6 +871,12 @@ button.brand-title-option:hover {
   color: color-mix(in srgb, var(--want-wash) 97%, transparent);
   mix-blend-mode: multiply;
 }
+/* A themed highlighter sits under the block's text (see washBehindClass in
+   blockShared.jsx). .show-block is its own stacking context, so z-index -1
+   paints the wash after the block's background but before its text. */
+.show-block.is-wash-behind .wash {
+  z-index: -1;
+}
 .show-block.vote-1 .mark.mark-check {
   opacity: 1;
 }
@@ -912,6 +925,13 @@ button.brand-title-option:hover {
   align-items: center;
   gap: var(--space-0-5);
   max-width: 100%;
+}
+.gv-heart {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  overflow: visible;
+  color: var(--block-fg, var(--block-ink));
 }
 .gv-check {
   font-size: 11px;
@@ -1810,4 +1830,66 @@ input[type="text"].is-tight {
   margin: 0;
   font-size: var(--text-lg);
   font-weight: 600;
+}
+
+/* ─── Snow (.is-snowing — a festival with snow: true, e.g. Lucky 13) ──
+   CSS only. Two fixed layers of tiled flakes, each a stack of
+   radial-gradient dots in a repeating tile. Falling is the tile's
+   background-position sliding down exactly one tile height per loop, so the
+   loop is seamless; the sideways sway is a separate transform on the whole
+   layer. The near layer is bigger, brighter and faster than the far one for
+   a little depth. pointer-events: none keeps every tap going to the page. */
+.app.is-snowing::before,
+.app.is-snowing::after {
+  content: '';
+  position: fixed;
+  /* Wider than the screen so the sway never shows an edge. */
+  inset: 0 -24px;
+  pointer-events: none;
+  z-index: var(--z-snow);
+  background-repeat: repeat;
+}
+.app.is-snowing::before {
+  background-image:
+    radial-gradient(circle at 15% 20%, var(--snow) 0 2.5px, transparent 3px),
+    radial-gradient(circle at 65% 8%, var(--snow) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 40% 70%, var(--snow) 0 3px, transparent 3.5px),
+    radial-gradient(circle at 88% 50%, var(--snow) 0 2px, transparent 2.5px);
+  background-size: 190px 190px, 250px 250px, 310px 310px, 220px 220px;
+  opacity: 0.85;
+  animation:
+    snow-fall-near 16s linear infinite,
+    snow-sway 7s ease-in-out infinite alternate;
+}
+.app.is-snowing::after {
+  background-image:
+    radial-gradient(circle at 30% 40%, var(--snow) 0 1.2px, transparent 1.7px),
+    radial-gradient(circle at 75% 25%, var(--snow) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 55% 85%, var(--snow) 0 1.5px, transparent 2px);
+  background-size: 120px 120px, 160px 160px, 140px 140px;
+  opacity: 0.55;
+  animation:
+    snow-fall-far 26s linear infinite,
+    snow-sway 11s ease-in-out infinite alternate-reverse;
+}
+/* Each layer's y offset equals its tile height, so the end frame matches the
+   start frame and the loop has no jump. */
+@keyframes snow-fall-near {
+  from { background-position: 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 0 190px, 0 250px, 0 310px, 0 220px; }
+}
+@keyframes snow-fall-far {
+  from { background-position: 0 0, 0 0, 0 0; }
+  to   { background-position: 0 120px, 0 160px, 0 140px; }
+}
+@keyframes snow-sway {
+  from { transform: translateX(-14px); }
+  to   { transform: translateX(14px); }
+}
+/* No moving snow for anyone who has asked for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .app.is-snowing::before,
+  .app.is-snowing::after {
+    display: none;
+  }
 }

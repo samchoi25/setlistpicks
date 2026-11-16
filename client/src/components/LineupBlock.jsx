@@ -1,6 +1,7 @@
 import React from 'react';
 import { stageBlockInk } from '../../../shared/theme.js';
-import { useVoteBlock, WashSvg, GroupVotesEl, ArtistNames, scoreClass } from './blockShared.jsx';
+import { useVoteBlock, WashSvg, GroupVotesEl, ArtistNames, scoreClass, washBehindClass } from './blockShared.jsx';
+import { useFestival } from '../festival-context.jsx';
 
 // An act with no set time yet — used for both untimed layouts (see
 // shared/festival.js dayModeOf). Three ways it can be positioned:
@@ -18,13 +19,14 @@ const LineupBlock = React.memo(function LineupBlock({
   const { washDataRef, online, ended, handleClick, startLongPress, cancelLongPress, handlePointerUp, longPressFired } =
     useVoteBlock({ id: s.id, artist: s.artist, artists: s.artists, myVote, groupId, memberKey, memberDisplayName, onVoteChange, onLongPress, onNotMember, atPickLimit });
 
+  const festival = useFestival();
   const style = stage
     ? { gridColumn: String(stage.col), gridRow: String(s.order + 2), background: `var(${stage.color})`, '--block-fg': stageBlockInk(stage) }
     : (flowColumn != null ? { gridColumn: String(flowColumn), gridRow: String(flowRow) } : undefined);
 
   return (
     <button
-      className={`show-block lineup-block ${scoreClass(myVote)}${online ? '' : ' offline'}${ended ? ' ended' : ''}`}
+      className={`show-block lineup-block ${scoreClass(myVote)}${washBehindClass(festival)}${online ? '' : ' offline'}${ended ? ' ended' : ''}`}
       data-stage={s.stageId ?? undefined}
       data-id={s.id}
       style={style}

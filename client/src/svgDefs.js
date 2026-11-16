@@ -100,10 +100,12 @@ export function ensureSvgDefs() {
           stroke-linecap="round" stroke-linejoin="round" filter="url(#roughen)"/>
       </symbol>
       <!-- The "like" mark for a maxPicks event (shared/festivals/lucky-13.js),
-           drawn in the same hand-inked stroke as the check it replaces. -->
+           drawn in the same hand-inked stroke as the check it replaces. Filled
+           red (--heart); its outline follows the text colour around it (unlike
+           the check's fixed brown), so it stays visible on a red highlighter. -->
       <symbol id="mark-heart" viewBox="0 0 28 28" overflow="visible">
         <path d="M14 24 C 6 18, 2.5 13.5, 3.5 9 C 4.5 4.5, 10.5 3.5, 14 8.5 C 17.5 3.5, 23.5 4.5, 24.5 9 C 25.5 13.5, 22 18, 14 24 Z"
-          fill="none" stroke="rgba(60,40,0,0.8)" stroke-width="3"
+          style="fill: var(--heart)" stroke="currentColor" stroke-width="3"
           stroke-linecap="round" stroke-linejoin="round" filter="url(#roughen)"/>
       </symbol>
     </defs>`;

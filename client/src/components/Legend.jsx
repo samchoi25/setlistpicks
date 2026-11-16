@@ -62,7 +62,8 @@ export default function Legend() {
           <span style={{ marginRight: 4 }}>Tap to vote:</span>
           <LegendPill variant="want" washId="legend-want">
             <MarkCheck symbol="mark-heart" />
-            Like
+            {/* In an element so .pill-highlighted lifts it above the wash. */}
+            <span>Like</span>
           </LegendPill>
           <span>· up to {maxPicks} {plural}</span>
         </div>

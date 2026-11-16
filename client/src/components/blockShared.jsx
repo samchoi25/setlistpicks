@@ -7,6 +7,16 @@ import { useFestival } from '../festival-context.jsx';
 import { hasFestivalEnded, nextScore } from '../../../shared/festival.js';
 import { getCachedJson, putJson, applyVotePatch, applyPerArtistPatch } from '../offline-cache.js';
 
+/*
+ * A festival whose theme recolors the Want highlighter (--want-wash) gets the
+ * wash drawn *under* a block's text rather than over it. Over the text is the
+ * default look — a yellow marker turns white text yellow, which stays bright —
+ * but a darker themed wash would dim the text to its own colour instead.
+ */
+export function washBehindClass(festival) {
+  return festival?.theme?.tokens?.['--want-wash'] ? ' is-wash-behind' : '';
+}
+
 export function scoreClass(score) {
   if (score >= 3) return 'vote-3';
   if (score >= 1) return 'vote-1';
@@ -43,7 +53,16 @@ export function GroupVotesEl({ votes, myVote, memberKey, memberDisplayName }) {
   // so the icons stand on their own.
   const showNames = allVoters.length <= 3;
   const fName = (v) => v.displayName.split(' ')[0];
-  const icon = (v) => v.score === 3 ? '🔥' : (maxPicks ? '♥' : '✓');
+  const icon = (v) => {
+    if (v.score === 3) return '🔥';
+    if (!maxPicks) return '✓';
+    // The same red-filled heart as the legend (svgDefs.js mark-heart).
+    return (
+      <svg className="gv-heart" viewBox="0 0 28 28" aria-label="liked">
+        <use href="#mark-heart" />
+      </svg>
+    );
+  };
   const cls  = (v) => v.score === 3 ? 'gv-fire' : 'gv-check';
 
   return (

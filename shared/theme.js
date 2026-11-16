@@ -58,6 +58,9 @@ const STAGE_TEXT_TOKENS = [...STAGE_TOKENS].flatMap((t) => [`${t}-header`, `${t}
 export const THEMEABLE_TOKENS = Object.freeze(new Set([
   '--bg', '--paper', '--ink', '--btn-primary', '--btn-secondary', '--on-btn-secondary',
   '--block-ink',
+  // The Want highlighter and the text set on it — so a festival whose palette
+  // fights the default yellow (Lucky 13's cool blues) can recolor it.
+  '--want-wash', '--want-ink',
   ...STAGE_TOKENS, ...STAGE_TEXT_TOKENS,
   '--font-display', '--font-body',
 ]));

@@ -221,7 +221,7 @@ export default function GroupView({
   }, [popup, perArtistRaw, myVotes, member.key, memberDisplayName]);
 
   return (
-    <div className="app">
+    <div className={`app${festival.snow ? ' is-snowing' : ''}`}>
       <OfflineBanner />
       <FestivalEndedBanner />
       {/* Toolbar: sticky header + day tabs */}

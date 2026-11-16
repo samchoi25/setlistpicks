@@ -15,6 +15,7 @@
 //   entryNoun    — what one set is called in copy ("Add a cocktail").
 //   maxPicks     — voting is a plain yes/no per cocktail (no Want/Must See),
 //                  and each guest can vote for at most this many.
+//   snow         — gently falling CSS snow over the page (.is-snowing).
 //   memberNameWords — holiday words for the placeholder name a new guest
 //                  gets before typing their own ("Jolly Snowflake 42").
 //
@@ -46,6 +47,7 @@ export default {
   unlisted: true,
   entryNoun: 'cocktail',
   maxPicks: 3,
+  snow: true,
   memberNameWords: {
     adjectives: [
       'Jolly', 'Merry', 'Festive', 'Frosty', 'Snowy', 'Twinkly', 'Cozy', 'Sparkly',
@@ -59,6 +61,27 @@ export default {
       'Wreath', 'Tinsel', 'Eggnog', 'Cocoa', 'Chestnut', 'Icicle', 'Mitten',
       'Penguin', 'Pinecone', 'Confetti', 'Countdown', 'Toast',
     ],
+  },
+  // Palette supplied for the party, light to dark: lavender #C7D1E9,
+  // periwinkle #98AED3, slate #607582, spruce #415A51, near-black olive
+  // #222F19. Cards sit on lavender over a periwinkle page; the darkest shade
+  // is all the text; the cocktail blocks and primary buttons are spruce with
+  // white text, and secondary buttons (Copy Link) slate. The "liked"
+  // highlighter is crimson #C33149 instead of the site's yellow — it
+  // multiplies, so it reads as a deep wine on the page and darkens a liked
+  // block — with white text on it in the legend.
+  theme: {
+    tokens: {
+      '--bg': '#98AED3',
+      '--paper': '#C7D1E9',
+      '--ink': '#222F19',
+      '--btn-primary': '#415A51',
+      '--btn-secondary': '#607582',
+      '--on-btn-secondary': '#FFFFFF',
+      '--block-ink': '#FFFFFF',
+      '--want-wash': '#C33149',
+      '--want-ink': '#FFFFFF',
+    },
   },
   groupNames: [
     'Lucky Thirteen', 'Shaken Not Stirred', 'Top Shelf', 'Last Call',

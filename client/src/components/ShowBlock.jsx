@@ -1,7 +1,7 @@
 import React from 'react';
 import { stageBlockInk } from '../../../shared/theme.js';
 import { useFestival } from '../festival-context.jsx';
-import { useVoteBlock, WashSvg, GroupVotesEl, ArtistName, scoreClass } from './blockShared.jsx';
+import { useVoteBlock, WashSvg, GroupVotesEl, ArtistName, scoreClass, washBehindClass } from './blockShared.jsx';
 
 const minToSlot = (min, gridStartMin, slotMins) =>
   Math.round((min - gridStartMin) / slotMins);
@@ -15,7 +15,8 @@ const ShowBlock = React.memo(function ShowBlock({
   s, stage, myVote, groupVotes, memberKey, memberDisplayName,
   groupId, onVoteChange, onLongPress, onNotMember,
 }) {
-  const { GRID_START_MIN, GRID_END_MIN, SLOT_MINS, TOTAL_SLOTS } = useFestival();
+  const festival = useFestival();
+  const { GRID_START_MIN, GRID_END_MIN, SLOT_MINS, TOTAL_SLOTS } = festival;
   if (!stage) return null;
   const col = stage.col;
   const startSlot = minToSlot(Math.max(s.startMin, GRID_START_MIN), GRID_START_MIN, SLOT_MINS);
@@ -27,7 +28,7 @@ const ShowBlock = React.memo(function ShowBlock({
 
   return (
     <button
-      className={`show-block ${scoreClass(myVote)}${s.followsPrevious ? ' follows-prev' : ''}${online ? '' : ' offline'}${ended ? ' ended' : ''}`}
+      className={`show-block ${scoreClass(myVote)}${washBehindClass(festival)}${s.followsPrevious ? ' follows-prev' : ''}${online ? '' : ' offline'}${ended ? ' ended' : ''}`}
       data-stage={s.stageId}
       data-id={s.id}
       style={{
