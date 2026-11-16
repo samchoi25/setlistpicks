@@ -7,7 +7,7 @@ import { openDb } from '../server/db.js';
 import { createStore } from '../server/groups.js';
 import { createPhotoStore, sniffImageType, MAX_PHOTO_BYTES } from '../server/photos.js';
 import { getFestival, listFestivals } from '../shared/festivals/index.js';
-import { userSetId } from '../shared/festival.js';
+import { userSetId, photosOpenFor, dayStartsAt, hasFestivalEnded } from '../shared/festival.js';
 
 /*
  * Photos guests attach to a Lucky 13 cocktail (photos: true — see
@@ -32,9 +32,44 @@ function fresh() {
   return { db, dir, store, photos, group, sam, set, setId };
 }
 
-test('only Lucky 13 takes photos', () => {
-  assert.equal(lucky.photos, true);
-  assert.deepEqual(listFestivals().filter((f) => f.photos).map((f) => f.slug), [SLUG]);
+test('every festival takes photos; only Lucky 13 takes them any time', () => {
+  assert.ok(listFestivals().every((f) => f.photos === true));
+  assert.deepEqual(listFestivals().filter((f) => f.photosAnytime).map((f) => f.slug), [SLUG]);
+});
+
+test('a festival act opens for photos on its own day, until 6am the next morning', () => {
+  const f = listFestivals().find((x) => !x.photosAnytime && x.days.length > 1);
+  const [day1, day2] = f.days;
+  const start = dayStartsAt(f, day1).getTime();
+  const at = (ms) => new Date(start + ms);
+  const H = 60 * 60 * 1000;
+  assert.equal(photosOpenFor(f, day1.id, at(-1)), false, 'the night before');
+  assert.equal(photosOpenFor(f, day1.id, at(0)), true, 'from midnight');
+  assert.equal(photosOpenFor(f, day1.id, at(29 * H)), true, '5am next morning');
+  assert.equal(photosOpenFor(f, day1.id, at(30 * H)), false, '6am next morning');
+  assert.equal(photosOpenFor(f, day2.id, at(12 * H)), false, 'another day\'s act');
+});
+
+test('Lucky 13 cocktails take photos any time until the event ends', () => {
+  assert.equal(photosOpenFor(lucky, lucky.days[0].id, new Date('2026-11-15T12:00:00Z')), true);
+  assert.equal(photosOpenFor(lucky, lucky.days[0].id, new Date('2027-01-02T12:00:00Z')), false);
+});
+
+test('the server refuses a festival photo outside its act\'s day', () => {
+  const db = openDb(':memory:');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'setlist-photos-'));
+  const store = createStore(db);
+  const photos = createPhotoStore(db, dir);
+  const f = listFestivals().find((x) => !x.photosAnytime && !hasFestivalEnded(x) && !x.unlisted);
+  const group = store.createGroup({ festivalSlug: f.slug });
+  const { member } = store.joinGroup(group.id, 'Alex');
+  const set = f.SCHEDULE[0];
+  const dayStart = dayStartsAt(f, f.days.find((d) => d.id === set.dayId));
+  assert.deepEqual(
+    photos.addPhoto(group.id, member.key, set.id, JPEG, new Date(dayStart.getTime() - 1000)),
+    { error: 'photos_not_open' },
+  );
+  assert.ok(photos.addPhoto(group.id, member.key, set.id, JPEG, new Date(dayStart.getTime() + 3600e3)).photo);
 });
 
 test('image type comes from the bytes, not the label', () => {

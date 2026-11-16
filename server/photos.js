@@ -3,11 +3,12 @@ import path from 'node:path';
 import { customAlphabet } from 'nanoid';
 import { db as defaultDb, PHOTO_DIR } from './db.js';
 import { getFestival, getSetById } from '../shared/festivals/index.js';
-import { hasFestivalEnded, userSetRowId } from '../shared/festival.js';
+import { userSetRowId, photosOpenFor, photosExpireAt } from '../shared/festival.js';
 
 /*
- * Photos guests take of a set and attach to it — Lucky 13's cocktails (a
- * festival with photos: true; see shared/festivals/lucky-13.js). The client
+ * Photos guests take of a set and attach to it — any festival's act, on that
+ * act's day, or a Lucky 13 cocktail any time (see photosOpenFor in
+ * shared/festival.js). The client
  * shrinks each picture before sending it, so these are a few hundred KB.
  *
  * Bytes go to disk under PHOTO_DIR, named by an unguessable id; the database
@@ -60,15 +61,19 @@ export function createPhotoStore(db, dir = PHOTO_DIR) {
     return Boolean(rowId && stmts.getUserSet.get(rowId, festival.slug));
   }
 
-  function addPhoto(groupId, memberKey, setId, buf) {
+  // Which of the festival's days a set is on — a guest-entered set is always
+  // on the first (only) day.
+  const dayOf = (festival, setId) => getSetById(setId)?.dayId ?? festival.days[0].id;
+
+  function addPhoto(groupId, memberKey, setId, buf, now = new Date()) {
     const group = stmts.getGroup.get(groupId);
     if (!group) return { error: 'group_not_found' };
     const festival = getFestival(group.festival_slug);
     if (!festival?.photos) return { error: 'not_allowed' };
-    if (hasFestivalEnded(festival)) return { error: 'festival_ended' };
     const mem = stmts.getMember.get(groupId, memberKey);
     if (!mem) return { error: 'not_a_member' };
     if (!setExists(festival, setId)) return { error: 'invalid_artist' };
+    if (!photosOpenFor(festival, dayOf(festival, setId), now)) return { error: 'photos_not_open' };
     if (!Buffer.isBuffer(buf) || !buf.length) return { error: 'no_image' };
     if (buf.length > MAX_PHOTO_BYTES) return { error: 'too_large' };
     const mime = sniffImageType(buf);
@@ -139,15 +144,16 @@ export function createPhotoStore(db, dir = PHOTO_DIR) {
 
   /*
    * Once an event is over its photos are deleted — rows and files — rather
-   * than kept on the server indefinitely. "Over" is the same line that closes
-   * voting: the end of the event's last day, in its own timezone. A festival
-   * that's no longer in the registry at all counts as over too.
+   * than kept on the server indefinitely. "Over" is the end of its last day
+   * in its own timezone, plus the few hours a last-night set's photos stay
+   * open (photosExpireAt). A festival that's no longer in the registry at all
+   * counts as over too.
    */
   function pruneEndedEventPhotos(now = new Date()) {
     let removed = 0;
     for (const { festival_slug: slug } of stmts.festivalsWithPhotos.all()) {
       const festival = getFestival(slug);
-      if (festival && !hasFestivalEnded(festival, now)) continue;
+      if (festival && now < photosExpireAt(festival)) continue;
       const ids = stmts.idsForFestival.all(slug).map((r) => r.id);
       stmts.deleteForFestival.run(slug);
       for (const id of ids) fs.rmSync(fileFor(id), { force: true });

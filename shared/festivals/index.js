@@ -94,7 +94,7 @@ function validate(def) {
   if (def.websocketsEnabled !== undefined && typeof def.websocketsEnabled !== 'boolean') {
     throw new Error(`${slug}: websocketsEnabled must be a boolean`);
   }
-  for (const flag of ['userSets', 'secretVotes', 'unlisted', 'snow', 'photos']) {
+  for (const flag of ['userSets', 'secretVotes', 'unlisted', 'snow', 'photos', 'photosAnytime']) {
     if (def[flag] !== undefined && typeof def[flag] !== 'boolean') {
       throw new Error(`${slug}: ${flag} must be a boolean`);
     }
@@ -201,9 +201,12 @@ for (const def of DEFINITIONS) {
   validate(def);
   if (bySlug.has(def.slug)) throw new Error(`Duplicate festival slug '${def.slug}'`);
   const websocketsEnabled = def.websocketsEnabled ?? WEBSOCKETS_ENABLED_DEFAULT;
+  // Every festival takes photos of its acts (see photosOpenFor in
+  // shared/festival.js for when); a definition can opt out with photos: false.
+  const photos = def.photos ?? true;
   const artistLinks = def.artistLinks
     ?? (SHARED_ARTIST_LINK_SLUGS.has(def.slug) ? sharedArtistLinks : undefined);
-  bySlug.set(def.slug, buildFestival({ ...def, websocketsEnabled, artistLinks }));
+  bySlug.set(def.slug, buildFestival({ ...def, websocketsEnabled, artistLinks, photos }));
 }
 
 /*

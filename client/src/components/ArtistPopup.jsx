@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Modal from './Modal.jsx';
 import { useFestival } from '../festival-context.jsx';
+import { photosOpenFor } from '../../../shared/festival.js';
 import { CameraButton, CameraView, PhotoGrid, usePhotos, deleteMyPhoto } from './SetPhotos.jsx';
 
 function initials(name) {
@@ -52,10 +53,13 @@ function ListenLinks({ name, links, showName }) {
 
 export default function ArtistPopup({ artistId, artistName, artists, votes, memberKey, groupId, onClose }) {
   const festival = useFestival();
-  // Photos only exist for a photos: true event; elsewhere the hook fetches
-  // nothing (it still runs, since hooks can't be conditional).
   const { photos, reload } = usePhotos(artistId, { groupId, memberKey });
   const [cameraOpen, setCameraOpen] = useState(false);
+  // The camera (and Retake) only appear while this act's photos are open —
+  // on its day for a festival, any time at Lucky 13 (photosOpenFor). Photos
+  // already taken stay visible either way.
+  const canTakePhoto = Boolean(groupId)
+    && photosOpenFor(festival, festival.SCHEDULE_BY_ID[artistId]?.dayId);
   const musts = votes.filter((v) => v.score === 3);
   const wants = votes.filter((v) => v.score === 1);
   const names = artists?.length ? artists : [artistName];
@@ -64,13 +68,13 @@ export default function ArtistPopup({ artistId, artistName, artists, votes, memb
     <Modal onClose={onClose} label={artistName} className="modal-popover" backdropClassName="is-centered">
       <div className="picks-artist">
         <span>{artistName}</span>
-        {festival.photos && groupId && !cameraOpen && (
+        {canTakePhoto && !cameraOpen && (
           <CameraButton setId={artistId} groupId={groupId} memberKey={memberKey}
             hasPhoto={photos.some((p) => p.mine)}
             onUploaded={reload} onOpenCamera={() => setCameraOpen(true)} />
         )}
       </div>
-      {festival.photos && cameraOpen && (
+      {canTakePhoto && cameraOpen && (
         <CameraView setId={artistId} groupId={groupId} memberKey={memberKey}
           onDone={() => { setCameraOpen(false); reload(); }}
           onCancel={() => setCameraOpen(false)} />
@@ -78,7 +82,7 @@ export default function ArtistPopup({ artistId, artistName, artists, votes, memb
       {festival.photos && !cameraOpen && (
         <PhotoGrid
           photos={photos}
-          onRetake={() => setCameraOpen(true)}
+          onRetake={canTakePhoto ? () => setCameraOpen(true) : undefined}
           onDelete={async () => {
             if (await deleteMyPhoto({ groupId, setId: artistId, memberKey })) reload();
           }}

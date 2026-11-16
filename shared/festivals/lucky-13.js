@@ -15,10 +15,11 @@
 //   entryNoun    — what one set is called in copy ("Add a cocktail").
 //   maxPicks     — voting is a plain yes/no per cocktail (no Want/Must See),
 //                  and each guest can vote for at most this many.
-//   photos       — guests can snap a photo of a cocktail from its long-press
-//                  popup; everyone sees the photos there. They're deleted
-//                  from the server within a few hours of the event's date
-//                  ending (server/photos.js), so set the real date below.
+//   photosAnytime — every festival lets guests photograph an act from its
+//                  long-press popup, but only on the act's day; here the
+//                  cocktails can be photographed for the whole event. Photos
+//                  are deleted from the server a few hours after the event's
+//                  date ends (server/photos.js), so set the real date below.
 //   logo         — image shown top-left in place of the "Lucky 13" wordmark
 //                  (client/public/logos/lucky-13.png, served from /logos/).
 //   snow         — gently falling CSS snow over the page (.is-snowing).
@@ -55,7 +56,7 @@ export default {
   maxPicks: 3,
   snow: true,
   logo: '/logos/lucky-13.png',
-  photos: true,
+  photosAnytime: true,
   memberNameWords: {
     adjectives: [
       'Jolly', 'Merry', 'Festive', 'Frosty', 'Snowy', 'Twinkly', 'Cozy', 'Sparkly',

@@ -77,6 +77,40 @@ export function nextScore(cur, { maxPicks } = {}) {
   return 1;
 }
 
+// Local midnight at the start of one of the festival's days.
+export function dayStartsAt(festival, day) {
+  const [mon, num] = day.date.split(' ');
+  const month = String(MONTHS[mon]).padStart(2, '0');
+  const dayPad = String(num).padStart(2, '0');
+  return new Date(`${festival.year}-${month}-${dayPad}T00:00:00${festival.utcOffset}`);
+}
+
+/*
+ * Photos of an act open on the act's own day: from local midnight until 6am
+ * the next morning, so a set that runs past midnight still counts as its day.
+ * An event with photosAnytime (Lucky 13 — its "acts" are cocktails at one
+ * party) is open for its whole run instead. The client uses this to show the
+ * camera; the server uses it to accept the upload.
+ */
+export const PHOTO_LATE_HOURS = 6;
+const HOUR_MS = 60 * 60 * 1000;
+
+export function photosOpenFor(festival, dayId, now = new Date()) {
+  if (!festival?.photos) return false;
+  if (festival.photosAnytime) return !hasFestivalEnded(festival, now);
+  const day = festival.days.find((d) => d.id === dayId);
+  if (!day) return false;
+  const start = dayStartsAt(festival, day).getTime();
+  const t = now.getTime();
+  return t >= start && t < start + (24 + PHOTO_LATE_HOURS) * HOUR_MS;
+}
+
+// When an event's photos are swept from the server: its end, plus the same
+// late-night grace a last-night set gets.
+export function photosExpireAt(festival) {
+  return new Date(festivalEndsAt(festival).getTime() + PHOTO_LATE_HOURS * HOUR_MS);
+}
+
 export function hasFestivalEnded(festival, now = new Date()) {
   return now.getTime() > festivalEndsAt(festival).getTime();
 }

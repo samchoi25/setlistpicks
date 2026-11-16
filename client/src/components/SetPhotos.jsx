@@ -4,9 +4,9 @@ import { useFestival } from '../festival-context.jsx';
 import { toast } from '../toast.js';
 
 /*
- * Photos of one set, for a festival with photos: true (Lucky 13's cocktails —
- * see shared/festivals/lucky-13.js). Rendered inside the long-press popup:
- * CameraButton sits beside the name, PhotoGrid below.
+ * Photos of one set — any festival's act, or a Lucky 13 cocktail. Rendered
+ * inside the long-press popup: CameraButton sits beside the name (only while
+ * photos are open — see photosOpenFor in shared/festival.js), PhotoGrid below.
  *
  * A picture is shrunk in the browser before it's sent (longest side 1600px,
  * JPEG), which turns a 4–8 MB phone photo into a few hundred KB and drops its
@@ -36,6 +36,7 @@ const ERRORS = {
   not_an_image: 'That doesn’t look like a photo.',
   too_many_photos: 'You’ve hit the photo limit.',
   festival_ended: 'The party’s over — no more photos.',
+  photos_not_open: 'Photos for this act open on its day.',
 };
 
 // A set's photos, this guest's own first. `viewer` lets the server mark which
@@ -289,7 +290,10 @@ export function PhotoGrid({ photos, onDelete, onRetake }) {
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(p); } }}>
             <img src={p.url} alt="Your photo" loading="lazy" />
             <div className="photo-actions">
-              <button type="button" onClick={(e) => { e.stopPropagation(); setRevealed(false); onRetake?.(); }}>Retake</button>
+              {/* No Retake once the act's photo window has closed. */}
+              {onRetake && (
+                <button type="button" onClick={(e) => { e.stopPropagation(); setRevealed(false); onRetake(); }}>Retake</button>
+              )}
               <button type="button" className="is-danger" onClick={(e) => {
                 e.stopPropagation();
                 if (confirm('Delete your photo?')) onDelete?.(p);
