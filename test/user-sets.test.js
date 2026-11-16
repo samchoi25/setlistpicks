@@ -210,3 +210,15 @@ test('new Lucky 13 guests get holiday placeholder names that fit the name limit'
   // Only Lucky 13 brings its own words; festivals keep the default ones.
   assert.deepEqual(listFestivals().filter((f) => f.memberNameWords).map((f) => f.slug), [SLUG]);
 });
+
+test('the Lucky 13 group lives at /lucky-13, with no group code in the URL', async () => {
+  const { groupUrlPath, groupPath, canonicalRedirect } = await import('../shared/routes.js');
+  assert.equal(groupUrlPath(SLUG, 'abcdefghjk'), '/lucky-13');
+  // An old link that still carries the code settles on the bare path.
+  assert.equal(canonicalRedirect(parsePath('/lucky-13/abcdefghjk')), '/lucky-13');
+  assert.equal(canonicalRedirect(parsePath('/abcdefghjk'), { lookupFestival: () => SLUG }), '/lucky-13');
+  // Festivals keep their codes.
+  const other = listFestivals().find((f) => !f.userSets);
+  assert.equal(groupUrlPath(other.slug, 'abcdefghjk'), groupPath(other.slug, 'abcdefghjk'));
+  assert.equal(canonicalRedirect(parsePath(`/${other.slug}/abcdefghjk`)), null);
+});

@@ -3,7 +3,7 @@ import { useFestival } from '../festival-context.jsx';
 import { getActiveGroup } from '../storage.js';
 import { listPublicFestivals } from '../../../shared/festivals/index.js';
 import { hasFestivalEnded } from '../../../shared/festival.js';
-import { groupPath, festivalPath } from '../../../shared/routes.js';
+import { groupUrlPath, festivalPath } from '../../../shared/routes.js';
 
 function ChevronIcon() {
   return (
@@ -19,7 +19,7 @@ function ChevronIcon() {
 // same resolution App.jsx does for a bare `/<slug>/` visit.
 function targetFor(slug) {
   const stored = getActiveGroup(slug);
-  return stored ? groupPath(slug, stored) : festivalPath(slug);
+  return stored ? groupUrlPath(slug, stored) : festivalPath(slug);
 }
 
 /*

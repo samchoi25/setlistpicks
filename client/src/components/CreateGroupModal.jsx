@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { api } from '../api.js';
 import { toast } from '../toast.js';
-import { groupPath } from '../../../shared/routes.js';
+import { groupUrlPath } from '../../../shared/routes.js';
 import Modal from './Modal.jsx';
 import Button from './Button.jsx';
 
@@ -27,7 +27,7 @@ export default function CreateGroupModal({ festivalSlug, onClose }) {
     setSubmitting(true);
     try {
       const group = await api.createGroup(trimmed, festivalSlug);
-      navigateTo(groupPath(festivalSlug, group.id));
+      navigateTo(groupUrlPath(festivalSlug, group.id));
     } catch (e) {
       setSubmitting(false);
       toast(

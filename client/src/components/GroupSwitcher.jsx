@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useFestival } from '../festival-context.jsx';
 import { hasFestivalEnded } from '../../../shared/festival.js';
 import { getGroupHistory } from '../storage.js';
-import { groupPath } from '../../../shared/routes.js';
+import { groupUrlPath } from '../../../shared/routes.js';
 import CreateGroupModal from './CreateGroupModal.jsx';
 
 function ChevronIcon() {
@@ -74,7 +74,7 @@ export default function GroupSwitcher({ groupId, groupName, memberCount, disable
           {others.map((g) => (
             <a
               key={g.groupId}
-              href={groupPath(festival.slug, g.groupId)}
+              href={groupUrlPath(festival.slug, g.groupId)}
               className="brand-title-option"
               onClick={() => setOpen(false)}
             >

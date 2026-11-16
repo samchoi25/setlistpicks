@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { groupPath } from '../../../shared/routes.js';
+import { groupUrlPath } from '../../../shared/routes.js';
 import { useFestival } from '../festival-context.jsx';
 import Button from './Button.jsx';
 
@@ -10,7 +10,7 @@ export default function ShareCard({ groupId, memberKey, mutedMembers, memberVote
   // 301s it — but handing people a URL that immediately redirects is worse
   // than handing them the real one.
   const { slug, userSets } = useFestival();
-  const path = groupPath(slug, groupId);
+  const path = groupUrlPath(slug, groupId);
   const url = `${location.origin}${path}`;
   const displayUrl = `${location.host}${path}`;
   const [copied, setCopied] = useState(false);

@@ -20,6 +20,16 @@ export { GROUP_CODE_RE };
 export const festivalPath = (slug) => `/${slug}`;
 export const groupPath = (slug, code) => `/${slug}/${code}`;
 
+/*
+ * Where a group lives in the address bar. A single-group event (userSets —
+ * a party, see shared/festivals/lucky-13.js) has exactly one group, so its
+ * code adds nothing: the event's own path is the group's address. Every
+ * place that links to or shares a group goes through here.
+ */
+export function groupUrlPath(slug, code) {
+  return getFestival(slug)?.userSets ? festivalPath(getFestival(slug).slug) : groupPath(slug, code);
+}
+
 function splitPath(pathname) {
   // Tolerate a trailing slash and a missing leading one; reject anything with
   // an empty interior segment ('//a') so odd input can't parse as valid.
@@ -87,10 +97,13 @@ export function canonicalRedirect(parsed, { lookupFestival } = {}) {
     case 'festival':
       return parsed.isAlias ? festivalPath(parsed.canonicalSlug) : null;
     case 'group':
+      // A single-group event's group lives at the event's own path, so a
+      // link that still carries the code settles there.
+      if (getFestival(parsed.canonicalSlug)?.userSets) return festivalPath(parsed.canonicalSlug);
       return parsed.isAlias ? groupPath(parsed.canonicalSlug, parsed.code) : null;
     case 'legacy-group': {
       const slug = lookupFestival?.(parsed.code);
-      return slug ? groupPath(slug, parsed.code) : null;
+      return slug ? groupUrlPath(slug, parsed.code) : null;
     }
     default:
       return null;

@@ -14,7 +14,7 @@ import { FestivalProvider } from './festival-context.jsx';
 import { useFestivalWithUserSets } from './user-sets.js';
 import { getFestival, DEFAULT_FESTIVAL_SLUG } from '../../shared/festivals/index.js';
 import { hasFestivalEnded } from '../../shared/festival.js';
-import { parsePath, groupPath, festivalPath } from '../../shared/routes.js';
+import { parsePath, groupUrlPath, festivalPath } from '../../shared/routes.js';
 
 const MEMBER_ADJS = ['Wild', 'Lucky', 'Golden', 'Breezy', 'Mellow', 'Groovy', 'Funky', 'Jazzy', 'Sunny', 'Foggy'];
 const MEMBER_NOUNS = ['Dune', 'Cypress', 'Stage', 'Trail', 'Wave', 'Riff', 'Chord', 'Beat', 'Note', 'Sound'];
@@ -167,7 +167,7 @@ function AppRoutes() {
     const recent = getMostRecentGroup();
     navigating.current = false;
     navigate(
-      recent ? groupPath(recent.slug, recent.groupId) : festivalPath(DEFAULT_FESTIVAL_SLUG),
+      recent ? groupUrlPath(recent.slug, recent.groupId) : festivalPath(DEFAULT_FESTIVAL_SLUG),
       { replace: true },
     );
   }, [path, navigate]); // eslint-disable-line
@@ -180,9 +180,35 @@ function AppRoutes() {
 
     const slug = route.canonicalSlug ?? festival.slug;
     const stored = getActiveGroup(slug);
+
+    /*
+     * A single-group event (userSets — see shared/festivals/lucky-13.js)
+     * shows its one group right here, at the event's own path, rather than
+     * moving to /:slug/:code. createGroup hands back that shared group, so
+     * asking it every time also corrects a stale stored id; offline, the
+     * stored one is loaded from cache instead.
+     */
+    if (getFestival(slug)?.userSets) {
+      navigating.current = false;
+      if (groupState?.groupMeta?.festivalSlug === slug) return;
+      if (hasFestivalEnded(getFestival(slug))) { setError({ readOnly: true }); return; }
+      (async () => {
+        try {
+          const group = await api.createGroup(randomGroupName(getFestival(slug)), slug);
+          loadGroup(group.id);
+        } catch (e) {
+          if (e.offline && stored) loadGroup(stored);
+          else if (e.offline) setError({ msg: "You're offline — joining needs a connection.", canRetry: false });
+          else if (e.data?.error === 'festival_ended') setError({ readOnly: true });
+          else setError({ msg: e.message, canRetry: true });
+        }
+      })();
+      return;
+    }
+
     if (stored) {
       navigating.current = false;
-      navigate(groupPath(slug, stored), { replace: true });
+      navigate(groupUrlPath(slug, stored), { replace: true });
       return;
     }
 
@@ -202,7 +228,7 @@ function AppRoutes() {
       try {
         const group = await api.createGroup(randomGroupName(getFestival(slug)), slug);
         navigating.current = false;
-        navigate(groupPath(slug, group.id), { replace: true });
+        navigate(groupUrlPath(slug, group.id), { replace: true });
       } catch (e) {
         navigating.current = false;
         if (e.offline) setError({ msg: "You're offline — starting a new group needs a connection.", canRetry: false });
@@ -225,7 +251,7 @@ function AppRoutes() {
   // an old link or an alias should settle on one address.
   useEffect(() => {
     if (!groupState?.groupMeta?.festivalSlug) return;
-    const want = groupPath(groupState.groupMeta.festivalSlug, groupState.groupId);
+    const want = groupUrlPath(groupState.groupMeta.festivalSlug, groupState.groupId);
     if (path !== want) navigate(want, { replace: true });
   }, [groupState, path, navigate]);
 
@@ -249,14 +275,21 @@ function AppRoutes() {
             <Button onClick={() => {
               clearActiveGroup(festival.slug);
               setError(null);
-              navigate(festivalPath(festival.slug));
+              // A single-group event is already at its festival path, so
+              // navigating there would change nothing — start it afresh.
+              if (festival.userSets) location.reload();
+              else navigate(festivalPath(festival.slug));
             }}>Start over</Button>
           )}
         </div>
       );
     }
 
-    if (loading || route.kind === 'home' || route.kind === 'festival') {
+    // A single-group event's group renders at the festival path itself.
+    const singleGroupHere = route.kind === 'festival' && festival.userSets
+      && groupState?.groupMeta?.festivalSlug === festival.slug;
+
+    if (loading || route.kind === 'home' || (route.kind === 'festival' && !singleGroupHere)) {
       return shell(
         <div className="card center loading-card">
           Setting up your crew…
@@ -264,7 +297,7 @@ function AppRoutes() {
       );
     }
 
-    if (groupState?.groupId === route.code) {
+    if (groupState && (groupState.groupId === route.code || singleGroupHere)) {
       return (
         <GroupView
           key={groupState.groupId}
