@@ -20,6 +20,8 @@ import bourbonAndBeyond2026 from './bourbon-and-beyond-2026.js';
 import aftershock2026 from './aftershock-2026.js';
 import suwanneeHulaween2026 from './suwannee-hulaween-2026.js';
 import escapeHalloween2026 from './escape-halloween-2026.js';
+import coachella2027Week1 from './coachella-2027-week-1.js';
+import coachella2027Week2 from './coachella-2027-week-2.js';
 import lucky13 from './lucky-13.js';
 import sharedArtistLinks from './artist-links.js';
 
@@ -29,6 +31,7 @@ const DEFINITIONS = [
   hardlyStrictlyBluegrass2026,
   seaHearNow2026, louderThanLife2026, bourbonAndBeyond2026, aftershock2026,
   suwanneeHulaween2026, escapeHalloween2026,
+  coachella2027Week1, coachella2027Week2,
   lucky13,
 ];
 
