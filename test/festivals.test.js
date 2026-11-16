@@ -134,6 +134,44 @@ test('every headliner named in metadata actually appears in the lineup', () => {
   }
 });
 
+/*
+ * Artist links are part of setting up a festival (see the checklist at the top
+ * of shared/festivals/index.js). Some acts can't be confidently identified, so
+ * the bar is most of the bill, not all of it.
+ *
+ * ARTIST_LINKS_EXEMPT predate links being part of setup and are over.
+ * ARTIST_LINKS_PENDING is a to-do list: a festival goes here only while its
+ * links are being gathered, and comes off once they land.
+ */
+const ARTIST_LINKS_MIN_COVERAGE = 0.75;
+const ARTIST_LINKS_EXEMPT = new Set(['outside-lands-2026', 'daisy-chain-fields-2026']);
+const ARTIST_LINKS_PENDING = new Set(['coachella-2027-week-1', 'coachella-2027-week-2']);
+
+test('every public festival has artist links for most of its bill', () => {
+  for (const f of listPublicFestivals()) {
+    if (ARTIST_LINKS_EXEMPT.has(f.slug) || ARTIST_LINKS_PENDING.has(f.slug)) continue;
+    const acts = [...new Set(f.SCHEDULE.flatMap((s) => s.artists))];
+    const linked = acts.filter((a) => f.artistLinks?.[a]).length;
+    assert.ok(
+      linked >= acts.length * ARTIST_LINKS_MIN_COVERAGE,
+      `${f.slug}: only ${linked}/${acts.length} acts have artist links — `
+      + `run node scripts/artist-links.js ${f.slug}`,
+    );
+  }
+});
+
+test('the pending artist-links list only holds festivals still missing them', () => {
+  // Stops the list from quietly becoming a permanent exemption.
+  for (const slug of ARTIST_LINKS_PENDING) {
+    const f = getFestival(slug);
+    assert.ok(f, `${slug} is not a festival`);
+    const acts = [...new Set(f.SCHEDULE.flatMap((s) => s.artists))];
+    const linked = acts.filter((a) => f.artistLinks?.[a]).length;
+    assert.ok(linked < acts.length * ARTIST_LINKS_MIN_COVERAGE,
+      `${slug} has its links now — take it off ARTIST_LINKS_PENDING`);
+  }
+});
+
 test('artist links are well-formed and only name platforms the popup renders', () => {
   // ArtistPopup keys off exactly these three; a fourth key, or an http:// URL
   // on the wrong host, would silently render nothing or leak a bad link.

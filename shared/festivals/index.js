@@ -3,6 +3,20 @@
  *
  * Adding a festival means adding a definition module and one line here.
  * Everything else (routing, SEO pages, sitemap, the grid) reads from this.
+ *
+ * Setup checklist for a new festival:
+ *   1. Definition module: lineup by day (bare strings until set times land),
+ *      headliners, place, dates, groupNames. Cite the source in its header.
+ *   2. One import + one DEFINITIONS entry below.
+ *   3. Artist links — Spotify, Apple Music, SoundCloud, shown on long-press.
+ *        node scripts/artist-links.js <slug>                  # coverage report
+ *        node scripts/artist-links.js <slug> --aeg <dataPath> --itunes
+ *      generates entries to review and paste into the festival's
+ *      `artistLinks`; see the script's header for sources. Look the rest up
+ *      by hand, and leave out any act you can't confidently identify.
+ *      test/festivals.test.js fails a public festival below 75% coverage
+ *      unless it's listed in ARTIST_LINKS_PENDING there.
+ *   4. npm test, then check both the festival page and a long-press popup.
  */
 import { buildFestival, festivalEndsAt, festivalStartsAt } from '../festival.js';
 import {
