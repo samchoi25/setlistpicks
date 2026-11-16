@@ -39,11 +39,11 @@ function InfoIcon() {
   );
 }
 
-function MarkCheck() {
+function MarkCheck({ symbol = 'mark-check' }) {
   return (
-    <svg className="mark mark-check" viewBox="0 0 28 28" overflow="visible"
+    <svg className={`mark ${symbol}`} viewBox="0 0 28 28" overflow="visible"
       aria-hidden="true" style={{ width: 14, height: 14, opacity: 1, position: 'static', transform: 'none', flexShrink: 0 }}>
-      <use href="#mark-check" />
+      <use href={`#${symbol}`} />
     </svg>
   );
 }
@@ -61,8 +61,8 @@ export default function Legend() {
         <div className="legend">
           <span style={{ marginRight: 4 }}>Tap to vote:</span>
           <LegendPill variant="want" washId="legend-want">
-            <MarkCheck />
-            Voted
+            <MarkCheck symbol="mark-heart" />
+            Like
           </LegendPill>
           <span>· up to {maxPicks} {plural}</span>
         </div>

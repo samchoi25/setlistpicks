@@ -85,6 +85,14 @@ function validate(def) {
   if (def.maxPicks !== undefined && !(Number.isInteger(def.maxPicks) && def.maxPicks > 0)) {
     throw new Error(`${slug}: maxPicks must be a positive integer`);
   }
+  if (def.memberNameWords !== undefined) {
+    const { adjectives, nouns } = def.memberNameWords ?? {};
+    for (const [key, list] of [['adjectives', adjectives], ['nouns', nouns]]) {
+      if (!Array.isArray(list) || !list.length || !list.every((w) => typeof w === 'string' && w.trim())) {
+        throw new Error(`${slug}: memberNameWords.${key} must be a non-empty array of words`);
+      }
+    }
+  }
   if (!Array.isArray(def.groupNames) || def.groupNames.length === 0) {
     throw new Error(`${slug}: groupNames must be a non-empty array`);
   }

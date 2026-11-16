@@ -200,3 +200,13 @@ test('only the guest who entered a cocktail (or an admin) can remove it, and its
   const { set: again } = store.addUserSet(group.id, sam.key, 'Mojito');
   assert.deepEqual(store.removeUserSet(SLUG, again.id, { asAdmin: true }), { ok: true });
 });
+
+test('new Lucky 13 guests get holiday placeholder names that fit the name limit', () => {
+  const { adjectives, nouns } = lucky.memberNameWords;
+  assert.ok(adjectives.length >= 10 && nouns.length >= 10);
+  // The longest possible "Adjective Noun 99" must fit the 50-character name cap.
+  const longest = (list) => Math.max(...list.map((w) => w.length));
+  assert.ok(longest(adjectives) + longest(nouns) + 4 <= 50);
+  // Only Lucky 13 brings its own words; festivals keep the default ones.
+  assert.deepEqual(listFestivals().filter((f) => f.memberNameWords).map((f) => f.slug), [SLUG]);
+});

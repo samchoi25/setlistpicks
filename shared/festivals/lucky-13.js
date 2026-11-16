@@ -15,6 +15,8 @@
 //   entryNoun    — what one set is called in copy ("Add a cocktail").
 //   maxPicks     — voting is a plain yes/no per cocktail (no Want/Must See),
 //                  and each guest can vote for at most this many.
+//   memberNameWords — holiday words for the placeholder name a new guest
+//                  gets before typing their own ("Jolly Snowflake 42").
 //
 // The date is deliberately far out so voting never closes early; set the
 // real party date here once it's known (voting closes when that day ends).
@@ -44,6 +46,20 @@ export default {
   unlisted: true,
   entryNoun: 'cocktail',
   maxPicks: 3,
+  memberNameWords: {
+    adjectives: [
+      'Jolly', 'Merry', 'Festive', 'Frosty', 'Snowy', 'Twinkly', 'Cozy', 'Sparkly',
+      'Glittery', 'Toasty', 'Cheery', 'Mistletoed', 'Tinseled', 'Candlelit',
+      'Gingerbread', 'Peppermint', 'Wintry', 'Starry', 'Spiced', 'Sugarplum',
+      'Velvet', 'Golden', 'Midnight', 'Bubbly',
+    ],
+    nouns: [
+      'Snowflake', 'Reindeer', 'Elf', 'Snowman', 'Nutcracker', 'Candy Cane',
+      'Mistletoe', 'Ornament', 'Stocking', 'Sleigh', 'Snowball', 'Garland',
+      'Wreath', 'Tinsel', 'Eggnog', 'Cocoa', 'Chestnut', 'Icicle', 'Mitten',
+      'Penguin', 'Pinecone', 'Confetti', 'Countdown', 'Toast',
+    ],
+  },
   groupNames: [
     'Lucky Thirteen', 'Shaken Not Stirred', 'Top Shelf', 'Last Call',
     'Bitters End', 'Happy Hour Heroes', 'Twist of Lime', 'On the Rocks',

@@ -17,12 +17,36 @@ const ERRORS = {
   festival_ended: 'Voting has closed.',
 };
 
+/*
+ * "I'm not bringing one" folds the card to a single line. Remembered per
+ * group in this browser so it stays folded across reloads; purely a display
+ * preference, so a private window that can't store it just starts unfolded.
+ */
+const notBringingKey = (groupId, memberKey) => `brsp.notBringing.v1.${groupId}.${memberKey}`;
+
+function readNotBringing(key) {
+  try { return localStorage.getItem(key) === '1'; } catch { return false; }
+}
+
+function writeNotBringing(key, value) {
+  try {
+    if (value) localStorage.setItem(key, '1');
+    else localStorage.removeItem(key);
+  } catch { /* not remembered — fine */ }
+}
+
 export default function UserSetSignup({ groupId, memberKey, memberDisplayName }) {
   const festival = useFestival();
   const noun = festival.entryNoun ?? 'entry';
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
+  const storageKey = notBringingKey(groupId, memberKey);
+  const [notBringing, setNotBringingState] = useState(() => readNotBringing(storageKey));
+  const setNotBringing = (value) => {
+    setNotBringingState(value);
+    writeNotBringing(storageKey, value);
+  };
 
   // Matched by name, which is only for display — the one-each limit itself is
   // enforced by member key on the server.
@@ -43,6 +67,19 @@ export default function UserSetSignup({ groupId, memberKey, memberDisplayName })
     } finally {
       setBusy(false);
     }
+  }
+
+  // Folded: one line, with a way back.
+  if (notBringing && mine.length === 0) {
+    return (
+      <div className="card user-set-signup is-collapsed">
+        <span className="card-title">Bringing a {noun}?</span>
+        <span className="user-set-collapsed-answer">I’m not.</span>
+        <button type="button" className="link-button" onClick={() => setNotBringing(false)}>
+          Actually, I am
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -67,6 +104,9 @@ export default function UserSetSignup({ groupId, memberKey, memberDisplayName })
             <Button type="submit" disabled={busy || !name.trim()}>Add</Button>
           </form>
           {message && <p className="user-set-message" role="status">{message}</p>}
+          <button type="button" className="link-button user-set-decline" onClick={() => setNotBringing(true)}>
+            I’m not bringing a {noun}
+          </button>
         </>
       )}
       {mine.map((s) => <p key={s.id} className="user-set-name">{s.artist}</p>)}

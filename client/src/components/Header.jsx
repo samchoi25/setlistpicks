@@ -51,6 +51,9 @@ export default function Header({
   // no group left to manage, only its final picks to look back on.
   const online = useOnline();
   const ended = hasFestivalEnded(festival);
+  // At a party (userSets event, see shared/festivals/lucky-13.js) the profile
+  // badge is just a name tag: it doesn't open the edit panel.
+  const badgeLocked = editing || !online || ended || Boolean(festival.userSets);
 
   function applyEditing(val) {
     setEditing(val);
@@ -261,12 +264,13 @@ export default function Header({
           <ShareIcon />
         </button>
       )}
-      <button className={`profile-badge${editing || !online || ended ? ' is-static' : ''}`}
-        onClick={editing || !online || ended ? undefined : openEdit}
-        title={editing || !online || ended ? undefined : 'Edit your name & crew'}>
+      <button className={`profile-badge${badgeLocked ? ' is-static' : ''}`}
+        onClick={badgeLocked ? undefined : openEdit}
+        disabled={Boolean(festival.userSets)}
+        title={badgeLocked ? undefined : 'Edit your name & crew'}>
         <span className="profile-avatar">{initials(displayMemberName)}</span>
         <span className="profile-name">{displayMemberName}</span>
-        {!editing && online && !ended && <ChevronIcon />}
+        {!badgeLocked && <ChevronIcon />}
       </button>
     </div>
   );

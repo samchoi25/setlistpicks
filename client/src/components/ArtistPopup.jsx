@@ -71,9 +71,9 @@ export default function ArtistPopup({ artistId, artistName, artists, votes, memb
         <div className="picks-section">
           <div className="picks-section-head">
             <svg className="icon-check" viewBox="0 0 28 28" overflow="visible" aria-hidden="true">
-              <use href="#mark-check" />
+              <use href={festival.maxPicks ? '#mark-heart' : '#mark-check'} />
             </svg>
-            Want
+            {festival.maxPicks ? 'Like' : 'Want'}
           </div>
           {wants.map((v) => <MemberRow key={v.key} v={v} memberKey={memberKey} />)}
         </div>

@@ -1456,6 +1456,11 @@ input[type="text"].is-tight {
 .profile-badge.is-static {
   cursor: default;
 }
+/* Not clickable, so no hover response either. */
+.profile-badge.is-static:hover {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--ink) 40%, transparent);
+}
 .profile-chevron {
   width: 10px;
   height: 10px;
@@ -1779,6 +1784,27 @@ input[type="text"].is-tight {
   margin: 0;
   font-size: var(--text-md);
   color: var(--danger);
+}
+.user-set-decline {
+  justify-self: start;
+  font-size: var(--text-md);
+  color: var(--ink-soft);
+}
+/* "I'm not bringing one": the card folded to a single line. */
+.user-set-signup.is-collapsed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-3);
+}
+.user-set-collapsed-answer,
+.user-set-signup.is-collapsed .link-button {
+  font-size: var(--text-md);
+}
+.user-set-signup.is-collapsed .link-button {
+  color: var(--ink-soft);
 }
 .user-set-name {
   margin: 0;

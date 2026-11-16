@@ -81,7 +81,9 @@ export default function GroupSwitcher({ groupId, groupName, memberCount, disable
               {g.name || 'Unnamed crew'}
             </a>
           ))}
-          {!hasFestivalEnded(festival) && (
+          {/* A party (userSets event, see shared/festivals/lucky-13.js) is one
+              shared group — there's no second crew to start. */}
+          {!hasFestivalEnded(festival) && !festival.userSets && (
             <>
               <div className="brand-title-divider" />
               <button

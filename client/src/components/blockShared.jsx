@@ -27,6 +27,9 @@ export function WashSvg({ data }) {
 }
 
 export function GroupVotesEl({ votes, myVote, memberKey, memberDisplayName }) {
+  // A maxPicks event (see shared/festivals/lucky-13.js) marks a like with a
+  // heart rather than the Want check.
+  const { maxPicks } = useFestival();
   const serverOthers = votes.filter((v) => v.key !== memberKey);
   const allVoters = [
     ...serverOthers,
@@ -40,7 +43,7 @@ export function GroupVotesEl({ votes, myVote, memberKey, memberDisplayName }) {
   // so the icons stand on their own.
   const showNames = allVoters.length <= 3;
   const fName = (v) => v.displayName.split(' ')[0];
-  const icon = (v) => v.score === 3 ? '🔥' : '✓';
+  const icon = (v) => v.score === 3 ? '🔥' : (maxPicks ? '♥' : '✓');
   const cls  = (v) => v.score === 3 ? 'gv-fire' : 'gv-check';
 
   return (

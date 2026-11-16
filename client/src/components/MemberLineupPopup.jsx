@@ -4,7 +4,7 @@ import { fmtTime } from '../../../shared/festival.js';
 import { useFestival } from '../festival-context.jsx';
 
 export default function MemberLineupPopup({ memberKey, memberDisplayName, perArtistRaw, onClose }) {
-  const { SCHEDULE, DAYS } = useFestival();
+  const { SCHEDULE, DAYS, maxPicks } = useFestival();
   // Build a votes map for this member from the already-fetched perArtistRaw
   const votes = {};
   for (const [artistId, voters] of Object.entries(perArtistRaw)) {
@@ -38,7 +38,7 @@ export default function MemberLineupPopup({ memberKey, memberDisplayName, perArt
                 <span className="picks-show-mark">
                   {votes[s.id] === 3 ? '🔥' : (
                     <svg className="icon-check" viewBox="0 0 28 28" overflow="visible" aria-hidden="true">
-                      <use href="#mark-check" />
+                      <use href={maxPicks ? '#mark-heart' : '#mark-check'} />
                     </svg>
                   )}
                 </span>

@@ -20,7 +20,13 @@ const MEMBER_ADJS = ['Wild', 'Lucky', 'Golden', 'Breezy', 'Mellow', 'Groovy', 'F
 const MEMBER_NOUNS = ['Dune', 'Cypress', 'Stage', 'Trail', 'Wave', 'Riff', 'Chord', 'Beat', 'Note', 'Sound'];
 
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-function randomMemberName() { return `${pick(MEMBER_ADJS)} ${pick(MEMBER_NOUNS)} ${Math.floor(10 + Math.random() * 90)}`; }
+// The placeholder name a new member gets until they type their own. A
+// festival can bring its own words (Lucky 13's are holiday themed).
+function randomMemberName(festival) {
+  const adjs = festival?.memberNameWords?.adjectives ?? MEMBER_ADJS;
+  const nouns = festival?.memberNameWords?.nouns ?? MEMBER_NOUNS;
+  return `${pick(adjs)} ${pick(nouns)} ${Math.floor(10 + Math.random() * 90)}`;
+}
 function randomGroupName(festival) { return pick(festival.groupNames); }
 
 function getPath() { return location.pathname; }
@@ -101,7 +107,7 @@ function AppRoutes() {
           });
           return;
         }
-        const { member } = await api.join(groupId, randomMemberName());
+        const { member } = await api.join(groupId, randomMemberName(getFestival(groupMeta.festivalSlug) ?? festival));
         setIdentity(groupId, member);
         identity = member;
         groupMeta = await api.getGroup(groupId);
