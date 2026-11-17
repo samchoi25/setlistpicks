@@ -263,8 +263,107 @@ const sets = {
   ],
 };
 
+// Artist links: MusicBrainz exact-name matches (one unambiguous artist
+// only), taking that artist's Spotify / Apple Music / SoundCloud links;
+// each Spotify link was fetched and its page title checked against the
+// billing. Acts with several same-named artists are left out.
+const artistLinks = {
+  '1-800 GIRLS': { spotify: 'https://open.spotify.com/artist/67yGrC4QoCSD0g7YMcGIgJ', appleMusic: 'https://music.apple.com/gb/artist/1288017230', soundcloud: 'https://soundcloud.com/1800girls' },
+  'After': { spotify: 'https://open.spotify.com/artist/7KfMR05zRrWyhQimnYa8li', appleMusic: 'https://music.apple.com/gb/artist/1674262029', soundcloud: 'https://soundcloud.com/after-band' },
+  'ALLEYCVT': { spotify: 'https://open.spotify.com/artist/4JxRK2gxmri7L7OWaxnVD1', appleMusic: 'https://music.apple.com/gb/artist/1560524882' },
+  'Ally Evenson': { spotify: 'https://open.spotify.com/artist/6UzwpF9cqjxgxXb2N6mb7y', appleMusic: 'https://music.apple.com/gb/artist/283908113', soundcloud: 'https://soundcloud.com/ally-evenson' },
+  'Audrey Hobert': { spotify: 'https://open.spotify.com/artist/4N0TAwz9vhnQtjCqS65aKS', appleMusic: 'https://music.apple.com/us/artist/1812750994' },
+  'Baby Keem': { spotify: 'https://open.spotify.com/artist/5SXuuuRpukkTvsLuUknva1', appleMusic: 'https://music.apple.com/us/artist/1413572916', soundcloud: 'https://soundcloud.com/hykeemcarter' },
+  'Bad Nerves': { spotify: 'https://open.spotify.com/artist/7IPyXY4ZHkuvQY1ny8TnMQ', appleMusic: 'https://music.apple.com/gb/artist/1213806228', soundcloud: 'https://soundcloud.com/badnerves' },
+  'Balu Brigada': { spotify: 'https://open.spotify.com/artist/6O9vGMmTwzihULICPCsNf2', appleMusic: 'https://music.apple.com/cl/artist/1171521321', soundcloud: 'https://soundcloud.com/balu-brigada' },
+  'Bandalos Chinos': { spotify: 'https://open.spotify.com/artist/0wn2qDKzeFlhjRUtJAwJjp' },
+  'Ben Böhmer': { spotify: 'https://open.spotify.com/artist/5tDjiBYUsTqzd0RkTZxK7u', appleMusic: 'https://music.apple.com/de/artist/794108530', soundcloud: 'https://soundcloud.com/ben-bohmer' },
+  'Billie Marten': { spotify: 'https://open.spotify.com/artist/02YLJJnWC7YQVixkjEBRn7', appleMusic: 'https://music.apple.com/gb/artist/879538438', soundcloud: 'https://soundcloud.com/billie-marten' },
+  'Boris Brejcha': { spotify: 'https://open.spotify.com/artist/6caPJFLv1wesmM7gwK1ACy', appleMusic: 'https://music.apple.com/de/artist/202970860', soundcloud: 'https://soundcloud.com/boris-brejcha' },
+  'Boys Noize': { spotify: 'https://open.spotify.com/artist/62k5LKMhymqlDNo2DWOvvv', appleMusic: 'https://music.apple.com/gb/artist/60393190', soundcloud: 'https://soundcloud.com/boysnoize' },
+  'camoufly': { spotify: 'https://open.spotify.com/artist/6ZmJg6NCjGmRgC2GEI86pQ', appleMusic: 'https://music.apple.com/gb/artist/1534993570', soundcloud: 'https://soundcloud.com/camouflybeats' },
+  'Carlita': { spotify: 'https://open.spotify.com/artist/1GVbOnrND8b3eh2JZ4opw8', appleMusic: 'https://music.apple.com/tr/artist/599607197', soundcloud: 'https://soundcloud.com/carla-frayman' },
+  'Charli xcx': { spotify: 'https://open.spotify.com/artist/0HNqrcl3vgc1U7U1SNtsvB', appleMusic: 'https://music.apple.com/gb/artist/432942256', soundcloud: 'https://soundcloud.com/charlixcx' },
+  'Chezile': { spotify: 'https://open.spotify.com/artist/1EmdfupUQDpXOcb4Nj2mBH', appleMusic: 'https://music.apple.com/us/artist/1502584860' },
+  'Clipse': { spotify: 'https://open.spotify.com/artist/2J257euzcjnDLipsyJH3F2', appleMusic: 'https://music.apple.com/gb/artist/627567' },
+  'Cruz Beckham': { spotify: 'https://open.spotify.com/artist/3ZPOiGqgEbfNlKFFKxXVsD', appleMusic: 'https://music.apple.com/us/artist/1182571263' },
+  'Day We Ran': { spotify: 'https://open.spotify.com/artist/6dtbK89qIT2XjIsCQHjTxS' },
+  'Death Cab for Cutie': { spotify: 'https://open.spotify.com/artist/0YrtvWJMgSdVrk3SfNjTbx', appleMusic: 'https://music.apple.com/us/artist/5448636', soundcloud: 'https://soundcloud.com/deathcabforcutie' },
+  'DESTIN CONRAD': { spotify: 'https://open.spotify.com/artist/4jwROPSUkTkohLCRiyjiZZ', appleMusic: 'https://music.apple.com/gb/artist/852999989' },
+  'Die Spitz': { spotify: 'https://open.spotify.com/artist/0zfZmpHTu0MlkkNr5KHeXE', appleMusic: 'https://music.apple.com/gb/artist/1545875931' },
+  'Disco Lines': { spotify: 'https://open.spotify.com/artist/5Kmr0b3ip8g9P2i0dLTC3Z', appleMusic: 'https://music.apple.com/us/artist/1462793893' },
+  'DJ Minx': { spotify: 'https://open.spotify.com/artist/4PTQtiKISN5iGNpbRVv02B' },
+  'Durand Bernarr': { spotify: 'https://open.spotify.com/artist/2d6ggH1oVt4z2zCuY2u5DW', appleMusic: 'https://music.apple.com/gb/artist/584124023', soundcloud: 'https://soundcloud.com/alcoholharmony' },
+  'Empire Of The Sun': { spotify: 'https://open.spotify.com/artist/67hb7towEyKvt5Z8Bx306c', appleMusic: 'https://music.apple.com/us/artist/284433289', soundcloud: 'https://soundcloud.com/empireofthesunsound' },
+  'Etari': { spotify: 'https://open.spotify.com/artist/5T2a7X0y51m0vb8PkSBiR1', appleMusic: 'https://music.apple.com/gb/artist/1478663856', soundcloud: 'https://soundcloud.com/etari' },
+  'Ethel Cain': { spotify: 'https://open.spotify.com/artist/0avMDS4HyoCEP6RqZJWpY2', appleMusic: 'https://music.apple.com/us/artist/1474427879', soundcloud: 'https://soundcloud.com/mothercain' },
+  'Faouzia': { spotify: 'https://open.spotify.com/artist/5NhgsV7qPWHZqYEMKzbYvo', appleMusic: 'https://music.apple.com/ca/artist/414067643', soundcloud: 'https://soundcloud.com/faouziaofficial' },
+  'Frost Children': { spotify: 'https://open.spotify.com/artist/2armP2pVQFy1awZ8HLbCib', appleMusic: 'https://music.apple.com/us/artist/1505504789', soundcloud: 'https://soundcloud.com/frostchildren' },
+  'GloRilla': { spotify: 'https://open.spotify.com/artist/2qoQgPAilErOKCwE2Y8wOG', appleMusic: 'https://music.apple.com/us/artist/1441017729', soundcloud: 'https://soundcloud.com/glorillapimp' },
+  'Goldie Boutilier': { spotify: 'https://open.spotify.com/artist/392WuM1Yb4QRI0GG4epyn5', appleMusic: 'https://music.apple.com/au/artist/1497564703' },
+  'Infinity Song': { spotify: 'https://open.spotify.com/artist/2PZThLYBW7XtcYVzQms8oM', appleMusic: 'https://music.apple.com/us/artist/1032063566' },
+  'Kerala Dust': { spotify: 'https://open.spotify.com/artist/6lK8O3kyFThiTmgowQZGOH', appleMusic: 'https://music.apple.com/gb/artist/1182111701', soundcloud: 'https://soundcloud.com/KeralaDust' },
+  'Kingfishr': { spotify: 'https://open.spotify.com/artist/6c2qQFq3xfxFJndX6wSe4f', appleMusic: 'https://music.apple.com/gb/artist/1616516476' },
+  'Lane 8': { spotify: 'https://open.spotify.com/artist/27gtK7m9vYwCyJ04zz0kIb', appleMusic: 'https://music.apple.com/fr/artist/634763116', soundcloud: 'https://soundcloud.com/lane8music' },
+  'Light Asylum': { spotify: 'https://open.spotify.com/artist/2y98d6N81pArQNXYvkupr8', soundcloud: 'https://soundcloud.com/light-asylum' },
+  'Lucy Dacus': { spotify: 'https://open.spotify.com/artist/07D1Bjaof0NFlU32KXiqUP', appleMusic: 'https://music.apple.com/us/artist/1060812309', soundcloud: 'https://soundcloud.com/lucy-dacus' },
+  'Luke Alessi': { spotify: 'https://open.spotify.com/artist/3Foat3c8Ui3HkvZghZAzQp', appleMusic: 'https://music.apple.com/au/artist/1072900724', soundcloud: 'https://soundcloud.com/lukealessiofficial' },
+  'Magnus Ferrell': { spotify: 'https://open.spotify.com/artist/5CljSCTqoS1Yu0tNJZJcKe', appleMusic: 'https://music.apple.com/us/artist/1572955044', soundcloud: 'https://soundcloud.com/magnus-paulin-ferrell' },
+  'Malcolm Todd': { spotify: 'https://open.spotify.com/artist/7eKkW1zo5uzW8kUntiiBvz', appleMusic: 'https://music.apple.com/gb/artist/1624326848' },
+  'Mariah the Scientist': { spotify: 'https://open.spotify.com/artist/7HO5fOXE4gh3lzZn64tX2E', appleMusic: 'https://music.apple.com/to/artist/1475275447', soundcloud: 'https://soundcloud.com/selkcub' },
+  'Marlon Funaki': { spotify: 'https://open.spotify.com/artist/3BcSXip92N0HwJRA9sVmP6', appleMusic: 'https://music.apple.com/us/artist/1513742282', soundcloud: 'https://soundcloud.com/marlonfunaki' },
+  'Miss Monique': { spotify: 'https://open.spotify.com/artist/29TpNOsTNYbLb6Xa10H0PR', appleMusic: 'https://music.apple.com/gb/artist/401265174', soundcloud: 'https://soundcloud.com/alesia-arkusha' },
+  'Modest Mouse': { spotify: 'https://open.spotify.com/artist/1yAwtBaoHLEDWAnWR87hBT', appleMusic: 'https://music.apple.com/us/artist/467112', soundcloud: 'https://soundcloud.com/modest-mouse-official' },
+  'NEZZA': { spotify: 'https://open.spotify.com/artist/0cRKBhWUTEtR1vmA06kVKz', appleMusic: 'https://music.apple.com/us/artist/1403942659' },
+  'Night Tapes': { spotify: 'https://open.spotify.com/artist/5APEQlUaQ5K70LgPqAdTuU', appleMusic: 'https://music.apple.com/gb/artist/1476057311' },
+  'Not for Radio': { spotify: 'https://open.spotify.com/artist/0oXhGlRUQ8aVTx8eO4MoMT', soundcloud: 'https://soundcloud.com/notforradio' },
+  'Pink Stiletto': { spotify: 'https://open.spotify.com/artist/5X7aA68MU4iTPy5k2PwJq5', appleMusic: 'https://music.apple.com/gb/artist/1721870732' },
+  'PinkPantheress': { spotify: 'https://open.spotify.com/artist/78rUTD7y6Cy67W1RVzYs7t', appleMusic: 'https://music.apple.com/gb/artist/1552521489', soundcloud: 'https://soundcloud.com/pinkpantheress' },
+  'Racing Mount Pleasant': { spotify: 'https://open.spotify.com/artist/5zaSiNpGxS2lOvZTIZiOQX', appleMusic: 'https://music.apple.com/us/artist/1798832480' },
+  'Red Leather': { spotify: 'https://open.spotify.com/artist/2qltFRTCjw1j67Da9FR8F1', appleMusic: 'https://music.apple.com/gb/artist/1611294049', soundcloud: 'https://soundcloud.com/red_leather' },
+  'RIO KOSTA': { spotify: 'https://open.spotify.com/artist/4xU7M9wEvpnvkNOyPdVi5y', appleMusic: 'https://music.apple.com/us/artist/1641407453' },
+  'RYMAN': { spotify: 'https://open.spotify.com/artist/1ZUNE7b5nNiN31AnJ0Smqj', appleMusic: 'https://music.apple.com/us/artist/1561850927' },
+  'RÜFÜS DU SOL': { spotify: 'https://open.spotify.com/artist/5Pb27ujIyYb33zBqVysBkj', appleMusic: 'https://music.apple.com/fr/artist/799587823', soundcloud: 'https://soundcloud.com/rufusdusol' },
+  'Sawyer Hill': { spotify: 'https://open.spotify.com/artist/3CwWzT9t3z7DARyhDIzwIG', appleMusic: 'https://music.apple.com/us/artist/1651349181' },
+  'Sienna Spiro': { spotify: 'https://open.spotify.com/artist/02gSuSAWEdWa5UOvqzjX6v', appleMusic: 'https://music.apple.com/gb/artist/1745678083', soundcloud: 'https://soundcloud.com/siennaspiro' },
+  'Sierra Ferrell': { spotify: 'https://open.spotify.com/artist/3oVcF3VdpMuvMvLLyHPT4t', appleMusic: 'https://music.apple.com/us/artist/1099234422' },
+  'Silvana Estrada': { spotify: 'https://open.spotify.com/artist/72VywtXEoONiBLNu3ibGI7', soundcloud: 'https://soundcloud.com/silvana-estrada-589970096' },
+  'Snow Strippers': { spotify: 'https://open.spotify.com/artist/6TsAG8Ve1icEC8ydeHm3C8', appleMusic: 'https://music.apple.com/us/artist/1597165659', soundcloud: 'https://soundcloud.com/snowstrippers' },
+  'Soltera': { soundcloud: 'https://soundcloud.com/soltera818' },
+  'sosocamo': { spotify: 'https://open.spotify.com/artist/6hpztnbgmaneFFGGnEOVjd', appleMusic: 'https://music.apple.com/us/artist/1615285313' },
+  'Sultan + Shepard': { spotify: 'https://open.spotify.com/artist/14Tg9FvbNismPR1PJHxRau', appleMusic: 'https://music.apple.com/ca/artist/969036179', soundcloud: 'https://soundcloud.com/sultanshepard' },
+  'The Strokes': { spotify: 'https://open.spotify.com/artist/0epOFNiUfyON9EYx7Tpr6V', appleMusic: 'https://music.apple.com/us/artist/560289', soundcloud: 'https://soundcloud.com/thestrokes' },
+  'The Temper Trap': { spotify: 'https://open.spotify.com/artist/4W48hZAnAHVOC2c8WH8pcq', appleMusic: 'https://music.apple.com/gb/artist/202033981', soundcloud: 'https://soundcloud.com/the-temper-trap' },
+  'The xx': { spotify: 'https://open.spotify.com/artist/3iOvXCl6edW5Um0fXEBRXy', appleMusic: 'https://music.apple.com/gb/artist/315473044', soundcloud: 'https://soundcloud.com/thexxofficial' },
+  'tobiahs': { spotify: 'https://open.spotify.com/artist/4eHzBO6qaL2wt35kENSbTs', soundcloud: 'https://soundcloud.com/tobiahs' },
+  'Wet Leg': { spotify: 'https://open.spotify.com/artist/2TwOrUcYnAlIiKmVQkkoSZ', appleMusic: 'https://music.apple.com/gb/artist/1569685293', soundcloud: 'https://soundcloud.com/wetleg' },
+  'Wunderhorse': { spotify: 'https://open.spotify.com/artist/41pd7r1XBRsvdxY3vHEgib', appleMusic: 'https://music.apple.com/gb/artist/1499976480' },
+  'Yard Act': { spotify: 'https://open.spotify.com/artist/2h3ooJn8m8X8cL2g1BZ1Rd', appleMusic: 'https://music.apple.com/gb/artist/1499415658', soundcloud: 'https://soundcloud.com/yardactband' },
+  'Łaszewo': { spotify: 'https://open.spotify.com/artist/6jxGLrn1I14RIeRYodOpLN', appleMusic: 'https://music.apple.com/gb/artist/1438035296' },
+};
+
+// Theme: from sfoutsidelands.com (read 2026-11-16) — cream (#FFF9E9) and a
+// deep navy (#0A2F3F) over park green (#6EA541), with candy pink (#FF9CD9)
+// and gold (#F7C63D) buttons and a wide heavy display face. The grid sits on
+// the cream with navy ink; navy carries the primary buttons, pink the
+// secondary. Archivo Black stands in for the wide display face. Stage colours
+// keep the base palette.
+const theme = {
+  tokens: {
+    '--bg': '#FFF9E9',
+    '--paper': '#FFFDF6',
+    '--ink': '#0A2F3F',
+    '--btn-secondary': '#FF9CD9',
+    '--on-btn-secondary': '#0A2F3F',
+    '--font-display': 'archivo-black',
+    '--font-body': 'montserrat',
+  },
+};
+
 export default {
   slug,
+  theme,
+  artistLinks,
   name: 'Outside Lands 2026',
   shortName: 'Outside Lands',
   year: 2026,

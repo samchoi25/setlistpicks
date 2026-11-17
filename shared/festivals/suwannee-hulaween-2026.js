@@ -264,10 +264,32 @@ const artistLinks = {
   'True Loves': { spotify: 'https://open.spotify.com/artist/1IlKHxSbOJDx10sotxhk4Z', appleMusic: 'https://music.apple.com/us/artist/269633170', soundcloud: 'https://soundcloud.com/truelovesband' },
   'Unknown Mortal Orchestra': { spotify: 'https://open.spotify.com/artist/1LeVJ5GPeYDOVUjxx1y7Rp', appleMusic: 'https://music.apple.com/us/artist/437580308' },
   '¥ØU$UK€ ¥UK1MAT$U': { spotify: 'https://open.spotify.com/artist/0BEmPeY22LTrZJFFP2xIyk', appleMusic: 'https://music.apple.com/us/artist/1830360631', soundcloud: 'https://soundcloud.com/yousukeyukimatsu' },
+  'Riordan': { spotify: 'https://open.spotify.com/artist/68rU1sdZ0HjxjEC5YnSmao', appleMusic: 'https://music.apple.com/gb/artist/1517575029' },
+};
+
+// Theme: from hulaween.com (read 2026-11-16) — midnight navy (#000120) and
+// violet (#16024A) under white, lit by neon green (#35F882), hot pink
+// (#FF60C6) and aqua (#25BEE7), with a stretched psychedelic display face.
+// The grid needs a light ground (the vote washes multiply), so the page is a
+// pale lavender with the navy as ink; violet carries primary buttons and the
+// neon green the secondary. Archivo Black stands in for the display face.
+// Stage colours keep the base palette.
+const theme = {
+  tokens: {
+    '--bg': '#EFEDF7',
+    '--paper': '#FAF9FD',
+    '--ink': '#000120',
+    '--btn-primary': '#16024A',
+    '--btn-secondary': '#35F882',
+    '--on-btn-secondary': '#000120',
+    '--font-display': 'archivo-black',
+    '--font-body': 'montserrat',
+  },
 };
 
 export default {
   slug,
+  theme,
   name: 'Suwannee Hulaween 2026',
   shortName: 'Hulaween',
   year: 2026,

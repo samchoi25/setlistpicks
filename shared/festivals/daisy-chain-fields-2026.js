@@ -78,8 +78,26 @@ const theme = {
   },
 };
 
+// Artist links: MusicBrainz exact-name matches (one unambiguous artist
+// only), taking that artist's Spotify / Apple Music / SoundCloud links;
+// each Spotify link was fetched and its page title checked against the
+// billing. Acts with several same-named artists are left out.
+const artistLinks = {
+  'Bikini Kill': { spotify: 'https://open.spotify.com/artist/0gvHPdYxlU94W7V5MSIlFe', appleMusic: 'https://music.apple.com/us/artist/2893586' },
+  'Chappell Roan': { spotify: 'https://open.spotify.com/artist/7GlBOeep6PqTfFi59PTUUN', appleMusic: 'https://music.apple.com/us/artist/1264818718', soundcloud: 'https://soundcloud.com/chappellroan' },
+  'Die Spitz': { spotify: 'https://open.spotify.com/artist/0zfZmpHTu0MlkkNr5KHeXE', appleMusic: 'https://music.apple.com/gb/artist/1545875931' },
+  'Doechii': { spotify: 'https://open.spotify.com/artist/4E2rKHVDssGJm2SCDOMMJB', appleMusic: 'https://music.apple.com/fr/artist/1437641643', soundcloud: 'https://soundcloud.com/iam-doechii' },
+  'KATSEYE': { spotify: 'https://open.spotify.com/artist/3c0gDdb9lhnHGFtP4prQpn', appleMusic: 'https://music.apple.com/us/artist/1754284416' },
+  'Mitski': { spotify: 'https://open.spotify.com/artist/2uYWxilOVlUdk4oV9DvwqK', appleMusic: 'https://music.apple.com/us/artist/497546276', soundcloud: 'https://soundcloud.com/mitskiofficial' },
+  'Not for Radio': { spotify: 'https://open.spotify.com/artist/0oXhGlRUQ8aVTx8eO4MoMT', soundcloud: 'https://soundcloud.com/notforradio' },
+  'Rachel Chinouriri': { spotify: 'https://open.spotify.com/artist/4wrzxtBZw20ufDstKyTnnP', appleMusic: 'https://music.apple.com/gb/artist/1033202344', soundcloud: 'https://soundcloud.com/rachel-chinouriri' },
+  'Santigold': { spotify: 'https://open.spotify.com/artist/6Jrxnp0JgqmeUX1veU591p', soundcloud: 'https://soundcloud.com/santigold' },
+  'The Breeders': { spotify: 'https://open.spotify.com/artist/1xgFexIwrf2QjbU0buCNnp', appleMusic: 'https://music.apple.com/us/artist/790125', soundcloud: 'https://soundcloud.com/thebreeders' },
+};
+
 export default {
   slug,
+  artistLinks,
   name: 'Daisy Chain Fields 2026',
   shortName: 'Daisy Chain Fields',
   year: 2026,

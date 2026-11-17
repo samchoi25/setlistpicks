@@ -263,10 +263,33 @@ const artistLinks = {
   'Willy Tea Taylor': { spotify: 'https://open.spotify.com/artist/7wFk6kv7WudeSu1bEhG89g' },
   '¿Qiensave?': { spotify: 'https://open.spotify.com/artist/2zzLwsB8sY1dkIDAKevDrc' },
   'Yasmin Williams and William Tyler': { spotify: 'https://open.spotify.com/artist/4j8CsPzssbM8TCjSvgnmSs' },
+  'Rahim AlHaj': { spotify: 'https://open.spotify.com/artist/6G0kPwGN96TTnSjeiqM3Ys' },
+  'The Deslondes': { spotify: 'https://open.spotify.com/artist/5nlQijI9hZ50keRqmLVov1', appleMusic: 'https://music.apple.com/us/artist/949983526' },
+  'Wreckless Strangers': { spotify: 'https://open.spotify.com/artist/3niRRJFTVQEmQAVtrCHMu5' },
+};
+
+// Theme: from hardlystrictlybluegrass.com (read 2026-11-16) — a parchment
+// ground (#F2EFE9 / #E3DED3), saddle-brown type (#774D43, #44352B), olive and
+// sage greens (#708308, #9AAE5F), and a vintage show-poster display face
+// (Modesto). The grid sits on the parchment with the dark brown as ink; brown
+// carries the primary buttons, sage the secondary. Rye stands in for Modesto.
+// Stage colours keep the base palette.
+const theme = {
+  tokens: {
+    '--bg': '#EFEBE3',
+    '--paper': '#F8F6F1',
+    '--ink': '#44352B',
+    '--btn-primary': '#774D43',
+    '--btn-secondary': '#9AAE5F',
+    '--on-btn-secondary': '#2B2119',
+    '--font-display': 'rye',
+    '--font-body': 'montserrat',
+  },
 };
 
 export default {
   slug,
+  theme,
   name: 'Hardly Strictly Bluegrass 2026',
   shortName: 'Hardly Strictly',
   year: 2026,

@@ -332,10 +332,35 @@ const artistLinks = {
   'YDG': { soundcloud: 'https://soundcloud.com/itsydg' },
   'Zedd': { spotify: 'https://open.spotify.com/artist/2qxJFvFYMEDqd7ui6kSAcq', appleMusic: 'https://music.apple.com/us/artist/368433979', soundcloud: 'https://soundcloud.com/zedd' },
   'Zoe Gitter': { spotify: 'https://open.spotify.com/artist/0IYS6mzt0DZL8P7DaqT4nm', appleMusic: 'https://music.apple.com/us/artist/1456354330' },
+  'Girl Math': { spotify: 'https://open.spotify.com/artist/5ME3kZ92gTA4IcXDauJmz5' },
+  'Ja Rule': { spotify: 'https://open.spotify.com/artist/1J2VVASYAamtQ3Bt8wGgA6', appleMusic: 'https://music.apple.com/gb/artist/134420', soundcloud: 'https://soundcloud.com/ja-rule-official' },
+  'Too $hort': { spotify: 'https://open.spotify.com/artist/4sb7rZNN93BSS6Gqgepo4v', appleMusic: 'https://music.apple.com/us/artist/145173964', soundcloud: 'https://soundcloud.com/officialtooshort' },
+};
+
+// Theme: from escapehalloween.com (read 2026-11-16) — near-black (#101010)
+// and white with a blood red (#E21C0F) and a dried-blood maroon (#64201D),
+// heavy condensed type. The grid needs a light ground (the vote washes
+// multiply), so the page is a cold bone-white with near-black ink; maroon
+// carries primary buttons (the red is only 4.4:1 with white), and the red,
+// with white labels, is a deepened #C4180D on secondary buttons. Anton
+// stands in for the condensed display face. Stage colours keep the base
+// palette.
+const theme = {
+  tokens: {
+    '--bg': '#ECEAE8',
+    '--paper': '#F7F6F5',
+    '--ink': '#101010',
+    '--btn-primary': '#64201D',
+    '--btn-secondary': '#C4180D',
+    '--on-btn-secondary': '#FFFFFF',
+    '--font-display': 'anton',
+    '--font-body': 'montserrat',
+  },
 };
 
 export default {
   slug,
+  theme,
   name: 'Escape Halloween 2026',
   shortName: 'Escape',
   year: 2026,

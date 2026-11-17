@@ -24,7 +24,7 @@
 // Silent Disco (Tito's, 8:00–10:00 every day) is a festival activity, not a
 // bookable artist, and is intentionally left out.
 
-import { artistLinks, stages } from './austin-city-limits-2026-lineup.js';
+import { artistLinks, stages, theme } from './austin-city-limits-2026-lineup.js';
 
 const slug = 'austin-city-limits-2026-week-1';
 
@@ -160,6 +160,7 @@ const sets = {
 };
 
 export default {
+  theme,
   slug,
   name: 'Austin City Limits Music Festival 2026 — Weekend One',
   shortName: 'ACL Week 1',

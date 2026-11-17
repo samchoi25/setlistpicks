@@ -199,4 +199,28 @@ export const artistLinks = {
   'VWILLZ': { spotify: 'https://open.spotify.com/artist/0S7eN9KAsbAaIZtFyCn1q1', appleMusic: 'https://music.apple.com/us/artist/vwillz/1483708170' },
   'World Famous Pets': { appleMusic: 'https://music.apple.com/us/artist/world-famous-pets/1896255592' },
   'Young Miko': { spotify: 'https://open.spotify.com/artist/3qsKSpcV3ncke3hw52JSMB', appleMusic: 'https://music.apple.com/us/artist/young-miko/1576521417', soundcloud: 'https://soundcloud.com/youngmiko' },
+  'Aaron Rowe': { spotify: 'https://open.spotify.com/artist/6lM3Lss7HI9Zpq4d4GqjIG', appleMusic: 'https://music.apple.com/us/artist/1701034074' },
+  'Coleman Jennings': { spotify: 'https://open.spotify.com/artist/3hxrh6IPuATmIiJuGNSdpp', appleMusic: 'https://music.apple.com/us/artist/1730130664' },
+  'LIVE': { spotify: 'https://open.spotify.com/artist/6eoJpTIlcuxJNjV5fDzDJH', appleMusic: 'https://music.apple.com/gb/artist/61027', soundcloud: 'https://soundcloud.com/freaks4live' },
+  'Radio Free Alice': { spotify: 'https://open.spotify.com/artist/4cCA6V2DRIDqeYDyGIcEoj', appleMusic: 'https://music.apple.com/gb/artist/1509790283', soundcloud: 'https://soundcloud.com/user-686856277' },
+};
+
+// Theme (both weekends): from aclfestival.com (read 2026-11-16) — warm cream
+// (#F0E1D2, lightened to #F5EADF for the page so every stage name clears
+// 4.5:1) and a dark forest green (#192819), a hot red-pink (#F03250) for
+// buttons, a gold (#FFAF19) and Oswald headlines. The grid sits on the cream
+// with the green as ink. The red-pink is 3.9:1 with white, so primary buttons
+// take it deepened to #C81E3C; gold is the secondary. Stage colours keep the
+// base palette.
+export const theme = {
+  tokens: {
+    '--bg': '#F5EADF',
+    '--paper': '#F8F1E8',
+    '--ink': '#192819',
+    '--btn-primary': '#C81E3C',
+    '--btn-secondary': '#FFAF19',
+    '--on-btn-secondary': '#192819',
+    '--font-display': 'oswald',
+    '--font-body': 'montserrat',
+  },
 };
