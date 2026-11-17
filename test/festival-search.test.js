@@ -75,7 +75,8 @@ test('coming-soon entries are searchable with the same matcher', async () => {
   assert.equal(ids('lolla')[0], 'lollapalooza-2027');
   assert.equal(ids('sonar')[0], 'sonar-2027');
   assert.ok(ids('barcelona').includes('primavera-sound-2027'));
-  assert.ok(!ids('outside lands').length);
+  assert.equal(ids('stagecoach')[0], 'stagecoach-2027');
+  assert.ok(!ids('hardly strictly').length);
 });
 
 test('no coming-soon entry shadows a festival that already has a page', async () => {

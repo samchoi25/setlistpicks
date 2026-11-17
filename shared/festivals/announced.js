@@ -8,10 +8,14 @@
  * lineup worth voting on, give it a proper definition module and delete its
  * entry here.
  *
- * Two kinds of entry:
+ * Three kinds of entry:
  *   - US festivals whose 2027 dates aren't announced yet (`start` is null,
  *     shown as "Dates TBA"). Bonnaroo is deliberately absent: it was called
  *     off for 2027 on 2026-08-21 after storm damage at The Farm.
+ *   - US festivals with 2027 dates, lineup or not. Coachella isn't here: it
+ *     already has its pages. A few dates are softer than others and say so in
+ *     their dateRange (ACL and When We Were Young are month-level guesses;
+ *     Rolling Loud's length was unclear in listings).
  *   - International festivals with 2027 dates and at least a partial lineup.
  *
  * Gathered 2026-11-16 from news and ticketing listings (ConcertVacay's 2027
@@ -36,6 +40,72 @@ export const ANNOUNCED_FESTIVALS = [
   { id: 'bourbon-and-beyond-2027', name: 'Bourbon & Beyond 2027', shortName: 'Bourbon & Beyond', venue: 'Highland Festival Grounds, Louisville', country: 'US' },
   { id: 'portola-2027', name: 'Portola Music Festival 2027', shortName: 'Portola', venue: 'Pier 80, San Francisco', country: 'US' },
   { id: 'sea-hear-now-2027', name: 'Sea.Hear.Now 2027', shortName: 'Sea.Hear.Now', venue: 'Asbury Park', country: 'US' },
+
+  // ─── US, 2027 dates announced ───────────────────────────────────────────
+  {
+    id: 'ultra-miami-2027', name: 'Ultra Music Festival 2027', shortName: 'Ultra Miami',
+    start: '2027-03-26', end: '2027-03-28', dateRange: 'March 26–28, 2027',
+    venue: 'Bayfront Park, Miami', country: 'US',
+  },
+  {
+    id: 'treefort-2027', name: 'Treefort Music Fest 2027', shortName: 'Treefort',
+    start: '2027-03-31', end: '2027-04-04', dateRange: 'March 31 – April 4, 2027',
+    venue: 'Boise', country: 'US',
+  },
+  {
+    id: 'big-ears-2027', name: 'Big Ears Festival 2027', shortName: 'Big Ears',
+    start: '2027-04-01', end: '2027-04-04', dateRange: 'April 1–4, 2027',
+    venue: 'Knoxville', country: 'US',
+    headliners: ['Weyes Blood', 'Thundercat', 'Sylvan Esso'],
+  },
+  {
+    id: 'stagecoach-2027', name: 'Stagecoach 2027', shortName: 'Stagecoach',
+    start: '2027-04-23', end: '2027-04-25', dateRange: 'April 23–25, 2027',
+    venue: 'Empire Polo Club, Indio', country: 'US',
+    headliners: ['Riley Green', 'Zach Top', 'Garth Brooks'],
+  },
+  {
+    id: 'rolling-loud-florida-2027', name: 'Rolling Loud Florida 2027', shortName: 'Rolling Loud Florida',
+    start: '2027-05-07', end: '2027-05-09', dateRange: 'May 7–9, 2027 (to be confirmed)',
+    venue: 'Camping World Stadium, Orlando', country: 'US',
+  },
+  {
+    id: 'sonic-temple-2027', name: 'Sonic Temple 2027', shortName: 'Sonic Temple',
+    start: '2027-05-13', end: '2027-05-16', dateRange: 'May 13–16, 2027',
+    venue: 'Columbus', country: 'US',
+  },
+  {
+    // Two separate weekends, each with its own tickets; one entry until a
+    // lineup splits them into week-1/week-2 definitions like Coachella.
+    id: 'edc-las-vegas-2027', name: 'EDC Las Vegas 2027', shortName: 'EDC Las Vegas',
+    start: '2027-05-14', end: '2027-05-23', dateRange: 'May 14–16 & 21–23, 2027',
+    venue: 'Las Vegas Motor Speedway', country: 'US',
+  },
+  {
+    id: 'bottlerock-2027', name: 'BottleRock Napa Valley 2027', shortName: 'BottleRock',
+    start: '2027-05-28', end: '2027-05-30', dateRange: 'May 28–30, 2027',
+    venue: 'Napa Valley Expo, Napa', country: 'US',
+  },
+  {
+    id: 'outside-lands-2027', name: 'Outside Lands 2027', shortName: 'Outside Lands',
+    start: '2027-08-06', end: '2027-08-08', dateRange: 'August 6–8, 2027',
+    venue: 'Golden Gate Park, San Francisco', country: 'US',
+  },
+  {
+    id: 'aftershock-2027', name: 'Aftershock 2027', shortName: 'Aftershock',
+    start: '2027-09-30', end: '2027-10-03', dateRange: 'September 30 – October 3, 2027',
+    venue: 'Discovery Park, Sacramento', country: 'US',
+  },
+  {
+    id: 'austin-city-limits-2027', name: 'Austin City Limits Music Festival 2027', shortName: 'Austin City Limits',
+    start: '2027-10-01', end: '2027-10-10', dateRange: 'October 2027, two weekends (expected)',
+    venue: 'Zilker Park, Austin', country: 'US',
+  },
+  {
+    id: 'when-we-were-young-2027', name: 'When We Were Young 2027', shortName: 'When We Were Young',
+    start: '2027-10-01', end: '2027-10-31', dateRange: 'October 2027',
+    venue: 'Las Vegas', country: 'US',
+  },
 
   // ─── International, dated with a lineup ─────────────────────────────────
   {
