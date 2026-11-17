@@ -36,6 +36,7 @@ import suwanneeHulaween2026 from './suwannee-hulaween-2026.js';
 import escapeHalloween2026 from './escape-halloween-2026.js';
 import coachella2027Week1 from './coachella-2027-week-1.js';
 import coachella2027Week2 from './coachella-2027-week-2.js';
+import stagecoach2027 from './stagecoach-2027.js';
 import lucky13 from './lucky-13.js';
 import sharedArtistLinks from './artist-links.js';
 
@@ -46,6 +47,7 @@ const DEFINITIONS = [
   seaHearNow2026, louderThanLife2026, bourbonAndBeyond2026, aftershock2026,
   suwanneeHulaween2026, escapeHalloween2026,
   coachella2027Week1, coachella2027Week2,
+  stagecoach2027,
   lucky13,
 ];
 
@@ -226,6 +228,7 @@ export const FESTIVAL_ALIASES = Object.freeze({
   'hulaween': 'suwannee-hulaween-2026',
   'suwannee-hulaween': 'suwannee-hulaween-2026',
   'escape-halloween': 'escape-halloween-2026',
+  'stagecoach': 'stagecoach-2027',
   // Coachella is two festivals, one per weekend. The bare name goes to
   // Weekend One, the first to happen; Weekend Two keeps its own URL.
   'coachella': 'coachella-2027-week-1',

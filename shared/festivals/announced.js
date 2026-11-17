@@ -12,8 +12,8 @@
  *   - US festivals whose 2027 dates aren't announced yet (`start` is null,
  *     shown as "Dates TBA"). Bonnaroo is deliberately absent: it was called
  *     off for 2027 on 2026-08-21 after storm damage at The Farm.
- *   - US festivals with 2027 dates, lineup or not. Coachella isn't here: it
- *     already has its pages. A few dates are softer than others and say so in
+ *   - US festivals with 2027 dates, lineup or not. Coachella and Stagecoach
+ *     aren't here: they already have their pages. A few dates are softer than others and say so in
  *     their dateRange (ACL and When We Were Young are month-level guesses;
  *     Rolling Loud's length was unclear in listings).
  *   - International festivals with 2027 dates and at least a partial lineup.
@@ -31,7 +31,6 @@ export const ANNOUNCED_FESTIVALS = [
   { id: 'governors-ball-2027', name: 'Governors Ball 2027', shortName: 'Governors Ball', venue: 'New York City', country: 'US' },
   { id: 'jazz-fest-2027', name: 'New Orleans Jazz & Heritage Festival 2027', shortName: 'Jazz Fest', venue: 'Fair Grounds Race Course, New Orleans', country: 'US' },
   { id: 'shaky-knees-2027', name: 'Shaky Knees 2027', shortName: 'Shaky Knees', venue: 'Atlanta', country: 'US' },
-  { id: 'welcome-to-rockville-2027', name: 'Welcome to Rockville 2027', shortName: 'Welcome to Rockville', venue: 'Daytona Beach', country: 'US' },
   { id: 'hangout-2027', name: 'Hangout Music Festival 2027', shortName: 'Hangout', venue: 'Gulf Shores', country: 'US' },
   { id: 'okeechobee-2027', name: 'Okeechobee Music & Arts Festival 2027', shortName: 'Okeechobee', venue: 'Sunshine Grove, Okeechobee', country: 'US' },
   { id: 'lightning-in-a-bottle-2027', name: 'Lightning in a Bottle 2027', shortName: 'Lightning in a Bottle', venue: 'Buena Vista Lake, Bakersfield', country: 'US' },
@@ -56,13 +55,8 @@ export const ANNOUNCED_FESTIVALS = [
     id: 'big-ears-2027', name: 'Big Ears Festival 2027', shortName: 'Big Ears',
     start: '2027-04-01', end: '2027-04-04', dateRange: 'April 1–4, 2027',
     venue: 'Knoxville', country: 'US',
-    headliners: ['Weyes Blood', 'Thundercat', 'Sylvan Esso'],
-  },
-  {
-    id: 'stagecoach-2027', name: 'Stagecoach 2027', shortName: 'Stagecoach',
-    start: '2027-04-23', end: '2027-04-25', dateRange: 'April 23–25, 2027',
-    venue: 'Empire Polo Club, Indio', country: 'US',
-    headliners: ['Riley Green', 'Zach Top', 'Garth Brooks'],
+    // Full lineup out: 170+ artists.
+    headliners: ['Mavis Staples', 'Jeff Tweedy', 'Brad Mehldau', 'Kronos Quartet', 'Weyes Blood', 'Thundercat'],
   },
   {
     id: 'rolling-loud-florida-2027', name: 'Rolling Loud Florida 2027', shortName: 'Rolling Loud Florida',
@@ -70,15 +64,31 @@ export const ANNOUNCED_FESTIVALS = [
     venue: 'Camping World Stadium, Orlando', country: 'US',
   },
   {
-    id: 'sonic-temple-2027', name: 'Sonic Temple 2027', shortName: 'Sonic Temple',
-    start: '2027-05-13', end: '2027-05-16', dateRange: 'May 13–16, 2027',
-    venue: 'Columbus', country: 'US',
+    // Full lineup out (Oct 29, 2026): 150+ acts, five stages. Fox 35's
+    // per-day headliners: Korn Thu, Bad Omens Fri, Pierce The Veil Sat,
+    // blink-182 Sun.
+    id: 'welcome-to-rockville-2027', name: 'Welcome to Rockville 2027', shortName: 'Welcome to Rockville',
+    start: '2027-05-06', end: '2027-05-09', dateRange: 'May 6–9, 2027',
+    venue: 'Daytona International Speedway, Daytona Beach', country: 'US',
+    headliners: ['Korn', 'Bad Omens', 'Pierce The Veil', 'blink-182'],
   },
   {
-    // Two separate weekends, each with its own tickets; one entry until a
-    // lineup splits them into week-1/week-2 definitions like Coachella.
-    id: 'edc-las-vegas-2027', name: 'EDC Las Vegas 2027', shortName: 'EDC Las Vegas',
-    start: '2027-05-14', end: '2027-05-23', dateRange: 'May 14–16 & 21–23, 2027',
+    // Full lineup out (late Oct 2026): ~150 acts, five stages.
+    id: 'sonic-temple-2027', name: 'Sonic Temple 2027', shortName: 'Sonic Temple',
+    start: '2027-05-13', end: '2027-05-16', dateRange: 'May 13–16, 2027',
+    venue: 'Historic Crew Stadium, Columbus', country: 'US',
+    headliners: ['blink-182', 'Iron Maiden', 'Falling in Reverse', 'Korn'],
+  },
+  {
+    // Two separate weekends with their own tickets, so two entries, like
+    // Coachella's week-1/week-2 definitions. Insomniac bills them Dusk and Dawn.
+    id: 'edc-las-vegas-2027-week-1', name: 'EDC Las Vegas 2027 — Weekend One', shortName: 'EDC Las Vegas Week 1',
+    start: '2027-05-14', end: '2027-05-16', dateRange: 'May 14–16, 2027',
+    venue: 'Las Vegas Motor Speedway', country: 'US',
+  },
+  {
+    id: 'edc-las-vegas-2027-week-2', name: 'EDC Las Vegas 2027 — Weekend Two', shortName: 'EDC Las Vegas Week 2',
+    start: '2027-05-21', end: '2027-05-23', dateRange: 'May 21–23, 2027',
     venue: 'Las Vegas Motor Speedway', country: 'US',
   },
   {
@@ -97,8 +107,15 @@ export const ANNOUNCED_FESTIVALS = [
     venue: 'Discovery Park, Sacramento', country: 'US',
   },
   {
-    id: 'austin-city-limits-2027', name: 'Austin City Limits Music Festival 2027', shortName: 'Austin City Limits',
-    start: '2027-10-01', end: '2027-10-10', dateRange: 'October 2027, two weekends (expected)',
+    // Two weekends, same bill, like ACL 2026's week-1/week-2 definitions.
+    // Dates are the expected Oct 1–3 and 8–10 pattern, not yet official.
+    id: 'austin-city-limits-2027-week-1', name: 'Austin City Limits Music Festival 2027 — Weekend One', shortName: 'ACL Week 1',
+    start: '2027-10-01', end: '2027-10-03', dateRange: 'October 1–3, 2027 (expected)',
+    venue: 'Zilker Park, Austin', country: 'US',
+  },
+  {
+    id: 'austin-city-limits-2027-week-2', name: 'Austin City Limits Music Festival 2027 — Weekend Two', shortName: 'ACL Week 2',
+    start: '2027-10-08', end: '2027-10-10', dateRange: 'October 8–10, 2027 (expected)',
     venue: 'Zilker Park, Austin', country: 'US',
   },
   {
