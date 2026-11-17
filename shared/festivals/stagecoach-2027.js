@@ -162,8 +162,32 @@ export const artistLinks = {
   'Zach Top': { spotify: 'https://open.spotify.com/artist/4FGPzWzgjURDNT7JQ8pYgH', appleMusic: 'https://music.apple.com/us/artist/1350125124' },
 };
 
+// Palette from stagecoachfestival.com (read 2026-11-16): a deep desert-night
+// teal (#012F44) under cream type (#FFF5E3), with marigold (#F6C140) buttons
+// and an orange accent (#E48500). The site is dark, but the grid's vote washes
+// multiply onto the page, so this flips it: cream ground, teal ink, the gold
+// kept for the secondary button. Lineup blocks and primary buttons take the
+// site's mid teal (#255B6A) rather than the navy: white reads on it, and it
+// is light enough for the Want/Must See washes, which multiply onto the
+// block, to show. Headings are a distressed western slab
+// (Vicente); Rye is the allowlisted face closest to it.
+const theme = {
+  tokens: {
+    '--bg': '#F6E9CF',
+    '--paper': '#FFF5E3',
+    '--ink': '#012F44',
+    '--btn-primary': '#255B6A',
+    '--btn-secondary': '#F6C140',
+    '--on-btn-secondary': '#0E0E0C',
+    '--block-ink': '#FFFFFF',
+    '--font-display': 'rye',
+    '--font-body': 'montserrat',
+  },
+};
+
 export default {
   slug,
+  theme,
   name: 'Stagecoach 2027',
   shortName: 'Stagecoach',
   dateRange: 'April 23–25, 2027',
