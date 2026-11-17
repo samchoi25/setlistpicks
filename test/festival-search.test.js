@@ -65,7 +65,7 @@ test('coming-soon list: dated first by start, TBA after, ended entries dropped',
   assert.equal(list.find((e) => e.id === 'lollapalooza-2027').dateRange, '2027 · Dates TBA');
   assert.ok(!list.some((e) => /bonnaroo/.test(e.id)), 'Bonnaroo is off in 2027');
   const later = listAnnouncedFestivals(new Date('2027-06-07T12:00:00Z'));
-  assert.ok(!later.some((e) => e.id === 'primavera-sound-2027'), 'drops once it has ended');
+  assert.ok(!later.some((e) => e.id === 'tomorrowland-winter-2027'), 'drops once it has ended');
   assert.ok(later.some((e) => e.id === 'lollapalooza-2027'), 'TBA entries never expire');
 });
 
@@ -74,7 +74,7 @@ test('coming-soon entries are searchable with the same matcher', async () => {
   const ids = (q) => suggestAnnounced(q).map((e) => e.id);
   assert.equal(ids('lolla')[0], 'lollapalooza-2027');
   assert.equal(ids('sonar')[0], 'sonar-2027');
-  assert.ok(ids('barcelona').includes('primavera-sound-2027'));
+  assert.ok(ids('barcelona').includes('sonar-2027'));
   assert.deepEqual(ids('edc'), ['edc-las-vegas-2027-week-1', 'edc-las-vegas-2027-week-2']);
   assert.ok(!ids('hardly strictly').length);
 });

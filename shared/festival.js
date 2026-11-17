@@ -367,6 +367,25 @@ function build(def) {
   const allMins = timedSchedule.flatMap((s) => [s.startMin, s.endMin]);
   const gridStartMin = allMins.length ? Math.floor(Math.min(...allMins) / 60) * 60 : 0;
   const gridEndMin = allMins.length ? Math.ceil(Math.max(...allMins) / 60) * 60 : 0;
+  const festivalBounds = Object.freeze({
+    startMin: gridStartMin, endMin: gridEndMin, totalSlots: (gridEndMin - gridStartMin) / SLOT_MINS,
+  });
+
+  // The time range each day's grid draws. Normally every day shares the
+  // festival-wide range above, so the same clock time sits at the same height
+  // on every day. A `gridPerDay` festival (Big Ears: a 10 AM raga day on
+  // Saturday, 6 PM starts on Thursday) instead trims each day to its own
+  // first and last set, whole hours either side, so a late-starting day
+  // doesn't open on hours of empty grid. Frozen per day so React can compare
+  // it by identity.
+  const boundsByDay = Object.fromEntries(def.days.map((day) => {
+    if (!def.gridPerDay) return [day.id, festivalBounds];
+    const mins = timedSchedule.filter((s) => s.dayId === day.id).flatMap((s) => [s.startMin, s.endMin]);
+    if (!mins.length) return [day.id, festivalBounds];
+    const startMin = Math.floor(Math.min(...mins) / 60) * 60;
+    const endMin = Math.ceil(Math.max(...mins) / 60) * 60;
+    return [day.id, Object.freeze({ startMin, endMin, totalSlots: (endMin - startMin) / SLOT_MINS })];
+  }));
 
   return Object.freeze({
     ...def,
@@ -377,6 +396,8 @@ function build(def) {
     stagesForDay: (dayId) => stagesByDay[dayId] ?? [],
     // 'timed' | 'untimed' — whether a day is positioned by time.
     dayMode: (dayId) => modeByDay[dayId] ?? 'timed',
+    // { startMin, endMin, totalSlots } for a day's timed grid — see boundsByDay.
+    gridBoundsForDay: (dayId) => boundsByDay[dayId] ?? festivalBounds,
     SLOT_MINS,
     SLOTS_PER_HOUR,
     GRID_START_MIN: gridStartMin,

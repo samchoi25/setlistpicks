@@ -37,6 +37,10 @@ import escapeHalloween2026 from './escape-halloween-2026.js';
 import coachella2027Week1 from './coachella-2027-week-1.js';
 import coachella2027Week2 from './coachella-2027-week-2.js';
 import stagecoach2027 from './stagecoach-2027.js';
+import bigEars2027 from './big-ears-2027.js';
+import welcomeToRockville2027 from './welcome-to-rockville-2027.js';
+import sonicTemple2027 from './sonic-temple-2027.js';
+import primaveraSound2027 from './primavera-sound-2027.js';
 import lucky13 from './lucky-13.js';
 import sharedArtistLinks from './artist-links.js';
 
@@ -47,7 +51,8 @@ const DEFINITIONS = [
   seaHearNow2026, louderThanLife2026, bourbonAndBeyond2026, aftershock2026,
   suwanneeHulaween2026, escapeHalloween2026,
   coachella2027Week1, coachella2027Week2,
-  stagecoach2027,
+  bigEars2027, stagecoach2027, welcomeToRockville2027, sonicTemple2027,
+  primaveraSound2027,
   lucky13,
 ];
 
@@ -96,7 +101,7 @@ function validate(def) {
   if (def.websocketsEnabled !== undefined && typeof def.websocketsEnabled !== 'boolean') {
     throw new Error(`${slug}: websocketsEnabled must be a boolean`);
   }
-  for (const flag of ['userSets', 'secretVotes', 'unlisted', 'snow', 'photos', 'photosAnytime']) {
+  for (const flag of ['userSets', 'secretVotes', 'unlisted', 'snow', 'photos', 'photosAnytime', 'gridPerDay']) {
     if (def[flag] !== undefined && typeof def[flag] !== 'boolean') {
       throw new Error(`${slug}: ${flag} must be a boolean`);
     }
@@ -229,6 +234,12 @@ export const FESTIVAL_ALIASES = Object.freeze({
   'suwannee-hulaween': 'suwannee-hulaween-2026',
   'escape-halloween': 'escape-halloween-2026',
   'stagecoach': 'stagecoach-2027',
+  'big-ears': 'big-ears-2027',
+  'welcome-to-rockville': 'welcome-to-rockville-2027',
+  'rockville': 'welcome-to-rockville-2027',
+  'sonic-temple': 'sonic-temple-2027',
+  'primavera-sound': 'primavera-sound-2027',
+  'primavera': 'primavera-sound-2027',
   // Coachella is two festivals, one per weekend. The bare name goes to
   // Weekend One, the first to happen; Weekend Two keeps its own URL.
   'coachella': 'coachella-2027-week-1',

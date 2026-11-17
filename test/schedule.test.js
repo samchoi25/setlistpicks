@@ -283,3 +283,25 @@ test('outside-lands-2026: co-billed Dolores slot is a single two-act block', () 
   assert.equal(merged[0].start, '16:45');
   assert.equal(merged[0].end, '17:45');
 });
+
+test('gridPerDay trims each day to its own sets; other festivals share one range', () => {
+  const be = getFestival('big-ears-2027');
+  const thu = be.gridBoundsForDay('thu');
+  const sat = be.gridBoundsForDay('sat');
+  assert.equal(thu.startMin, 18 * 60, 'Thursday opens at 6 PM, its first set');
+  assert.equal(sat.startMin, 10 * 60, 'Saturday opens at 10 AM for the raga day');
+  for (const day of be.DAYS) {
+    const b = be.gridBoundsForDay(day.id);
+    assert.equal(b.totalSlots, (b.endMin - b.startMin) / be.SLOT_MINS);
+    for (const s of be.SCHEDULE.filter((x) => x.dayId === day.id)) {
+      assert.ok(s.startMin >= b.startMin && s.endMin <= b.endMin, `${s.artist} outside ${day.id}'s range`);
+    }
+  }
+  const osl = getFestival('outside-lands-2026');
+  for (const day of osl.DAYS) {
+    assert.deepEqual(
+      { ...osl.gridBoundsForDay(day.id) },
+      { startMin: osl.GRID_START_MIN, endMin: osl.GRID_END_MIN, totalSlots: osl.TOTAL_SLOTS },
+    );
+  }
+});

@@ -145,7 +145,11 @@ test('every headliner named in metadata actually appears in the lineup', () => {
  */
 const ARTIST_LINKS_MIN_COVERAGE = 0.75;
 const ARTIST_LINKS_EXEMPT = new Set(['outside-lands-2026', 'daisy-chain-fields-2026']);
-const ARTIST_LINKS_PENDING = new Set([]);
+// big-ears-2027 and primavera-sound-2027: neither festival's site carries
+// streaming links, and much of each bill is billed in a form no service lists
+// (Big Ears' programme titles and named ensembles, Primavera's "live"/"b2b"
+// billings). About half of each is linked; the rest wants a hand pass.
+const ARTIST_LINKS_PENDING = new Set(['big-ears-2027', 'primavera-sound-2027']);
 
 test('every public festival has artist links for most of its bill', () => {
   for (const f of listPublicFestivals()) {
@@ -240,8 +244,11 @@ test('festivals with their own artist links keep them', () => {
     const f = getFestival(slug);
     assert.ok(Object.keys(f.artistLinks ?? {}).length > 0, `${slug} lost its artistLinks`);
   }
-  // ...and a festival on neither list gets nothing attached.
-  assert.equal(getFestival('outside-lands-2026').artistLinks, undefined);
+  // ...and a festival off the shared list keeps only its own map, never the
+  // shared one (Outside Lands has its own; Louder Than Life reads the shared).
+  const own = getFestival('outside-lands-2026').artistLinks;
+  const shared = getFestival('louder-than-life-2026').artistLinks;
+  assert.ok(own && own !== shared, 'outside-lands-2026 must not pick up the shared map');
 });
 
 test('buildFestival is memoised per slug', () => {

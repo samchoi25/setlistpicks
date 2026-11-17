@@ -12,11 +12,13 @@ function fmtTimeShort(hhmm) {
 }
 
 const ShowBlock = React.memo(function ShowBlock({
-  s, stage, myVote, groupVotes, memberKey, memberDisplayName,
+  s, stage, bounds, myVote, groupVotes, memberKey, memberDisplayName,
   groupId, onVoteChange, onLongPress, onNotMember,
 }) {
   const festival = useFestival();
-  const { GRID_START_MIN, GRID_END_MIN, SLOT_MINS, TOTAL_SLOTS } = festival;
+  const { SLOT_MINS } = festival;
+  // The day's grid range, from TimedDayBody (festival.gridBoundsForDay).
+  const { startMin: GRID_START_MIN, endMin: GRID_END_MIN, totalSlots: TOTAL_SLOTS } = bounds;
   if (!stage) return null;
   const col = stage.col;
   const startSlot = minToSlot(Math.max(s.startMin, GRID_START_MIN), GRID_START_MIN, SLOT_MINS);

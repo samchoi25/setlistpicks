@@ -12,8 +12,9 @@
  *   - US festivals whose 2027 dates aren't announced yet (`start` is null,
  *     shown as "Dates TBA"). Bonnaroo is deliberately absent: it was called
  *     off for 2027 on 2026-08-21 after storm damage at The Farm.
- *   - US festivals with 2027 dates, lineup or not. Coachella and Stagecoach
- *     aren't here: they already have their pages. A few dates are softer than others and say so in
+ *   - US festivals with 2027 dates, lineup or not. Festivals with a page of
+ *     their own (Coachella, Stagecoach, Big Ears, Welcome to Rockville, Sonic
+ *     Temple, Primavera Sound) aren't here. A few dates are softer than others and say so in
  *     their dateRange (ACL and When We Were Young are month-level guesses;
  *     Rolling Loud's length was unclear in listings).
  *   - International festivals with 2027 dates and at least a partial lineup.
@@ -52,32 +53,9 @@ export const ANNOUNCED_FESTIVALS = [
     venue: 'Boise', country: 'US',
   },
   {
-    id: 'big-ears-2027', name: 'Big Ears Festival 2027', shortName: 'Big Ears',
-    start: '2027-04-01', end: '2027-04-04', dateRange: 'April 1–4, 2027',
-    venue: 'Knoxville', country: 'US',
-    // Full lineup out: 170+ artists.
-    headliners: ['Mavis Staples', 'Jeff Tweedy', 'Brad Mehldau', 'Kronos Quartet', 'Weyes Blood', 'Thundercat'],
-  },
-  {
     id: 'rolling-loud-florida-2027', name: 'Rolling Loud Florida 2027', shortName: 'Rolling Loud Florida',
     start: '2027-05-07', end: '2027-05-09', dateRange: 'May 7–9, 2027 (to be confirmed)',
     venue: 'Camping World Stadium, Orlando', country: 'US',
-  },
-  {
-    // Full lineup out (Oct 29, 2026): 150+ acts, five stages. Fox 35's
-    // per-day headliners: Korn Thu, Bad Omens Fri, Pierce The Veil Sat,
-    // blink-182 Sun.
-    id: 'welcome-to-rockville-2027', name: 'Welcome to Rockville 2027', shortName: 'Welcome to Rockville',
-    start: '2027-05-06', end: '2027-05-09', dateRange: 'May 6–9, 2027',
-    venue: 'Daytona International Speedway, Daytona Beach', country: 'US',
-    headliners: ['Korn', 'Bad Omens', 'Pierce The Veil', 'blink-182'],
-  },
-  {
-    // Full lineup out (late Oct 2026): ~150 acts, five stages.
-    id: 'sonic-temple-2027', name: 'Sonic Temple 2027', shortName: 'Sonic Temple',
-    start: '2027-05-13', end: '2027-05-16', dateRange: 'May 13–16, 2027',
-    venue: 'Historic Crew Stadium, Columbus', country: 'US',
-    headliners: ['blink-182', 'Iron Maiden', 'Falling in Reverse', 'Korn'],
   },
   {
     // Two separate weekends with their own tickets, so two entries, like
@@ -129,12 +107,6 @@ export const ANNOUNCED_FESTIVALS = [
     id: 'tomorrowland-winter-2027', name: 'Tomorrowland Winter 2027', shortName: 'Tomorrowland Winter',
     start: '2027-03-20', end: '2027-03-27', dateRange: 'March 20–27, 2027',
     venue: "Alpe d'Huez, France", country: 'FR',
-  },
-  {
-    id: 'primavera-sound-2027', name: 'Primavera Sound Barcelona 2027', shortName: 'Primavera Sound',
-    start: '2027-06-02', end: '2027-06-06', dateRange: 'June 2–6, 2027',
-    venue: 'Parc del Fòrum, Barcelona', country: 'ES',
-    headliners: ['Doechii', 'Phoebe Bridgers', 'Massive Attack', 'The Chemical Brothers', 'Fontaines D.C.', 'Robyn'],
   },
   {
     id: 'rock-am-ring-2027', name: 'Rock am Ring 2027', shortName: 'Rock am Ring',

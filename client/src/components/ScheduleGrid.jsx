@@ -5,14 +5,14 @@ import { watchWordFit } from '../fitWords.js';
 import { useFestival } from '../festival-context.jsx';
 import { stageHeaderColor } from '../../../shared/theme.js';
 
-function timeAxisLabel(slotIndex, { GRID_START_MIN, SLOT_MINS, TOTAL_SLOTS }) {
-  const totalMin = GRID_START_MIN + slotIndex * SLOT_MINS;
+function timeAxisLabel(slotIndex, { startMin, totalSlots }, SLOT_MINS) {
+  const totalMin = startMin + slotIndex * SLOT_MINS;
   const hour = Math.floor(totalMin / 60);
   const h12 = hour % 12 === 0 ? 12 : hour % 12;
   const suffix = hour % 24 >= 12 ? ' PM' : ' AM';
   // Label the two ends with the meridiem for orientation; the rest are bare
   // hour numbers so the narrow axis stays readable.
-  if (slotIndex === 0 || slotIndex === TOTAL_SLOTS) {
+  if (slotIndex === 0 || slotIndex === totalSlots) {
     return <>{h12}<span className="time-pm">{suffix}</span></>;
   }
   return String(h12);
@@ -85,8 +85,11 @@ function HeaderBar({ variant, stages, flowColumns, colGap, headerRowRef }) {
   );
 }
 
-function TimedDayBody({ festival, stages, daySets, stageById, voteProps }) {
-  const { TOTAL_SLOTS, SLOTS_PER_HOUR } = festival;
+function TimedDayBody({ festival, day, stages, daySets, stageById, voteProps }) {
+  const { SLOTS_PER_HOUR, SLOT_MINS } = festival;
+  // Usually the festival-wide range; a gridPerDay festival trims each day.
+  const bounds = festival.gridBoundsForDay(day.id);
+  const TOTAL_SLOTS = bounds.totalSlots;
   return (
     // --stage-count drives the column template, so the grid widens to
     // whatever this day's stage list holds.
@@ -111,13 +114,13 @@ function TimedDayBody({ festival, stages, daySets, stageById, voteProps }) {
       ).map((slot) => (
         <div key={slot} className="time-label"
           style={{ gridColumn: 1, gridRow: slot + 2 }}>
-          {timeAxisLabel(slot, festival)}
+          {timeAxisLabel(slot, bounds, SLOT_MINS)}
         </div>
       ))}
 
       {/* Show blocks */}
       {daySets.map((s) => (
-        <ShowBlock key={s.id} s={s} stage={stageById[s.stageId]} {...voteProps(s)} />
+        <ShowBlock key={s.id} s={s} stage={stageById[s.stageId]} bounds={bounds} {...voteProps(s)} />
       ))}
     </div>
   );
@@ -221,7 +224,7 @@ function DayGrid({ day, myVotes, perArtistRaw, memberKey, memberDisplayName, gro
       )}
       <div className="schedule-wrap" ref={wrapRef} onScroll={onWrapScroll}>
         {mode === 'timed' && (
-          <TimedDayBody festival={festival} stages={stages} daySets={daySets} stageById={stageById} voteProps={voteProps} />
+          <TimedDayBody festival={festival} day={day} stages={stages} daySets={daySets} stageById={stageById} voteProps={voteProps} />
         )}
         {mode === 'untimed' && (
           stages.length > 0
