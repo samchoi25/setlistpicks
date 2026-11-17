@@ -226,6 +226,9 @@ export const FESTIVAL_ALIASES = Object.freeze({
   'hulaween': 'suwannee-hulaween-2026',
   'suwannee-hulaween': 'suwannee-hulaween-2026',
   'escape-halloween': 'escape-halloween-2026',
+  // Coachella is two festivals, one per weekend. The bare name goes to
+  // Weekend One, the first to happen; Weekend Two keeps its own URL.
+  'coachella': 'coachella-2027-week-1',
 });
 
 /*
