@@ -5,6 +5,8 @@ import { hasFestivalEnded } from '../../../shared/festival.js';
 import { groupUrlPath, festivalPath } from '../../../shared/routes.js';
 import { DEFAULT_THEME_COLOR } from '../../../shared/theme.js';
 
+const HOME_TITLE = 'Setlist Picks | Plan your festival sets with your crew';
+
 /*
  * The landing page at `/`: what Setlist Picks is, and every public festival
  * with a search box over them. Filtering is shared/festival-search.js, the
@@ -21,7 +23,11 @@ function useSiteTheme() {
     if (el) el.textContent = '';
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = DEFAULT_THEME_COLOR;
-    document.title = 'Setlist Picks | Plan your festival sets with your crew';
+    // Festival pages get their title baked in by the server and never set it
+    // client-side, so hand back whatever was there when leaving.
+    const prevTitle = document.title;
+    document.title = HOME_TITLE;
+    return () => { if (prevTitle !== HOME_TITLE) document.title = prevTitle; };
   }, []);
 }
 

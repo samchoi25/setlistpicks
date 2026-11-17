@@ -230,9 +230,15 @@ function AppRoutes() {
   }, [path]); // eslint-disable-line
 
   // Once a group is loaded, put the URL on its festival's canonical path —
-  // an old link or an alias should settle on one address.
+  // an old link or an alias should settle on one address. Only while the URL
+  // is still about this group: leaving it (Back to `/`, another festival)
+  // must not be bounced back here just because groupState is still set.
   useEffect(() => {
     if (!groupState?.groupMeta?.festivalSlug) return;
+    const r = parsePath(path);
+    const aboutThisGroup = ((r.kind === 'group' || r.kind === 'legacy-group') && r.code === groupState.groupId)
+      || (r.kind === 'festival' && r.canonicalSlug === groupState.groupMeta.festivalSlug);
+    if (!aboutThisGroup) return;
     const want = groupUrlPath(groupState.groupMeta.festivalSlug, groupState.groupId);
     if (path !== want) navigate(want, { replace: true });
   }, [groupState, path, navigate]);
