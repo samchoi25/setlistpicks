@@ -2,6 +2,8 @@ import React, { useLayoutEffect, useMemo } from 'react';
 import { useFestivalSuggestions } from '../components/FestivalSearchModal.jsx';
 import { getActiveGroup } from '../storage.js';
 import { hasFestivalEnded } from '../../../shared/festival.js';
+import { suggestAnnounced } from '../../../shared/festival-search.js';
+import { listAnnouncedFestivals } from '../../../shared/festivals/announced.js';
 import { groupUrlPath, festivalPath } from '../../../shared/routes.js';
 import { DEFAULT_THEME_COLOR } from '../../../shared/theme.js';
 
@@ -56,6 +58,24 @@ function FestivalRow({ festival, ended }) {
   );
 }
 
+// A festival that's coming but has no page yet — shown, not linked.
+function AnnouncedRow({ festival }) {
+  return (
+    <li>
+      <div className="landing-festival is-announced">
+        <span className="landing-festival-name">{festival.shortName}</span>
+        <span className="landing-festival-meta">
+          {festival.dateRange}
+          {festival.venue && <> · {festival.venue}</>}
+        </span>
+        {festival.headliners?.length > 0 && (
+          <span className="landing-festival-acts">{festival.headliners.join(' · ')}</span>
+        )}
+      </div>
+    </li>
+  );
+}
+
 export default function LandingView() {
   useSiteTheme();
   const { query, setQuery, results } = useFestivalSuggestions('', { limit: Infinity });
@@ -66,6 +86,10 @@ export default function LandingView() {
     for (const f of results) (hasFestivalEnded(f, now) ? groups.past : groups.upcoming).push(f);
     return groups;
   }, [results]);
+
+  // Read once per visit; it only changes when an entry's last day passes.
+  const announcedAll = useMemo(() => listAnnouncedFestivals(), []);
+  const announced = useMemo(() => suggestAnnounced(query, { festivals: announcedAll }), [query, announcedAll]);
 
   return (
     <div className="app landing">
@@ -96,7 +120,7 @@ export default function LandingView() {
           spellCheck={false}
         />
 
-        {results.length === 0 && (
+        {results.length === 0 && announced.length === 0 && (
           <p className="landing-empty">No festivals match &ldquo;{query.trim()}&rdquo;.</p>
         )}
 
@@ -105,6 +129,16 @@ export default function LandingView() {
             <h3 className="landing-subheading">Upcoming</h3>
             <ul className="landing-list">
               {upcoming.map((f) => <FestivalRow key={f.slug} festival={f} />)}
+            </ul>
+          </>
+        )}
+
+        {announced.length > 0 && (
+          <>
+            <h3 className="landing-subheading">Coming soon</h3>
+            <p className="landing-note">Not on Setlist Picks yet. Each one gets a page once its lineup is out.</p>
+            <ul className="landing-list">
+              {announced.map((f) => <AnnouncedRow key={f.id} festival={f} />)}
             </ul>
           </>
         )}

@@ -55,3 +55,31 @@ test('limit and includeEnded are honoured', () => {
   const farFuture = new Date('2099-01-01');
   assert.deepEqual(suggestFestivals('', { includeEnded: false, now: farFuture }), []);
 });
+
+test('coming-soon list: dated first by start, TBA after, ended entries dropped', async () => {
+  const { listAnnouncedFestivals, ANNOUNCED_FESTIVALS } = await import('../shared/festivals/announced.js');
+  const list = listAnnouncedFestivals(new Date('2026-11-16T12:00:00Z'));
+  assert.equal(list.length, ANNOUNCED_FESTIVALS.length);
+  const firstTba = list.findIndex((e) => !e.start);
+  assert.ok(list.slice(firstTba).every((e) => !e.start), 'TBA entries come last');
+  assert.equal(list.find((e) => e.id === 'lollapalooza-2027').dateRange, '2027 · Dates TBA');
+  assert.ok(!list.some((e) => /bonnaroo/.test(e.id)), 'Bonnaroo is off in 2027');
+  const later = listAnnouncedFestivals(new Date('2027-06-07T12:00:00Z'));
+  assert.ok(!later.some((e) => e.id === 'primavera-sound-2027'), 'drops once it has ended');
+  assert.ok(later.some((e) => e.id === 'lollapalooza-2027'), 'TBA entries never expire');
+});
+
+test('coming-soon entries are searchable with the same matcher', async () => {
+  const { suggestAnnounced } = await import('../shared/festival-search.js');
+  const ids = (q) => suggestAnnounced(q).map((e) => e.id);
+  assert.equal(ids('lolla')[0], 'lollapalooza-2027');
+  assert.equal(ids('sonar')[0], 'sonar-2027');
+  assert.ok(ids('barcelona').includes('primavera-sound-2027'));
+  assert.ok(!ids('outside lands').length);
+});
+
+test('no coming-soon entry shadows a festival that already has a page', async () => {
+  const { ANNOUNCED_FESTIVALS } = await import('../shared/festivals/announced.js');
+  const slugsWithPages = new Set(listPublicFestivals().map((f) => f.slug));
+  for (const e of ANNOUNCED_FESTIVALS) assert.ok(!slugsWithPages.has(e.id), e.id);
+});

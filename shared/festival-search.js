@@ -9,6 +9,7 @@
  * hits somewhere — name, short name, slug, alias, venue or city.
  */
 import { listPublicFestivals, FESTIVAL_ALIASES } from './festivals/index.js';
+import { listAnnouncedFestivals } from './festivals/announced.js';
 import { festivalStartsAt, hasFestivalEnded } from './festival.js';
 
 // Lowercase, strip accents, treat `&` as "and", and collapse everything that
@@ -44,7 +45,7 @@ for (const [alias, slug] of Object.entries(FESTIVAL_ALIASES)) {
 function indexEntry(festival) {
   const primary = [festival.shortName, festival.name];
   const secondary = [
-    festival.slug,
+    festival.slug ?? festival.id,
     ...(aliasesBySlug.get(festival.slug) ?? []),
     festival.venue,
     festival.place?.name,
@@ -59,18 +60,18 @@ function indexEntry(festival) {
     // Compact forms so "seahearnow" or "louderthan" still find their festival.
     compact: primary.map((s) => normalize(s).replace(/ /g, '')),
     initials: primary.map(initialsOf).filter((s) => s.length > 1),
-    startsAt: +festivalStartsAt(festival),
+    // Announced entries (shared/festivals/announced.js) have no days; their
+    // list arrives already in display order, so they don't need one.
+    startsAt: festival.days ? +festivalStartsAt(festival) : 0,
   };
 }
 
-let cachedFor = null;
-let cachedIndex = null;
+// Keyed by list identity: the landing page searches two lists side by side,
+// and a single cache slot would rebuild both on every keystroke.
+const indexCache = new WeakMap();
 function getIndex(festivals) {
-  if (cachedFor !== festivals) {
-    cachedFor = festivals;
-    cachedIndex = festivals.map(indexEntry);
-  }
-  return cachedIndex;
+  if (!indexCache.has(festivals)) indexCache.set(festivals, festivals.map(indexEntry));
+  return indexCache.get(festivals);
 }
 
 // Higher is better; 0 means no match. Whole-query matches against the name
@@ -140,4 +141,21 @@ export function suggestFestivals(rawQuery, {
     || (a.ended ? b.entry.startsAt - a.entry.startsAt : a.entry.startsAt - b.entry.startsAt));
 
   return ranked.slice(0, limit).map((r) => r.entry.festival);
+}
+
+/*
+ * The same matcher over the "Coming soon" entries — festivals that have no
+ * page yet (shared/festivals/announced.js). Best match first; ties keep the
+ * list's own order (dated by start, then dates-TBA by name). An empty query
+ * returns the whole list.
+ */
+export function suggestAnnounced(rawQuery, { festivals = listAnnouncedFestivals() } = {}) {
+  const query = normalize(rawQuery);
+  if (!query) return festivals;
+  const tokens = query.split(' ');
+  return getIndex(festivals)
+    .map((entry, i) => ({ entry, i, s: score(entry, query, tokens) }))
+    .filter((r) => r.s > 0)
+    .sort((a, b) => (b.s - a.s) || (a.i - b.i))
+    .map((r) => r.entry.festival);
 }

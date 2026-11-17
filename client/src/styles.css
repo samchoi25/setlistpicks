@@ -2203,6 +2203,22 @@ input[type="text"].is-tight {
 .landing-festival.is-ended {
   background: transparent;
 }
+/* Coming soon: not a link, so no hover/press feedback and a dashed edge. */
+.landing-festival.is-announced {
+  background: transparent;
+  border-style: dashed;
+}
+.landing-festival.is-announced:hover {
+  border-color: color-mix(in srgb, var(--ink) 18%, transparent);
+}
+.landing-festival.is-announced:active {
+  transform: none;
+}
+.landing-note {
+  margin: calc(-1 * var(--space-1)) 0 var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
 .landing-festival-name {
   font-family: var(--font-display);
   font-style: italic;
